@@ -30,6 +30,8 @@ import DashboardManage from '../DashboardManage'
 //内置
 import DashboardBuiltin from '../DashboardBuiltin'
 
+//后台管理页面
+import Admin from '../Admin'
 const ARoute = (props)=>(
   <div css={{
     background: props.theme.bodyBg,
@@ -41,6 +43,7 @@ const ARoute = (props)=>(
     <Switch>
       <Route path='/login' exact component={  Login } />
       <Route path='/app' render={()=> <Layout />}/>
+      <Route path='/admin' exact render={()=><Admin />}/>
       <Redirect from='/' to="/app" />
     </Switch>
   </div>
