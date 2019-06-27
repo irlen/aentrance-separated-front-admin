@@ -1,0 +1,37 @@
+@import '../../../static/scss/_base.scss';
+.error-tip-container {
+	position: absolute;
+	top: $header-height;
+	left: $left-nav-width;
+	right: $right-panel-width;
+	padding-top: $padding-y-base;
+	height: 50px;
+	overflow-y: hidden;
+	text-align: center;
+	z-index: 1000;
+	>.error-message {
+		display: inline-block;
+		padding: 10px 20px;
+		background-color: rgb(255,255,255);
+		color: #c22;
+		font-size: 14px;
+		position: relative;
+		@include prefix(box-shadow, 0 0 8px rgba(0,0,0,.15));
+		@include prefix(animation, error-message-in 0.1s 0s ease-in 1);
+        @at-root {
+			@include prefix-keyframes(error-message-in) {
+			  0% {
+			     //@include prefix(transform, rotate(0deg) scale(1));
+				  opacity: 0;
+				  top: -30px;
+			  }
+			
+			  100% {
+			    //@include prefix(transform, rotate(360deg) scale(1));
+				  opacity: 1;
+				  top: 0px;
+	          }
+			}
+		}
+	}
+}
