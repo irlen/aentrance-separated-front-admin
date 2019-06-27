@@ -1,0 +1,22 @@
+const homeview = (state={modules: []},action)=>{
+   switch(action.type){
+    case 'ADD_MODULE':
+      state.modules.push(action.moduleData)
+      return state
+    case 'SET_POSITION':
+      state.modules.map((item,index)=>{
+        action.positions.map((subItem,subIndex)=>{
+          if(item.id === subItem.i){
+            const {h,w,x,y} = subItem
+            state.modules[index].position = Object.assign({},state.modules[index].position,{h,w,x,y})
+            return
+          }
+        })
+      })
+      return state
+    default:
+      return state
+  }
+}
+
+export default homeview

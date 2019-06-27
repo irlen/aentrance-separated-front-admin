@@ -1,0 +1,163 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import propTypes from 'prop-types'
+import { Scrollbars } from 'react-custom-scrollbars'
+
+import { appGroupStandard } from '../components/StandarConstant'
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+import { wyAxiosPost } from '../components/WyAxios'
+const Option = Select.Option
+
+class AppListTable extends Component{
+  state={
+    selStandarList: ['sip','dip','bytes','packets','app_bytes','ret','drop','request_num','conn_time','tran_time','drop_time'],
+    standarLength:'11',
+
+    appName: '',
+    subTime: [],
+    stringName: '',
+
+    xData: [],
+    yData: [],
+    initColumns: [],
+    isSpining: false,
+    pageSize: 5
+  }
+  getAppTableData = ()=>{
+    let info = {}
+    info.appName = this.state.appName
+    if(!this.state.subTime){
+      info.start_time = ''
+      info.last_time = ''
+    }else{
+      info.start_time = this.state.subTime[0]
+      info.last_time = this.state.subTime[1]
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('App/getClientList',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let newxxx = []
+      if(responseData.xxx && responseData.xxx.length>0){
+        responseData.xxx.map(item=>{
+          if(this.state.selStandarList.indexOf(item.dataIndex) !== -1){
+            newxxx.push(item)
+          }
+        })
+      }
+      this.setState({
+        xData: newxxx,
+        yData: responseData.yyy,
+        initColumns: responseData.xxx,
+        isSpining: false
+      })
+    })
+  }
+  componentDidMount(){
+    const { appName, subTime, stringName } = this.props
+    this.setState({
+      appName,
+      subTime,
+      stringName
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      !(this.props.appName === nextProps.appName && JSON.stringify(this.props.subTime) === JSON.stringify(nextProps.subTime))
+    ){
+      this.setState({
+        appName: nextProps.appName,
+        subTime: nextProps.subTime,
+        stringName: nextProps.stringName
+      },()=>{
+        this.getAppTableData()
+      })
+    }
+  }
+  selStandarListChange = (value)=>{
+    let newxxx = []
+    if(this.state.initColumns && this.state.initColumns.length>0){
+      this.state.initColumns.map(item=>{
+        if(value.indexOf(item.dataIndex) !== -1){
+          newxxx.push(item)
+        }
+      })
+    }
+
+    this.setState({
+      selStandarList: value,
+      standarLength: value.length,
+      xData: newxxx
+    })
+  }
+  setSubTime = (value)=>{
+    this.setState({
+      subTime:value
+    },()=>{
+      this.getAppTableData()
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>{this.state.stringName}</span>
+          <span style={{float:"right"}}>
+            <span>指标显示：</span>
+            <Select
+              style={{minWidth: "120px"}}
+              mode="tags"
+              size="small"
+              onChange={this.selStandarListChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+this.state.standarLength+'项')}
+              value={this.state.selStandarList}
+            >
+              <Option key="sip" value="sip">客户端</Option>
+              <Option key="dip" value="dip">服务器</Option>
+              {
+                appGroupStandard && appGroupStandard.length>0?
+                appGroupStandard.map(item=>{
+                  return(
+                    <Option key={item.value} value={item.value} title={item.name}>{item.name}</Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            style={{height: "300px"}}
+            >
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+              />
+            </WySpin>
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+AppListTable.propType={
+  moduleName: propTypes.string
+}
+export default AppListTable

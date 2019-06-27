@@ -1,0 +1,106 @@
+import _ from 'lodash'
+import { wyAxiosPost } from '../components/WyAxios'
+
+export const userLogin = (userInfo)=>({
+  type: 'USER_LOGIN',
+  userInfo
+})
+
+export const userLogout = (userInfo)=>({
+  type: 'USER_LOGOUT',
+  userInfo
+})
+
+
+//权限设置action
+export const setAuth = (authData)=>({
+  type: 'SET_USERAUTH',
+  authData
+})
+//权限生成器
+export const getCompiledAuth = (roleId)=>{
+  return new Promise((resolve,reject)=>{
+    let counter = 0
+    let pageAuth = [], //被纳入权限的页面方位权限
+        dataAuth = [], //被纳入权限的数据操作权限
+        roleAuth = {}  //该角色拥有的权限
+    const getNewCounter = ()=>{
+      counter+=1
+      if(counter === 3){
+        //计算差集，封装数据
+        const newPageAuth = []
+        const newDataAuth = []
+        if(pageAuth && pageAuth.length>0){
+          pageAuth.map(item=>{
+            item.list.map(subItem=>{
+              if(roleAuth.pageAuth.indexOf(subItem.id) === -1){
+                const atom = {}
+                atom.id = subItem.id
+                atom.path = subItem.path
+                newPageAuth.push(atom)
+              }
+            })
+          })
+        }
+        if(dataAuth && dataAuth.length>0){
+          dataAuth.map(item=>{
+            item.list.map(subItem=>{
+              if(roleAuth.dataAuth.indexOf(subItem.id) === -1){
+                const atom = {}
+                atom.id = subItem.id
+                atom.api_name = subItem.api_name
+                newDataAuth.push(atom)
+              }
+            })
+          })
+        }
+        const data = {}
+        data.pageAuth = _.cloneDeep(newPageAuth)
+        data.dataAuth = _.cloneDeep(newDataAuth)
+        resolve(data)
+      }
+    }
+    wyAxiosPost('Auth/getAuthList',{control:'1'},(result)=>{
+      const responseData = result.data.msg
+      pageAuth = _.cloneDeep(responseData)
+      getNewCounter()
+    })
+    wyAxiosPost('Auth/getAuthFunc',{control:'1'},(result)=>{
+      const responseData = result.data.msg
+      dataAuth = _.cloneDeep(responseData)
+      getNewCounter()
+    })
+    wyAxiosPost('Auth/editRole',{id:roleId},(result)=>{
+      const responseData = result.data.msg
+      roleAuth = _.cloneDeep(responseData)
+      getNewCounter()
+    })
+  })
+}
+
+//侧导航伸缩状态
+export const setNavResize = ()=>({
+  type: 'SET_SLIDE'
+})
+
+////////////////////////////////总览页面
+//增加模块
+export const addModules = (moduleData)=>({
+  type: 'ADD_MODULE',
+  moduleData
+})
+//设置位置
+export const setPosition = (positions)=>({
+  type: 'SET_POSITION',
+  positions
+})
+//删除模块
+export const deleteModule = (id)=>({
+  type: 'DELETE_MODULE',
+  id
+})
+//设置数据
+export const setData = (dataInfo)=>({
+  type: 'SET_DATA',
+  dataInfo
+})

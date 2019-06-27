@@ -1,0 +1,102 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+import { withRouter } from 'react-router'
+
+import { wyAxiosPost } from '../components/WyAxios'
+
+class TemplateForCalc extends Component{
+  state = {
+    showViewData: {},
+    autoHeight: 100,
+    updateTime: 0,
+    secondData: {}
+  }
+  componentDidMount(){
+
+    this.setState({
+      showViewData: this.props.showViewData,
+      autoHeight: this.props.autoHeight,
+      updateTime: this.props.updateTime
+    },()=>{
+      console.log('渲染')
+      this.getCurViewData()
+      if(this.state.updateTime && this.props.env !== 'set'){
+        this.updateData()
+      }
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    console.log(this.props.showViewData)
+    console.log(nextProps.showViewData)
+    console.log(this.props.autoHeight)
+    console.log(nextProps.autoHeight)
+    console.log(this.props.upDateTime)
+    console.log(nextProps.upDateTime)
+    if(
+      ! (_.isEqual(this.props.showViewData,nextProps.showViewData)) ||
+      this.props.autoHeight !== nextProps.autoHeight ||
+      this.props.updateTime !== nextProps.upDateTime
+    ){
+      this.setState({
+        showViewData: nextProps.showViewData,
+        autoHeight: nextProps.autoHeight,
+        updateTime: nextProps.updateTime
+      },()=>{
+        console.log('更新')
+        this.getCurViewData()
+        if(this.state.updateTime && this.props.env !== 'set'){
+          this.updateData()
+        }
+      })
+    }
+  }
+  //获取数据
+  getCurViewData = ()=>{
+    if(this.state.showViewData.data && Object.keys(this.state.showViewData.data).length>0){
+      const info = {}
+      info.viewType = this.state.showViewData.viewType
+      info.api = this.state.showViewData.data.dataMethod
+
+      wyAxiosPost('Screen/getScreenData',{info},(result)=>{
+        const responseData = result.data.msg
+          const curTime = []
+          console.log(responseData)
+          //curTime.push(responseData.start_time)
+          //curTime.push(responseData.last_time)
+          // this.setState({
+          //   xData: responseData.xxx,
+          //   yData: responseData.yyy,
+          //   aUnit: responseData.unit,
+          //   subTime: _.cloneDeep(curTime),
+          //   secondData: responseData.secondData?responseData.secondData:{}
+          // })
+
+      })
+    }
+  }
+  updateData = ()=>{
+
+  }
+  render(){
+    const height = this.state.autoHeight + 20
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+      {
+        this.props.env === 'set'?
+        ''
+        :
+        <div className="moduleHeader" style={{display:"flex"}}>
+          <div className="moduleHeaderIn"style={{flex:"1 1 auto"}}>
+            {this.state.showViewData.data && Object.keys(this.state.showViewData.data).length>0?this.state.showViewData.data.moduleName:''}
+          </div>
+        </div>
+      }
+        <div className="moduleBody" style={{height,textAlign:"center",fontSize:"30px",lineHeight:height-10+"px",color:"rgba(0,255,102,0.8)"}}>
+          统计结果
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(TemplateForCalc)

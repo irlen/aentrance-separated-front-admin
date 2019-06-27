@@ -1,0 +1,87 @@
+import React, { Component } from 'react'
+import { Input, Select, Icon, Tooltip } from 'antd'
+
+import * as regions from './regions'
+const Option = Select.Option
+class Custom extends Component{
+  state={
+    custom_areaName:'',
+    custom_city:'',
+    custom_ip:'',
+    bus_map: ''
+  }
+  componentDidMount(){
+    this.setState({
+      custom_areaName: this.props.custom_areaName,
+      custom_city: this.props.custom_city,
+      custom_ip: this.props.custom_ip,
+      bus_map: this.props.bus_map
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      !(
+        this.props.bus_map === nextProps.bus_map &&
+        this.props.custom_areaName === nextProps.custom_areaName &&
+        this.props.custom_city === nextProps.custom_city &&
+        this.props.custom_ip === nextProps.custom_ip
+      )
+    ){
+      this.setState({
+        custom_areaName: nextProps.custom_areaName,
+        custom_city: nextProps.custom_city,
+        custom_ip: nextProps.custom_ip,
+        bus_map: nextProps.bus_map
+      })
+    }
+  }
+  customChange = (value,obj)=>{
+    this.props.setCustom(this.props.id, obj, value)
+  }
+  delCustom = (id)=>{
+    this.props.delCustom(id)
+  }
+  render(){
+    return(
+        <li style={{display: "flex"}}>
+          <div style={{flex:"0 0 180px",padding:"0 20px 0 10px"}}>
+            <Input
+              value={this.state.custom_areaName}
+              onChange={(e)=>{this.customChange(e.target.value,'custom_areaName')}}
+            />
+          </div>
+          <div style={{flex:"0 0 180px",padding:"0 20px 0 10px"}}>
+            <Select
+              showSearch
+              filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+              style={{width:"100%"}}
+              value={this.state.custom_city}
+              onChange={(value)=>{this.customChange(value,'custom_city')}}
+            >
+              {
+                regions[this.state.bus_map] && regions[this.state.bus_map].length>0?
+                regions[this.state.bus_map].map((item,index)=>{
+                  return <Option key={index} value={item.name}>{item.name}</Option>
+                })
+                :
+                ''
+              }
+            </Select>
+          </div>
+          <div style={{flex:"0 0 180px",padding:"0 20px 0 10px"}}>
+            <Tooltip placement="topLeft" title="多个ip/ip段之间以逗号隔开">
+              <Input
+                value={this.state.custom_ip}
+                onChange={(e)=>{this.customChange(e.target.value,'custom_ip')}}
+              />
+            </Tooltip>
+          </div>
+          <div style={{flex:"1 1 auto",padding:"0 20px 0 10px"}}>
+            <Icon onClick={()=>{this.delCustom(this.props.id)}} title="删除" style={{cursor:"pointer"}}><i className="fa fa-trash-o" aria-hidden="true"></i></Icon>
+          </div>
+        </li>
+    )
+  }
+}
+
+export default Custom

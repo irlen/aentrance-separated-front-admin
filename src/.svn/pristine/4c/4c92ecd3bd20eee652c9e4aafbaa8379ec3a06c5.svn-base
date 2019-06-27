@@ -1,0 +1,194 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, Popconfirm, Drawer, Select, TimePicker, Transfer } from 'antd'
+import _ from 'lodash'
+
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+
+const Option = Select.Option
+class ReportList extends Component{
+  state = {
+    ids:[],
+    visible: false,
+
+    report_type:'day',
+    start_time:null,
+    last_time: null,
+    day_time:[],
+    mockData:[],
+
+  }
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    })
+  }
+
+  onClose = () => {
+    this.setState({
+      visible: false
+    })
+  }
+
+  showModal = ()=>{
+    this.showDrawer()
+  }
+
+  report_typeChange = (value)=>{
+    this.setState({
+      report_type: value
+    })
+  }
+  start_timeChange = (time)=>{
+    if(time){
+      const strTime = time.format('HH:mm')
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[0] = strTime
+      this.setState({
+        start_time: time,
+        day_time: curTime
+      })
+    }else{
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[0] = null
+      this.setState({
+        start_time: null,
+        day_time: curTime
+      })
+    }
+  }
+  last_timeChange = (time)=>{
+    if(time){
+      const strTime = time.format('HH:mm')
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[1] = strTime
+      this.setState({
+        last_time: time,
+        day_time: curTime
+      })
+    }else{
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[1] = null
+      this.setState({
+        start_time: null,
+        day_time: curTime
+      })
+    }
+  }
+  //获取穿梭框数据
+  getMock = () => {
+    const targetKeys = [];
+    const mockData = [];
+    const id = this.state.editId
+
+
+
+
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return (
+      <div className='amodule'>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col style={{padding: "20px 0 0 30px"}}>
+            <Button type="primary" onClick={this.showModal}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?`确定要删除这${this.state.ids.length}选项？`:'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <div className="moduleBody">
+                <WyTable
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                  rowSelection={rowSelection}
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                />
+              </div>
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title="新建模板"
+          placement="right"
+          onClose={this.onClose}
+          visible={this.state.visible}
+           width={900}
+        >
+          <div style={{padding: "20px"}}>
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>报表类型：</div>
+              <div style={{flex:" 1 1 auto"}}>
+                <Select value={this.state.report_type} onChange={this.report_typeChange}>
+                  <Option key='day' value='day'> 日报 </Option>
+                  <Option key='week' value='week'> 周报 </Option>
+                </Select>
+              </div>
+            </div>
+            {
+              this.state.report_type === 'day'?
+              <div style={{display: "flex", marginBottom:"20px"}}>
+                <div style={{flex:" 0 0 100px"}}>时间：</div>
+                <div style={{flex:" 1 1 auto"}}>
+                  <TimePicker value={this.state.start_time} allowClear={false} placeHolder={'请选择时间'}  onChange={this.start_timeChange} format={'HH:mm'} /> ~ <TimePicker value={this.state.last_time} allowClear={false} placeHolder={'请选择时间'}  onChange={this.last_timeChange} format={'HH:mm'} />
+                </div>
+              </div>
+              :
+              ''
+            }
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>内容：</div>
+                <div style={{flex:" 1 1 auto"}}>
+                  <Transfer
+                    dataSource={this.state.mockData}
+                    listStyle={{
+                      width: 300,
+                      height: 400,
+                    }}
+                    showSearch
+                    filterOption={this.filterOption}
+                    targetKeys={this.state.targetKeys}
+                    onChange={this.transferChange}
+                    render={item => item.title}
+                  />
+              </div>
+            </div>
+          </div>
+          <p style={{textAlign: 'right'}}>
+            <Button
+                onClick={this.onClose}
+                style={{marginRight:"20px"}}
+              >
+                取消
+            </Button>
+            <Button onClick={this.onClose} type="primary" style={{marginRight: "20px"}}>
+              提交
+            </Button>
+          </p>
+
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+
+export default ReportList

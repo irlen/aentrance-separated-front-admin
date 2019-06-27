@@ -1,0 +1,435 @@
+*{margin: 0; padding: 0; box-sizing: border-box;}
+body{
+	font-family: sans-serif,Helvetica,-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+             "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+             SimSun,sans-serif;
+}
+html {font-size: 62.5%;/*10 ÷ 16 × 100% = 62.5%*/}
+body {
+	font-size: 14px;
+	font-size: 1.4rem;/*1.4 × 10px = 14px */
+	overflow-y: hidden;
+}
+h1 { font-size: 2.4rem;/*2.4 × 10px = 24px*/}
+
+html,body {height: 100%; width: 100%;}
+ul{list-style: none;}
+img{border: none; outline: none; display: inline-block;}
+img{ -ms-interpolation-mode: bicubic; }
+a{text-decoration: none; color: inherit;}
+a:hover{text-decoration: none; color: inherit;}
+/*清除浮动代码*/
+.clearfloat:after{display:block;clear:both;content:"";visibility:hidden;height:0}
+.clearfloat{zoom:1}
+
+/*栅格布局的上边距*/
+.rowMarginTop{
+	margin-top: 24px;
+}
+
+
+/*.ant-table-thead > tr > th, .ant-table-tbody > tr > td{
+	text-overflow: ellipsis;
+	white-space: nowrap;
+  overflow: hidden;
+}*/
+/***********表格额外样式添加*****************************************************************************/
+.ant-table-tbody > tr > td> .noWrap {
+		max-width: 200px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+}
+.ant-table-tbody > tr > td{
+	border: none
+}
+
+/*表格头样式*/
+.ant-table-small > .ant-table-content > .ant-table-header > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-body > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-scroll > .ant-table-header > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-scroll > .ant-table-body > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-fixed-left > .ant-table-header > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-fixed-right > .ant-table-header > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-fixed-left > .ant-table-body-outer > .ant-table-body-inner > table > .ant-table-thead > tr > th, .ant-table-small > .ant-table-content > .ant-table-fixed-right > .ant-table-body-outer > .ant-table-body-inner > table > .ant-table-thead > tr > th{
+	border: none;
+	color:#ffffff;
+	font-weight: bold;
+	background-color: rgba(0,0,0,0.24);
+}
+/*表格去边距*/
+.ant-table-small > .ant-table-content > .ant-table-header > table, .ant-table-small > .ant-table-content > .ant-table-body > table, .ant-table-small > .ant-table-content > .ant-table-scroll > .ant-table-header > table, .ant-table-small > .ant-table-content > .ant-table-scroll > .ant-table-body > table, .ant-table-small > .ant-table-content > .ant-table-fixed-left > .ant-table-header > table, .ant-table-small > .ant-table-content > .ant-table-fixed-right > .ant-table-header > table, .ant-table-small > .ant-table-content > .ant-table-fixed-left > .ant-table-body-outer > .ant-table-body-inner > table, .ant-table-small > .ant-table-content > .ant-table-fixed-right > .ant-table-body-outer > .ant-table-body-inner > table{
+	padding: 0px;
+}
+
+.ant-table-small {  /*表格去边框*/
+	border:none;
+}
+
+/*表格行奇偶颜色控制*/
+.ant-table-tbody>.ant-table-row:nth-of-type(odd) {
+	background-color:rgba(0,0,0,0.48);
+}
+.ant-table-tbody>.ant-table-row:nth-of-type(even) {
+	background-color:rgba(0,0,0,0.24);
+}
+
+.ant-table-column-sorter {     /*表头项排序上下三角符号*/
+    position: relative;
+    margin-left: 8px;
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    text-align: center;
+    font-weight: normal;
+    color: #ffffff;
+}
+
+/**表格无数据时候的主体部分颜色**/
+.ant-table-placeholder {
+	background-color:  rgba(0,0,0,0);
+}
+/***********表格额外样式添加结束*****************************************************************************/
+
+/***********warning框样式完***********************************************************/
+.ant-message-notice-content{
+	background: #b0d7cd;
+	background-color:rgba(21,35,84,0.88);
+	border:rgba(1,211,159,0.8) solid 1px;
+}
+/***********warning框样式完*****************************************************************/
+
+/***********notification框样式***************************************************************/
+.ant-notification-notice{
+	background-color:  rgba(21,35,84,0.88);
+	border:rgba(1,211,159,0.64) solid 1px;
+}
+.ant-notification-notice-message{
+		color: #01D39F;
+}
+/***********notification框样式完*********************************************************************/
+
+/***********popover气泡框样式***********************************************************************/
+.ant-popover-arrow,.ant-popover-inner{
+	border: rgba(1,211,159,0.64) solid 1px;
+}
+/*********popover气泡框样式完***********************************************************************/
+
+/************自定义仪表板添加视图选择样式*********************************************************/
+.ant-transfer-list-header{
+	background: rgba(255,255,255,0);
+}
+.ant-transfer-list{
+	border: #ffffff solid 1px;
+}
+.ant-transfer-list-search-action .anticon{    /*搜索icon*/
+	color:rgba(255,255,255,0.64);
+}
+.ant-btn-primary.disabled, .ant-btn-primary[disabled], .ant-btn-primary.disabled:hover, .ant-btn-primary[disabled]:hover, .ant-btn-primary.disabled:focus, .ant-btn-primary[disabled]:focus, .ant-btn-primary.disabled:active, .ant-btn-primary[disabled]:active, .ant-btn-primary.disabled.active, .ant-btn-primary[disabled].active{      //按钮左右icon
+	color:rgba(0,0,0,0.56);
+}
+.ant-transfer-list-content-item:not(.ant-transfer-list-content-item-disabled):hover{
+	background-color:  rgba(1,211,159,0.40);
+}
+
+.ant-transfer-list-body-not-found{  /*无匹配结果*/
+	color: rgba(255,255,255,0.64);
+}
+/************自定义仪表板添加视图选择样式end*****************************************************/
+
+/********drawer抽屉样式*****************************************************************************/
+.ant-drawer-title{
+	color: #fff;
+}
+
+.ant-drawer-header{
+	background:linear-gradient(228deg, #84aaac 0%, #386698 100%);
+}
+
+.ant-drawer-body>div{
+	background: linear-gradient(-96deg, #84aaac 0%, #386698 100%) !important;
+}
+
+.ant-drawer-wrapper-body{
+	background:linear-gradient(-96deg, #84aaac 0%, #386698 100%);
+}
+/***********drawer抽屉样式样式完******************************************************************/
+
+/***********modal对话框样式*****************************************************************/
+.ant-modal-header{
+	background:linear-gradient(228deg, #84aaac 0%, #5291c6 100%);
+}
+.ant-modal-title{
+	color: #fff;
+}
+.ant-modal-content{
+	background:linear-gradient(-96deg, #84aaac 0%, #5291c6 100%);
+}
+/***********modal对话框样式完****************************************************************/
+
+/*******************tabs样式*****************************************************/
+.ant-tabs.ant-tabs-card > .ant-tabs-bar .ant-tabs-tab{
+	border: rgba(1,211,159,1) solid 1px;
+}
+.ant-tabs.ant-tabs-card > .ant-tabs-bar .ant-tabs-tab-active{
+	color: #ffffff;
+	background: rgba(1,211,159,1);
+}
+.ant-tabs-bar{
+	margin:0;
+}
+.ant-tabs:not(.ant-tabs-vertical) > .ant-tabs-content{
+	padding-top: 16px;
+}
+/*******************tabs样式完*****************************************************/
+
+/***********select样式****************************************************************************/
+.ant-select.ant-select-enabled{   /*选择器最小宽度*/
+	//min-width: 192px !important;
+}
+.ant-select-arrow{
+	color: rgba(255,255,255,0.8)
+}
+.ant-select-selection.ant-select-selection--single{    /*选择器边框颜色&背景颜色*/
+	border-color:rgba(1,211,159,0.4);
+	background-color:  rgba(0,0,0,0.24);
+}
+.ant-select-dropdown-menu-item{      /*下拉列表背景颜色*/
+	// overflow: visible;
+	background-color:#2a4280;
+}
+.ant-select-dropdown-menu-item:hover{      /*下拉列表悬浮字体颜色&背景颜色*/
+	color:@focusColor;
+	background-color: @selectColor;
+}
+.ant-select-dropdown-menu-item-disabled{    /*下拉无匹配提示字体颜色*/
+	color: rgba(255,255,255,0.88);
+}
+
+.ant-input-number{                   /*数字选择器样式*/
+	border: rgba(1,211,159,0.4) solid 1px;
+}
+/***********select样式完******************************************************************/
+
+/********************select多选*************************************************/
+.ant-select-selection--multiple{
+	background: rgba(0,0,0,0.24);
+	border: rgba(1,211,159,0.4) solid 1px;
+}
+.ant-select-selection--multiple .ant-select-selection__choice{
+	background-color: rgba(1,211,159,0.32);
+	border: rgba(255,255,255,0.24) solid 1px;
+}
+
+/***********视图源设置*******************/
+.ant-select-tree-dropdown{
+	background: linear-gradient(228deg, #b0d7cd 0%, #5291c6 100%);
+}
+.ant-select-tree li .ant-select-tree-node-content-wrapper:hover{
+	background-color: rgba(1,211,159,0.64);
+}
+
+li.ant-select-tree-treenode-disabled > span:not(.ant-select-tree-switcher), li.ant-select-tree-treenode-disabled > .ant-select-tree-node-content-wrapper, li.ant-select-tree-treenode-disabled > .ant-select-tree-node-content-wrapper span{
+	color: #fff;
+}
+/********************select多选完*************************************************/
+
+/**********分页箭头样式***************************************************************/
+.ant-pagination-disabled a, .ant-pagination-disabled:hover a, .ant-pagination-disabled:focus a, .ant-pagination-disabled .ant-pagination-item-link, .ant-pagination-disabled:hover .ant-pagination-item-link, .ant-pagination-disabled:focus .ant-pagination-item-link{
+	color: #ffffff;
+}
+/******分页选中样式********************************************************************************/
+.ant-pagination-item-active{
+	background: rgba(0,0,0,0.32);
+}
+
+/**********时间选择样式***************************************************************/
+.ant-calendar-range{     /*时间选择背景颜色*/
+	background:linear-gradient(8deg, #b0d7cd 0%, #5291c6 100%);
+}
+.ant-calendar-cell.ant-calendar-in-range-cell:before{   /*选择范围背景色*/
+	background: rgba(0,0,0,0.32);
+}
+.ant-calendar-disabled-cell .ant-calendar-date:hover{ /*鼠标在不能选择的日期上悬浮*/
+	color: rgba(0, 0, 0, 0.64);
+	background: rgba(255, 255, 255, 0.36);
+}
+.ant-calendar-disabled-cell .ant-calendar-date{   /*未来的日期*/
+	color: rgba(0, 0, 0, 0.64);
+	background: rgba(255, 255, 255, 0.36);
+}
+
+.ant-calendar-date:hover,.ant-time-picker-panel-select li:hover,.ant-upload-list-item:hover,.ant-upload-list-item-info{
+	background: #01D39F;    /*日期悬浮*/
+}
+.ant-calendar-today .ant-calendar-date{  /*今天的日期*/
+	color: #ffffff;
+	border: #ffffff solid 1px;
+}
+.ant-calendar-last-month-cell .ant-calendar-date, .ant-calendar-next-month-btn-day .ant-calendar-date{
+	color: rgba(0, 0, 0, 0.64);     /*month下个月日期*/
+}
+
+.ant-calendar-year-panel,.ant-calendar-decade-panel{
+	background: linear-gradient(312deg, #b0d7cd 0%, #5291c6 100%);
+}
+
+.ant-calendar-month-panel,.ant-calendar-time-picker-combobox,{   /*月份选择，时间选择样式*/
+	background: linear-gradient(48deg, #b0d7cd 0%, #5291c6 100%);
+}
+// .ant-calendar-year-panel-body,.ant-calendar-decade-panel-body{   //年份选择，十年选择样式
+// 	background: linear-gradient(312deg, #b0d7cd 0%, #5291c6 100%);
+// }
+li.ant-calendar-time-picker-select-option-selected{  /*时间已选择样式*/
+	background: #01D39F;
+}
+.ant-menu-item:active,.ant-menu-submenu-title:active{  /*子菜单*/
+	background: #01D39F;
+}
+
+.ant-calendar-year-panel-last-decade-cell .ant-calendar-year-panel-year, .ant-calendar-year-panel-next-decade-cell .ant-calendar-year-panel-year,.ant-calendar-decade-panel-last-century-cell .ant-calendar-decade-panel-decade, .ant-calendar-decade-panel-next-century-cell .ant-calendar-decade-panel-decade{  /*decade往前或往后的十年份*/
+	color: rgba(0,0,0,0.64);
+}
+
+.ant-calendar-month-panel-cell-disabled .ant-calendar-month-panel-month, .ant-calendar-month-panel-cell-disabled .ant-calendar-month-panel-month:hover{    /*month不能选择的月份*/
+	cursor: not-allowed;
+	color: rgba(0,0,0,0.64);
+	background: rgba(255,255,255,0.4);
+}
+.ant-calendar-time-picker-btn:hover{    /* "选择时间" 按钮悬浮颜色*/
+	color: #01D39F;
+}
+
+.ant-calendar-picker-icon:after{
+	color: rgba(255,255,255,0.8);
+}
+.ant-calendar-time-picker-select li:hover{   /*时分秒悬浮背景色*/
+	background: rgba(0, 0, 0, 0.32);
+}
+.ant-calendar-time-picker{     /*时间选择器底层背景色*/
+	background-color: rgba(255,255,255,0.1);
+}
+
+.ant-calendar-range .ant-calendar-input, .ant-calendar-range .ant-calendar-time-picker-input{
+	padding-left: 76px;                                                         /*时间输入框样式*/
+	background-color:rgba(0,0,0,0.4);
+}
+/*********时间选择样式end**************************************************************************/
+
+/**********新建告警时间选择样式***************************************************************/
+.ant-time-picker-panel-input-wrap{
+	background: linear-gradient(312deg, #b0d7cd 0%, #5291c6 100%);
+}
+
+.ant-time-picker-panel-input{
+	background-color:rgba(0,0,0,0.24);
+}
+
+li.ant-time-picker-panel-select-option-selected{
+	background: #01D39F;
+}
+/**********新建告警时间选择样式end***************************************************************/
+
+/******对象定义/导入样式********************************************************************************/
+.ant-upload.ant-upload-drag{
+	border: 1px dashed rgba(255, 255, 255, 0.8);
+	transition: border-color 0.3s;
+  cursor: pointer;
+  border-radius: 4px;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding: 16px 0;
+  background: rgba(0,0,0,0.24);
+}
+.ant-upload.ant-upload-drag p.ant-upload-text {
+	font-size: 16px;
+	margin: 0 0 4px;
+	color: rgba(255, 255, 255, 1);
+}
+/******对象定义/导入样式END********************************************************************************/
+
+/******设备相关样式*************************************************************************************/
+.ant-card{
+	background:rgba(0,0,0,0.32);
+}
+.ant-card-head-title{
+	color:#ffffff;
+}
+
+.ant-dropdown-menu{   /*卡片重命名*/
+	background: linear-gradient(228deg, #b0d7cd 0%, #5291c6 100%);
+}
+/******设备相关样式 end*************************************************************************************/
+
+/*下拉菜单鼠标悬浮字体变色*/
+.ant-dropdown-menu-item-active{
+	color: #01D39F;
+}
+
+/*下拉列表禁用样式还原*/
+.ant-dropdown-menu-item-disabled, .ant-dropdown-menu-submenu-title-disabled{
+	color: #ffffff;
+	cursor: default;
+}
+.ant-dropdown-menu-item-disabled:hover, .ant-dropdown-menu-submenu-title-disabled:hover{
+	color: rgba(0,0,0,1);
+	cursor: default;
+}
+/*统一模块样式*/
+.amodule{
+	padding: 0 0 0 0;
+	border-radius: 5px;
+	height: auto;
+	margin-bottom: 16px;
+}
+.moduleHeader{
+	padding: 0 20px 0 20px;
+	height: 50px;
+	line-height: 50px;
+	// margin-bottom: 10px;
+	border-bottom: #e8e8e8 solid 1px;
+}
+
+.moduleHeader h4{
+	color: #ffffff;
+}
+
+.moduleBody{
+	padding: 10px 20px 10px 20px;
+}
+
+// body{
+// 	background: -webkit-@gradientbgcolor;
+// 	background: -ms-@gradientbgcolor;
+// 	background: -o-@gradientbgcolor;
+// 	background: -moz-@gradientbgcolor;
+// 	background: @gradientbgcolor;
+// }
+
+/***下拉框调用类***/
+.dropShow{
+	display: block;
+}
+.dropHide{
+	display: none;
+}
+/******/
+
+
+
+/*全局颜色*/
+@import './globalColor.less';
+/*字体图标*/
+@import './font-awesome.min.less';
+/*登陆页面*/
+@import '../Login/less/login.less';
+/*布局页面*/
+@import '../Layout/less/container.less';
+@import '../Layout/less/header.less';
+/*数据源页面*/
+@import '../DataSource/less/datasource.less';
+/*定义视图页面*/
+@import '../DefineView/less/defineview.less';
+/*生产页面*/
+@import '../ProductPages/less/productPages';
+/*DropList组件*/
+@import '../components/DropList/less/droplist.less';
+/*二级页面*/
+@import '../SubPage/Layout/less/subPage.less';

@@ -1,0 +1,182 @@
+import React, { Component } from 'react'
+import { Select, Tabs } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router'
+
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import Line from '../components/Line'
+import contextList from '../SubPage/ContextList'
+const Option = Select.Option
+const TabPane = Tabs.TabPane
+class Toppic extends Component{
+  state = {
+    appValue:'',//应用
+    subTime:[],//模块时间
+    standard:'',//指标
+    pointType: 'server',//端类型
+    isSpining: false,
+    xData: [],
+    yData: [],
+    aUnit: '',
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  componentDidMount(){
+    this.setState({
+      standard: this.props.standard
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(JSON.stringify(this.props.allTime) === JSON.stringify(nextProps.allTime) && this.props.appValue === nextProps.appValue)){
+      if(JSON.stringify(this.props.allTime) !== JSON.stringify(nextProps.allTime)){
+        const data = {}
+        data.appValue = nextProps.appValue
+        data.standard = this.state.standard
+        data.start_time = nextProps.allTime[0]
+        data.last_time = nextProps.allTime[1]
+        data.pointType = this.state.pointType
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('Http/getHttpDataByType',data,(result)=>{
+          const data = result.data.msg
+          this.setState({
+            xData: data.xxx,
+            yData: data.yyy,
+            aUnit: data.unit,
+            subTime: [...nextProps.allTime],
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }else{
+        const data = {}
+        data.appValue = nextProps.appValue
+        data.standard = this.state.standard
+        data.start_time = this.state.subTime[0]
+        data.last_time = this.state.subTime[1]
+        data.pointType = this.state.pointType
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('Http/getHttpDataByType',data,(result)=>{
+          const data = result.data.msg
+          this.setState({
+            xData: data.xxx,
+            yData: data.yyy,
+            aUnit: data.unit,
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }
+    }
+  }
+
+  subTimeChange = (value)=>{
+    this.setState({
+      isSpining: true
+    })
+    let requstData = {}
+    requstData.appValue = this.state.appValue
+    requstData.pointType = this.state.pointType
+    requstData.start_time = value[0]
+    requstData.last_time = value[1]
+    requstData.standard = this.state.standard
+
+    wyAxiosPost('Http/getHttpDataByType',requstData,(result)=>{
+      const data = result.data.msg
+      this.setState({
+        xData: data.xxx,
+        yData: data.yyy,
+        aUnit: data.unit,
+        subTime: [...value],
+        isSpining: false
+      })
+    })
+    this.setState({
+      subTime: [...value]
+    })
+  }
+  pointTypeChange = (value)=>{
+    this.setState({
+      isSpining: true
+    })
+    let requstData = {}
+    requstData.appValue = this.state.appValue
+    requstData.pointType = value
+    requstData.start_time = this.state.subTime[0]
+    requstData.last_time = this.state.subTime[1]
+    requstData.standard = this.state.standard
+
+    wyAxiosPost('Http/getHttpDataByType',requstData,(result)=>{
+      const data = result.data.msg
+      this.setState({
+        xData: data.xxx,
+        yData: data.yyy,
+        aUnit: data.unit,
+        pointType: value,
+        isSpining: false
+      })
+    })
+  }
+  chartContextmenu = (params,dom,position,viewId)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'apply',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: params.name,
+      objType: 'http',
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+          <Tabs defaultActiveKey="1" onChange={this.pointTypeChange} tabBarExtraContent={
+            <span style={{float:"right",paddingRight: "20px"}}>
+              <WyDatePicker size="small" rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} style={{maxWidth: "280px"}}/>
+            </span>
+          }>
+            <TabPane tab="服务端" key="server">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining} >
+                  <Line
+                    xData={this.state.xData}
+                    yData={this.state.yData}
+                    aUnit={this.state.aUnit}
+                    onContextmenu={this.chartContextmenu}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </WySpin>
+              </div>
+            </TabPane>
+            <TabPane tab="客户端" key="custom">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining} >
+                  <Line xData={this.state.xData} yData={this.state.yData} aUnit={this.state.aUnit}/>
+                </WySpin>
+              </div>
+            </TabPane>
+          </Tabs>
+      </div>
+    )
+  }
+}
+
+export default withRouter(Toppic)

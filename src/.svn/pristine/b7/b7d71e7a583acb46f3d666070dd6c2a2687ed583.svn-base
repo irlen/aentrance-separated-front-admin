@@ -1,0 +1,190 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import propTypes from 'prop-types'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyTable from '../components/WyTable'
+
+const Option = Select.Option
+
+class ConversationListTable extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} title={text} className="activeRow noWrap" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} title={text} className="noWrap" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    appArray:[],
+    appValue: '0',
+    standarList: ['key','sip','dip','client_sql','operator','tb_name','num','data_time','bytes','bytes_client','bytes_server'],
+    standarLength: 11,
+    columns: [],
+    dataSource: [],
+    initColumns:[],
+    activeRowKey:'',
+    pageSize:5
+  }
+
+  standarChange = (value)=>{
+    const initColumns = this.state.initColumns
+    let filterInitColomns = []
+    initColumns.map(item=>{
+      if(value.indexOf(item.key) !== -1){
+        filterInitColomns.push(item)
+      }
+    })
+    const activeRowKey = this.state.activeRowKey
+    let newColumns = []
+    if(value.length>0){
+      newColumns = this.compileColumns(activeRowKey,filterInitColomns)
+    }
+
+    this.setState({
+      columns:[...newColumns],
+      standarList: [...value],
+      standarLength: value.length
+    })
+  }
+  componentDidMount(){
+    wyAxiosPost('DB/getDblist',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        appArray: responseData
+      })
+    })
+  }
+
+  componentWillReceiveProps(nextProps){
+    if(!(JSON.stringify(this.props.xData) === JSON.stringify(nextProps.xData) && JSON.stringify(this.props.yData) === JSON.stringify(nextProps.yData)) ){
+      let activeRowKey = ''
+      if(nextProps.yData && nextProps.yData.length !== 0){
+        activeRowKey = nextProps.yData[0].key
+        nextProps.setPicPrama(nextProps.yData[0].appstr,nextProps.yData[0].app_id,nextProps.yData[0].client_sql)
+      }else{
+        nextProps.setPicPrama('','','')
+      }
+      const initColumns = nextProps.xData
+      let filterInitColomns = []
+      initColumns.map(item=>{
+        if(this.state.standarList.indexOf(item.key) !== -1){
+          filterInitColomns.push(item)
+        }
+      })
+      const newColumns = this.compileColumns(activeRowKey,filterInitColomns)
+
+      this.setState({
+        columns: [...newColumns],
+        initColumns,
+        dataSource: nextProps.yData,
+        activeRowKey
+      })
+    }
+  }
+  onTableClick = (record)=>{
+    const activeRowKey = record.key
+    const initColumns = this.state.initColumns
+    let filterInitColomns = []
+    initColumns.map(item=>{
+      if(this.state.standarList.indexOf(item.key) !== -1){
+        filterInitColomns.push(item)
+      }
+    })
+    let newColumns = []
+    if(this.state.standarList.length>0){
+      newColumns = this.compileColumns(activeRowKey,filterInitColomns)
+    }
+    this.setState({
+      activeRowKey,
+      columns: [...newColumns]
+    })
+    this.props.setPicPrama(record.appstr,record.app_id,record.client_sql)
+  }
+  appValueChange = (value)=>{
+    this.setState({
+      appValue: value
+    },()=>{
+      this.props.setAppValue(value)
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    const curLen = this.state.standarLength
+    const activeRowKey = this.state.activeRowKey
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>{this.props.moduleName}</span>
+          <span style={{float:"right"}}>
+            <span>指标显示：</span>
+            <Select
+              style={{minWidth: "120px"}}
+              mode="tags"
+              size="small"
+              onChange={this.standarChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+curLen+'项')}
+              value={this.state.standarList}
+            >
+              {
+                this.state.initColumns && this.state.initColumns.length>0?
+                this.state.initColumns.map(item=>{
+                  return(
+                    <Option key={item.key} title={item.title}>{item.title}</Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+          <span style={{float: "right",marginRight:"20px"}}>
+            <span>应用：</span>
+            <Select style={{minWidth:"120px"}} onChange={this.appValueChange} value={this.state.appValue}>
+              <Option key="0" value="0">所有</Option>
+             {
+              this.state.appArray && this.state.appArray.length>0?
+              this.state.appArray.map(item=>{
+                return  <Option key={item.id} value={item.id} title={item.name}>{item.name}</Option>
+              })
+              :
+              ''
+            }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <WyTable
+          pageSize={this.state.pageSize}
+          onShowSizeChange={this.pageSizeChange}
+          onTableClick={this.onTableClick}
+          xData={ this.state.columns.length>0?this.state.columns:[] }
+          yData={ this.state.dataSource.length>0?this.state.dataSource:[] }
+          />
+        </div>
+      </div>
+    )
+  }
+}
+ConversationListTable.propType={
+  moduleName: propTypes.string
+}
+export default ConversationListTable

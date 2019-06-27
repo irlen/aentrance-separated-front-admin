@@ -1,0 +1,36 @@
+import React, { Component } from 'react'
+import { Row, Col } from 'antd'
+import { withRouter } from 'react-router'
+import '../styles/style.less'
+import { wyAxiosPost } from '../components/WyAxios'
+class ForCut extends Component{
+  componentDidMount(){
+    //容器高度自适应
+    const loginContainer = document.querySelector(".loginContainer")
+    const windowH = parseInt(document.body.clientHeight,0);
+    loginContainer.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)
+      loginContainer.style.height = rwindowH +'px'
+    }
+
+    const id = this.props.match.params.id
+    wyAxiosPost('Dashboard/getDshChart',{id:1},(result)=>{
+
+    })
+
+  }
+  render(){
+    return (
+        <div className="loginContainer evntContainer" style={{padding: '20px'}}>
+          <Row className="cutContent">
+            <Col>
+              cut page
+            </Col>
+          </Row>
+        </div>
+    )
+  }
+}
+
+export default ForCut

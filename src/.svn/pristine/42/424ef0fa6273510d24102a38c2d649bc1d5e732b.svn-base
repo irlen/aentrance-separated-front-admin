@@ -1,0 +1,24 @@
+import React, { Component } from 'react'
+import {Tabs,Button} from 'antd'
+import $ from 'jquery'
+import _ from 'lodash'
+import { wyAxiosPost } from '../components/WyAxios'
+
+import SetViewContainer from './SetViewContainer'
+import ShowPageContainer from './ShowPageContainer'
+
+
+class Home extends Component{
+  constructor(props) {
+    super(props);
+  }
+  render(){
+    return(
+      <div>
+        <SetViewContainer />
+        <ShowPageContainer />
+      </div>
+    )
+  }
+}
+export default Home

@@ -1,0 +1,61 @@
+import React from 'react'
+import { wyAxiosPost } from '../components/WyAxios'
+import { routeOne } from './routeConfig'
+const VerticSuccess = (url,Component)=>{
+  let ShowComponent = ''
+  const localPathArray = JSON.parse(localStorage.getItem('userAuth')).pageAuth
+  const curPathArray = []
+  if(localPathArray && localPathArray.length>0){
+    localPathArray.map(item=>{
+      curPathArray.push(item.path)
+    })
+  }
+
+  if(curPathArray.indexOf(url) !== -1){
+    //403页面
+    alert("你没有权限")
+  }else{
+    const curPath = url
+    const reg = /\/[a-z]+/g
+    const pathArray = curPath.match(reg)
+    const data = {}
+    data.url = curPath
+    //获取需要记忆的页面信息
+    if(routeOne && routeOne.length>0){
+      if(pathArray.length === 1){
+        routeOne.map(item=>{
+          if(item.path === pathArray[0]){
+            data.name = item.name
+            data.icon = item.icon
+            return
+          }
+        })
+      }else if(pathArray.length>1){
+        routeOne.map(item=>{
+          const fatherPath = pathArray[0]+pathArray[1]
+          const subPath = fatherPath+pathArray[2]
+          if(item.path === fatherPath){
+            data.icon = item.icon
+            if(item.routes && item.routes.length>0){
+              item.routes.map(subItem=>{
+                if(subItem.path === subPath){
+                  data.name = subItem.name
+                  return
+                }
+              })
+            }
+            return
+          }
+        })
+      }
+    }
+    if(!(url === '/app' || url === '/app/source/appanalysis' || url ==='/app/dashboard/dashboarddefine' || url === '/app/net/netfilter')){
+      wyAxiosPost('NavUrl/saveNavUrl',{info: data},(result)=>{})
+    }
+    ShowComponent = Component
+  }
+  return ShowComponent
+}
+
+
+export default VerticSuccess

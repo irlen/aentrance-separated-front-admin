@@ -1,0 +1,321 @@
+import React ,{Component} from 'react'
+import { Select, Input, Button, Row, Col, message} from 'antd'
+import axios from 'axios'
+import $ from 'jquery'
+import Qs from 'qs'
+import { wyAxiosPost } from '../components/WyAxios'
+
+
+import RuleOne from './ruleone'
+import RuleTwo from './ruletwo'
+import WyTable from '../components/WyTable'
+import { host } from '../components/Host'
+const Option = Select.Option;
+class DataSource extends Component{
+  state={
+    dataTypeList:[],//数据类型列表
+    filterId: '',
+    filterList:[],
+    tb:'',
+    group:[],
+    twhere:[],
+    lastRule:{id:'',operator:'=',value:''},
+    dataSourceName:'',
+    tableTitle: [],
+    tableData: []
+}
+
+  //数据表change事件
+  dataTypeChange = (value)=> {
+    /*
+  var tmp = {};
+ tmp.tbId = value;
+	var data = Qs.stringify(tmp);
+
+	  axios({
+		  method:"post",
+		  url:host+"AppSource/getTbList",
+		  data:data,
+		  headers:{
+			"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+		 }
+		}).then(result=>{
+		  console.log(result)
+
+		}).catch(erro=>{
+		  console.log(erro)
+		})
+  */
+
+    axios.get(host+'Table/getFieldList&tbId='+value).then(result=>{
+      this.setState({
+        filterId: value,
+        filterList:[...result.data.data],
+        group:[],
+        tb: value,
+        twhere: [],
+        lastRule:{id:'',operator:'=',value:''}
+      })
+    }).catch(erro=>{
+      console.log(erro)
+    })
+  }
+  //分组change事件
+  groupChange = (value)=>{
+    this.setState({
+      group:[...value]
+    })
+  }
+  //数据源名称改变
+  dataSourceNameChange = (e)=>{
+    this.setState({
+      dataSourceName: e.target.value
+    })
+  }
+  //更新where
+  changeWhere = (value)=>{
+      let isExist = false;
+      if(this.state.twhere.length == 0){
+        const curTwhere = [...this.state.twhere]
+        curTwhere.push(value)
+        this.setState({
+          twhere: [...curTwhere]
+        })
+        isExist =  true
+      }else{
+        this.state.twhere.map((item,index)=>{
+          if(item.id == value.id){
+            const curTwhere = [...this.state.twhere]
+            curTwhere[index] = value
+            this.setState({
+              twhere: [...curTwhere]
+            })
+            isExist = true
+          }
+        })
+      }
+      if(!isExist){
+        const curTwhere = [...this.state.twhere]
+        curTwhere.push(value)
+        this.setState({
+          twhere: [...curTwhere]
+        })
+      }
+  }
+  //lastRule改变事件
+  lastRuleChangeId = (value)=>{
+    this.setState({
+      lastRule: Object.assign({},this.state.lastRule,{id: value})
+    })
+  }
+  lastRuleChangeOperator= (value)=>{
+    this.setState({
+      lastRule: Object.assign({},this.state.lastRule,{operator: value})
+    })
+  }
+  lastRuleChangeValue= (e)=>{
+    this.setState({
+      lastRule: Object.assign({},this.state.lastRule,{value: e.target.value})
+    })
+  }
+  //提交数据
+  forSubmit = ()=>{
+    let data = {}
+    data.tb = this.state.tb
+    data.dataSourceName = this.state.dataSourceName
+    data.group = this.state.group
+    data.twhere = [this.state.lastRule,...this.state.twhere]
+	  var tmp = {}
+	  tmp.info = data
+    //data = Qs.stringify(tmp);
+    // axios({
+    //    method:'post',
+    //    url:host+'AppSource/saveSource11',
+    //    data:data,
+    //    headers:{
+    //      "Content-Type": "application/x-www-form-urlencoded "
+    //   }
+    //  }).then(result=>{
+    //   console.log(result)
+	  //   alert(result.data.data.log);
+    // }).catch(erro=>{
+    //   console.log(erro)
+    // })
+    wyAxiosPost('Source/saveSource',tmp,function(data){
+      console.log(data)
+    })
+
+  }
+
+  //预览
+  preViewSubmit = ()=>{
+    console.log('tb'+this.state.tb)
+    console.log('group'+this.state.group)
+    console.log('twhere'+JSON.stringify(this.state.twhere))
+    console.log('lastRule'+JSON.stringify(this.state.lastRule))
+    console.log('dataSourceName'+this.state.dataSourceName)
+    let data = {}
+    data.tb = this.state.tb
+    data.dataSourceName = this.state.dataSourceName
+    data.group = this.state.group
+    data.twhere = [this.state.lastRule,...this.state.twhere]
+
+/*
+    axios({
+       method:'post',
+       url:host+'/ajax_DataSourcePreview',
+       data:data,
+       headers:{
+         "Content-Type": "application/x-www-form-urlencoded "
+      }
+     }).then(result=>{
+      console.log(result)
+	  this.setState({
+        tableTitle: [...result.data.xxx],
+        tableData: [...result.data.yyy],
+      })
+    }).catch(erro=>{
+      console.log(erro)
+    })
+	*/
+
+	const _this = this
+	wyAxiosPost('Source/previewSource',{info:data},function(result){
+		 _this.setState({
+			tableTitle: [...result.data.xxx],
+			tableData: [...result.data.yyy],
+		})
+    })
+
+  }
+
+  componentDidMount(){
+   // axios.get(host+'/ajax_getTable').then(result=>{
+   wyAxiosPost('Table/getTableList',{},(result)=>{
+     const responseData = result.data.msg
+     this.setState({
+       dataTypeList: [...responseData]
+     })
+
+   })
+  }
+
+  render(){
+    return(
+      <Row >
+        <Col className="amodule">
+          <ul className="filterList" style={{width: "600px"}}>
+            <li>
+              <span>数据源名称：</span>
+              <span className="spanlist">
+                <Input type="primary" style={{width:"450px"}} onChange={this.dataSourceNameChange} value={this.state.dataSourceName}/>
+              </span>
+            </li>
+            <li>
+              <span>数据类型：</span>
+              <span className="spanlist">
+                <Select defaultValue='' onChange={this.dataTypeChange} style={{width: "450px"}}>
+                  <Option key='mykey' value=''>请选择</Option>
+                  {
+                    this.state.dataTypeList.map(item=>{
+                      return(
+                        <Option key={item.id} value={item.id}>
+                          {item.name}
+                        </Option>
+                      )
+                    })
+                  }
+                </Select>
+              </span>
+            </li>
+            {
+              this.state.filterId == ''?'':
+              <li className="filterLi">
+                <span>查询条件：</span>
+
+                  {
+                    this.state.filterList.map(item=>{
+                      if(item.is_group === 1 && item.name !='时间'){
+                        return(
+                          <span key={item.id} style={{display: "inline-block",position:"relative",height: "40px",lineHeight:"40px"}} >
+                            {
+                              item.other_list != 'null'?
+                              <RuleTwo item={item} changeWhere={this.changeWhere}/>
+                              :
+                              <RuleOne  item={item} changeWhere={this.changeWhere}/>
+                            }
+                          </span>
+                        )
+                      }
+                    })
+                  }
+
+                <span className="spanlist" style={{paddingLeft:'120px',display: "block"}}>
+                  <Select defaultValue='' onChange={this.lastRuleChangeId} value={this.state.lastRule.id}>
+                    <Option key='mykey' value=''>请选择</Option>
+                    {
+                      this.state.filterList && this.state.filterList.length>0?
+                      this.state.filterList.map(item=>{
+                        if(item.is_group === 0){
+                          return(
+                            <Option key={item.id} value={item.id}>{item.name}</Option>
+                          )
+                        }
+                      })
+                      :
+                      ''
+                    }
+                  </Select>
+                  <Select defaultValue='=' onChange={this.lastRuleChangeOperator} value={this.state.lastRule.operator}>
+                    <Option key='=' value='='>等于</Option>
+                    <Option key='>' value='>'>大于</Option>
+                    <Option key='<' value='<'>小于</Option>
+                    <Option key='>=' value='>='>大于等于</Option>
+                    <Option key='<=' value='<='>小于等于</Option>
+                    <Option key='!=' value='!='>不等于</Option>
+                  </Select>
+                  <Input placeholder="请输入" style={{width: '120px'}} onChange={this.lastRuleChangeValue} value={this.state.lastRule.value}/>
+                </span>
+              </li>
+            }
+            {
+              this.state.filterId == ''?'':
+              <li>
+                <span>选择分组：</span>
+                <span className="spanlist">
+                  <Select
+                     mode="multiple"
+                     style={{width: "450px"}}
+                     placeholder="请选择"
+                     defaultValue={[]}
+                     value={this.state.group}
+                     onChange={this.groupChange}
+                    >
+                      {
+                        this.state.filterList.map(item=>{
+                          if(item.is_group === 1){
+                            return(
+                              <Option key={item.id} value={item.id}>{item.name}</Option>
+                            )
+                          }
+                        })
+                      }
+                  </Select>
+                </span>
+              </li>
+            }
+          </ul>
+          <Button type="primary" style={{marginLeft:"20px"}} onClick={this.preViewSubmit}>预览</Button>
+          <Button type="primary" style={{marginLeft:"20px"}} onClick={this.forSubmit}>提交</Button>
+        </Col>
+        <Col span={24} className="amodule" >
+            <div className="amodule" style={{padding: "20px"}}>
+              <WyTable xData={this.state.tableTitle} yData={this.state.tableData}/>
+            </div>
+        </Col>
+      </Row>
+    )
+  }
+}
+
+export default DataSource

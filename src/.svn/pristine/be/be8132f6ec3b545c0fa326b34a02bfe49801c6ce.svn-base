@@ -1,0 +1,101 @@
+import { Avatar, Menu, Dropdown, Icon, message } from 'antd'
+import React, { Component } from 'react'
+import { Link,withRouter } from 'react-router-dom'
+
+import { wyAxiosPost } from '../components/WyAxios'
+
+class Avatarmenu extends Component{
+  constructor(props){
+    super(props)
+  }
+  state={
+    fullScreenForDom: ()=>{},
+    fullScreenForWindow:()=>{},
+    hrefForShot: 'imagdata'
+
+  }
+  componentDidMount = ()=>{
+    // dom全屏
+    const fullScreenForDom = ()=>{
+      const fullDom = document.querySelector('.fullScreen')
+      let requestMethod = fullDom.webkitRequestFullScreen || fullDom.requestFullScreen ||
+      fullDom.mozRequestFullScreen ||
+      fullDom.msRequestFullScreen;
+      if (requestMethod) {
+        requestMethod.call(fullDom);
+      }
+    }
+    // window全屏
+    const fullScreenForWindow = ()=>{
+      let requestMethod = document.documentElement.requestFullScreen || //W3C
+      document.documentElement.webkitRequestFullScreen ||    //Chrome等
+      document.documentElement.mozRequestFullScreen || //FireFox
+      document.documentElement.msRequestFullScreen; //IE11
+      if (requestMethod) {
+        requestMethod.call(document.documentElement);
+      }
+    }
+    this.setState({
+      fullScreenForDom,
+      fullScreenForWindow
+    })
+  }
+  goOut = ()=>{
+    localStorage.removeItem('userInfo')
+    localStorage.removeItem('userAuth')
+    this.props.history.push('/login')
+  }
+  clearCache = ()=>{
+    wyAxiosPost('User/clearCache',{},(result)=>{
+      const responseData = result.data
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+      }
+    })
+  }
+    //退出全屏
+    // exitFull = ()=>{
+    //   let exitMethod = document.exitFullscreen || //W3C
+    //   document.mozCancelFullScreen ||    //Chrome等
+    //   document.webkitExitFullscreen || //FireFox
+    //   document.webkitExitFullscreen; //IE11
+    //   if (exitMethod) {
+    //     exitMethod.call(document);
+    //    }
+    // }
+  render(){
+    const menu = (
+      <Menu>
+        <Menu.Item>
+          <span onClick={this.clearCache}>清除缓存</span>
+        </Menu.Item>
+        <Menu.Item>
+          <span onClick={this.state.fullScreenForWindow}>页面全屏</span>
+        </Menu.Item>
+        <Menu.Item>
+          <span onClick={this.state.fullScreenForDom}>内容全屏</span>
+        </Menu.Item>
+        <Menu.Item>
+          <a className="down" href={this.state.hrefForShot} download="downImg">内容快照</a>
+        </Menu.Item>
+        <Menu.Item>
+          <span onClick={this.goOut}>退出</span>
+        </Menu.Item>
+      </Menu>
+    );
+
+    return(
+      <div style={{float:"right",margin: "0 20px 0 0"}}>
+        <Avatar icon="user" style={{background: "#87d068"}}/>
+        <Dropdown overlay={menu} trigger={['click']}>
+          <a className="ant-dropdown-link" href="#" style={{fontSize: "12px"}}>
+            {this.props.userName}
+            <Icon type="down" />
+          </a>
+        </Dropdown>
+      </div>
+    )
+  }
+}
+
+export default withRouter(Avatarmenu)

@@ -1,0 +1,59 @@
+.leftContainer{
+  width: auto;
+  float: left;
+  position: relative;
+  overflow: auto;
+}
+.rightContainer{
+  width: -webkit-calc(100% - 81px);
+  width: calc(100% - 81px);
+  float: right;
+  position: relative;
+  overflow: auto;
+  /*background: #f9f9f9;*/
+}
+
+.navContainer{
+  width: 180px;
+}
+
+.ant-menu-inline, .ant-menu-vertical, .ant-menu-vertical-left{
+  border-right: none;
+}
+.ant-menu{
+  background: none;
+}
+/*ant导航宽度修改*/
+.ant-menu-inline-collapsed > .ant-menu-item, .ant-menu-inline-collapsed > .ant-menu-item-group > .ant-menu-item-group-list > .ant-menu-item, .ant-menu-inline-collapsed > .ant-menu-submenu > .ant-menu-submenu-title{
+  padding:0 18px !important;
+}
+.ant-menu-submenu.ant-menu-submenu-popup.ant-menu-light.ant-menu-submenu-placement-rightTop{
+  left: 60px !important;
+}
+.ant-menu-inline-collapsed{
+  width: 56px;
+}
+/*.ant-menu-submenu > .ant-menu{
+  background-color: rgba(0,0,0,0.1);
+}
+.ant-menu{
+  color: rgba(255,255,255,0.5)
+}
+.ant-menu-item > a{
+  color: rgba(255,255,255,0.5)
+}*/
+/*调用类*/
+.containerOpen{
+  width: -webkit-calc(100% - 57px);
+  width: calc(100% - 57px);
+}
+.leftOpen{
+  width: 57px;
+}
+.containerClose{
+  width: -webkit-calc(100% - 181px);
+  width: calc(100% - 181px);
+}
+.leftClose{
+  width: 181px;
+}

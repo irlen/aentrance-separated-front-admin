@@ -1,0 +1,184 @@
+import React, { Component } from 'react'
+import { Button } from 'antd'
+import { Col, Row } from 'antd'
+import RGL, { WidthProvider } from "react-grid-layout"
+import _ from 'lodash'
+import TemplateForLine from './TemplateForLine'
+import TemplateForTable from './TemplateForTable'
+import { wyAxiosPost } from '../components/WyAxios'
+require('../../node_modules/react-grid-layout/css/styles.css')
+require('../../node_modules/react-resizable/css/styles.css')
+
+
+const ReactGridLayout = WidthProvider(RGL);
+//const originalLayout = getFromLS("layout") || []
+
+class DragArea extends Component{
+  static defaultProps = {
+    className: "layout",
+    cols: 24,
+    margin:[10,10],
+    rowHeight: 20,
+    autoSize: true,
+    onLayoutChange: function(){},
+  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      layout:[],
+      showViewData: [],
+      id: ''
+    };
+    //this.resetLayout = this.resetLayout.bind(this); //重置原始状态布局
+  }
+
+  componentWillReceiveProps(nextProps){
+
+    if(
+      !(
+        _.isEqual(this.props.showViewData,nextProps.showViewData) &&
+        _.isEqual(this.props.pageData,nextProps.pageData)
+      )
+    ){
+      //找出id对应的position
+      let curPosition = []
+      if(nextProps.pageData && nextProps.pageData.yyy.length>0){
+        const pageData = _.cloneDeep(nextProps.pageData.yyy)
+        pageData.map(item=>{
+          if(item.id === nextProps.id){
+            curPosition = item.position
+            return
+          }
+        })
+      }
+      //将position数据放到每个模块的position里面
+      let showViewData = _.cloneDeep(nextProps.showViewData)
+      if(showViewData && showViewData.length>0){
+        showViewData.map(item=>{
+          if(curPosition && curPosition.length>0){
+            curPosition.map((subItem,index)=>{
+              if(item.id === subItem.i){
+                item.position = curPosition[index]
+                return
+              }
+            })
+          }
+        })
+      }
+      const initPosition = []
+      if(curPosition && curPosition.length>0){
+        curPosition.map(item=>{
+          const {i,h,w,x,y} = item
+          initPosition.push({
+            i,
+            h: parseInt(h),
+            w: parseInt(w),
+            x: parseInt(x),
+            y: parseInt(y)
+          })
+        })
+      }
+      this.setState({
+        id: nextProps.id,
+        showViewData,
+        layout: initPosition
+      })
+    }
+  }
+  //存储位置信息
+  savePosition = (value)=>{
+    const info = {}
+    info.id = this.state.id
+    info.position = value
+    wyAxiosPost('Dashboard/savePagePosition',{info},(result)=>{
+      const responseData = result.data
+      if(responseData.status === 1){
+        this.props.getShowData()
+      }
+    })
+  }
+
+  //zoom事件监听
+  onLayoutChange = (layout)=>{
+    let newLayout = []
+    if(layout && layout.length>0){
+      layout.map(item=>{
+        const {i,h,w,x,y} = item
+        newLayout.push({i,h,w,x,y})
+      })
+    }
+    if(newLayout.length > 0){
+      const checkLayout = (value)=>{
+        return value.h === 1 && value.w === 1 && value.x === 0 && value.y === 0
+      }
+      if(newLayout.every(checkLayout)){
+        newLayout = []
+      }
+    }
+    //this.state.id !== '' && layout.length>0 && this.state.layout.length>0 && JSON.stringify(this.state.layout) !== JSON.stringify(newLayout)
+    if(newLayout.length>0 && !_.isEqual(this.state.layout,newLayout)){
+       this.setState({ layout:newLayout },()=>{
+         this.savePosition(newLayout)
+       })
+    }
+  }
+  generatedView =()=>{
+    let divArry = []
+    if(this.state.showViewData && this.state.showViewData.length>0){
+      this.state.showViewData.map((item,index)=>{
+        const content = JSON.parse(item.content)
+        let compiledPosition = {}
+        if(item.position){
+          const i = item.position.i
+          const h = parseInt(item.position.h)
+          const w = parseInt(item.position.w)
+          const x = parseInt(item.position.x)
+          const y = parseInt(item.position.y)
+          compiledPosition = Object.assign({},{i,h,w,x,y})
+        }
+        if(Object.keys(compiledPosition).length > 0){
+          if(content.viewType === 'line' || content.viewType === 'bar'){
+            divArry.push(
+              <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+                <TemplateForLine autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+              </div>
+            )
+          }else if(content.viewType === 'wytable'){
+            divArry.push(
+              <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+               <TemplateForTable autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+              </div>
+            )
+          }
+        }
+      })
+    }
+    return divArry
+  }
+  render(){
+    return (
+      <div>
+        {
+          this.state.layout && this.state.layout.length>0?
+          <ReactGridLayout
+            {...this.props}
+            draggableHandle=".moduleHeaderIn"
+            useCSSTransforms={true}
+            onLayoutChange={this.onLayoutChange}
+            style={{position: "relative"}}
+            verticalCompact={true}
+            layout={this.state.layout}
+          >
+            {
+              this.generatedView()
+            }
+          </ReactGridLayout>
+          :
+          ''
+        }
+      </div>
+    )
+  }
+}
+
+export default DragArea

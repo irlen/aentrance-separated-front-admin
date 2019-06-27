@@ -1,0 +1,72 @@
+import React, { Component } from 'react'
+import {Row, Col} from 'antd'
+import propTypes from 'prop-types'
+import _ from 'lodash'
+
+import TemplateForLine from './TemplateForLine'
+import TemplateForTable from './TemplateForTable'
+import WyDatePicker from '../components/WyDatePicker'
+class TemplateForPage extends Component{
+  state = {
+    content: []
+  }
+  componentDidMount(){
+    this.setState({
+      content: [...this.props.content]
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(nextProps.content && JSON.stringify(this.props.content) !== JSON.stringify(nextProps.content)){
+      this.setState({
+        content: [...nextProps.content]
+      })
+    }
+  }
+  render(){
+    return(
+      <div>
+       <Row gutter={16}>
+         {
+           this.state.content && this.state.content.length>0?
+           this.state.content.map(item=>{
+             if(item.viewType === 'line' || item.viewType === 'bar'){
+               return(
+                 <Col key={item.id} span={item.viewWidth}>
+                   <TemplateForLine
+                     pageId={this.props.pageId}
+                     viewId={item.id}
+                     key={item.id}
+                     curViewData={_.cloneDeep(item)}
+                     updatePanes={ this.props.updatePanes }
+                    />
+                 </Col>
+               )
+             }else if(item.viewType === 'wytable'){
+               return(
+                 <Col key={item.id} span={item.viewWidth}>
+                   <TemplateForTable
+                     key={item.id}
+                     pageId={this.props.pageId}
+                     viewId={item.id}
+                     curViewData={_.cloneDeep(item)}
+                     updatePanes={ this.props.updatePanes }
+                   />
+                 </Col>
+               )
+             }else{
+               return ''
+             }
+           })
+           :
+           ''
+         }
+       </Row>
+     </div>
+    )
+  }
+}
+
+TemplateForPage.propTypes = {
+  content: propTypes.array.isRequired
+}
+export default TemplateForPage

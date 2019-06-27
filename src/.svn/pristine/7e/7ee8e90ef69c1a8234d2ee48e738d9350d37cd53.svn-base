@@ -1,0 +1,82 @@
+import React, { Component } from 'react'
+import { wyAxiosPost } from '../components/WyAxios'
+
+
+import Line from '../components/Line'
+import WyDatePicker from '../components/WyDatePicker'
+import WySpin from '../components/WySpin'
+
+class CpuRate extends Component{
+  state={
+    xData: ['15:05','15:10','15:15','15:20','15:30'],
+    yData: [{
+                name:'内存使用率',
+                type:'line',
+                data:[2, 5, 3, 7, 9, 2, 1]
+            }],
+    aUnit:'%',
+    subTime: [],
+    requestPath:'',
+    isSpining: false
+  }
+
+  componentDidMount(){
+    const url = this.props.requestPath
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost(url,{},(result)=>{
+      const data = result.data.msg
+      let getTime = []
+      getTime.push(data.start_time)
+      getTime.push(data.last_time)
+      this.setState({
+        subTime:[...getTime],
+        xData: [...data.xxx],
+        yData: [...data.yyy],
+        aUnit: data.unit,
+        requestPath: this.props.requestPath,
+        isSpining: false
+      })
+    })
+  }
+  subTimeChange = (value)=>{
+    this.setState({
+      isSpining: true
+    })
+    let data = {}
+    data.start_time = value[0]
+    data.last_time = value[1]
+    wyAxiosPost(this.state.requestPath,data,(result)=>{
+      const data = result.data.msg
+      this.setState({
+        subTime:[...value],
+        xData: [...data.xxx],
+        yData: [...data.yyy],
+        aUnit: data.unit,
+        isSpining: false
+      })
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>
+            {this.props.moduleName}
+          </span>
+          <span style={{float: "right"}}>
+            <WyDatePicker rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} style={{width:"280px"}}/>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <Line xData={this.state.xData} yData={this.state.yData} aUnit={this.state.aUnit}/>
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default CpuRate

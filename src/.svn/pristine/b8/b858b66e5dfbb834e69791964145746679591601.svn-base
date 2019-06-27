@@ -1,0 +1,172 @@
+import React, { Component } from 'react'
+import { Drawer } from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+import $ from 'jquery'
+
+
+class SetView extends Component{
+
+  state = {
+    visible: true,
+    sHeight: '0px',
+  }
+  componentDidMount(){
+    const windowH = parseInt(document.body.clientHeight,0)-104
+    this.setState({
+      sHeight: windowH+'px'
+    })
+    $(window).resize(()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)-104
+      this.setState({
+        sHeight: rwindowH+'px'
+      })
+    })
+  }
+  onClose = ()=>{
+    this.setState({
+      visible: false
+    })
+  }
+
+  //拖放事件
+  dropEvent =  (event)=>{
+    const e = event || window.event
+    e.preventDefault();
+    const data = JSON.parse(e.dataTransfer.getData("viewattr"));
+    //随机数作为id
+    const randomCount = Math.random();
+    const curTime = new Date().getTime();
+    const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+    const id = asId.toString()
+    data.id = id
+    this.props.doAdd(data)
+
+
+  }
+  dragOverEvent = (event)=>{
+    const e = event || window.event
+    e.preventDefault();
+  }
+  dragStartEvent = (event)=>{
+    const e = event || window.event
+    e.dataTransfer.setData("viewattr",e.target.getAttribute('viewattr'));
+  }
+  render(){
+    return(
+      <div>
+        <Drawer
+          title="总览构建"
+          placement="right"
+          closable={false}
+          onClose={this.onClose}
+          visible={this.state.visible}
+          closable={true}
+          width="90%"
+        >
+          <div style={{display: "flex"}}>
+            <div style={{flex:"0 0 100px"}}>
+              <Scrollbars
+                autoHide
+                autoHideTimeout={100}
+                autoHideDuration={200}
+                universal={true}
+                style={{height:this.state.sHeight,borderRight:"rgba(255,255,255,0.2) solid 1px"}}
+              >
+                  <ul style={{padding: "2px 20px 2px 20px"}}>
+                    <li>
+                      <div
+                        style={{width:"100%",height:"100px",cursor:"move"}}
+                      >
+                        <img
+                          src={require("../asets/line.png")} alt="" width="100%"
+                          draggable={true}
+                          viewattr='{"viewType":"line"}'
+                          onDragStart={this.dragStartEvent}
+                        />
+                      </div>
+                    </li>
+                    <li>
+                      <div
+                        style={{width:"100%",height:"100px",cursor:"move"}}
+                      >
+                        <img
+                          src={require("../asets/table.png")} alt="" width="100%"
+                          draggable={true}
+                          viewattr='{"viewType":"table"}'
+                          onDragStart={this.dragStartEvent}
+                        />
+                      </div>
+                    </li>
+                    <li>
+                      <div
+                        style={{width:"100%",height:"100px",cursor:"move"}}
+                      >
+                        <img
+                          src={require("../asets/bar.png")} alt="" width="100%"
+                          draggable={true}
+                          viewattr='{"viewType":"bar"}'
+                          onDragStart={this.dragStartEvent}
+                        />
+                      </div>
+                    </li>
+                    <li>
+                      <div
+                        style={{width:"100%",height:"100px",cursor:"move"}}
+                      >
+                        <img
+                          src={require("../asets/column.png")} alt="" width="100%"
+                          draggable={true}
+                          viewattr='{"viewType":"column"}'
+                          onDragStart={this.dragStartEvent}
+                        />
+                      </div>
+                    </li>
+                    <li>
+                      <div
+                        style={{width:"100%",height:"100px",cursor:"move"}}
+                      >
+                        <img
+                          src={require("../asets/pie.png")} alt="" width="100%"
+                          draggable={true}
+                          viewattr='{"viewType":"pie"}'
+                          onDragStart={this.dragStartEvent}
+                        />
+                      </div>
+                    </li>
+                    <li>
+                      <div
+                        style={{width:"100%",height:"100px",cursor:"move"}}
+                      >
+                        <img
+                          src={require("../asets/map.png")} alt="" width="100%"
+                          draggable={true}
+                          viewattr='{"viewType":"map"}'
+                          onDragStart={this.dragStartEvent}
+                        />
+                      </div>
+                    </li>
+                  </ul>
+              </Scrollbars>
+            </div>
+            <div style={{flex:"1 1 auto"}}>
+              <Scrollbars
+                autoHide
+                autoHideTimeout={100}
+                autoHideDuration={200}
+                universal={true}
+                style={{height:this.state.sHeight}}
+                onDrop={this.dropEvent}
+                onDragOver={this.dragOverEvent}
+                >
+
+              </Scrollbars>
+            </div>
+          </div>
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+
+export default SetView

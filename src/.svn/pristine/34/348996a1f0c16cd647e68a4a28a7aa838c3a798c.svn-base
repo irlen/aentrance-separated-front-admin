@@ -1,0 +1,342 @@
+import React, { Component } from 'react'
+import { Tabs, Button, Input, Select, Icon, message} from 'antd'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+import OneRule from './OneRule'
+import {forName} from '../components/RegExp'
+const TabPane = Tabs.TabPane
+const Option = Select.Option
+const { TextArea } = Input
+
+class StepWindow extends Component {
+  state={
+    dataTypeList:[], //数据类型列表
+    dataSourceName:'',//数据源名称
+    dataType:'',//数据源类型
+    dataDescription:'',//数据源描述
+
+    standardList:[],//供条件选择的指标
+
+
+    groupStandarList:[],//供分组选择的指标
+    ruleList:[],//添加的条件
+    operaList:[], //供选择运算符列表
+    valueList:[],//供选择的值列表，为空时为输入值
+    logic:'or', //条件满足逻辑
+    forGroup: [], //分组依据
+    xData:[], //预览表格数据
+    yData:[],//预览表格数据
+    id: ''
+  }
+  componentDidMount(){
+    wyAxiosPost('Table/getTableList',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        dataTypeList: [...responseData]
+      })
+    })
+  }
+  /*******************************供调用开始*********************************/
+  //根据dataType获取standardList
+
+  getStandardListBydataType = (id)=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Table/getFieldList',{tbId: id},(result)=>{
+      const responseData = _.cloneDeep(result.data.msg)
+      let curStandardList = []
+      responseData.map(item=>{
+        if(item.id !== "1"){
+          curStandardList.push(item)
+        }
+      })
+      this.setState({
+        standardList: [...curStandardList],
+        groupStandarList: [...responseData],
+        dataType: id,
+        isSpining: false
+      })
+    })
+  }
+  //存储dataSource
+  saveDataSource = ()=>{
+    let info = {}
+    info.dataSourceName = this.state.dataSourceName
+    info.tb = this.state.dataType
+    info.twhere = this.state.ruleList
+    info.logic = this.state.logic
+    info.group = this.state.forGroup
+    info.decribe = this.state.dataDescription
+    info.id = this.state.id
+    wyAxiosPost('Source/saveSource',{info: info},(result)=>{
+      this.props.refreshTable()
+      message.success(result.data.msg)
+      this.props.onClose()
+    })
+  }
+
+  /*************************供调用完***************************************/
+
+  dataSourceNameChange = (e)=>{
+    this.setState({
+      dataSourceName: e.target.value
+    })
+
+  }
+  //数据类型触发事件
+
+  dataTypeChange = (value)=>{
+    this.getStandardListBydataType(value)
+    this.setState({
+      ruleList: [],
+      forGroup: []
+    })
+  }
+
+  dataDescriptionChange = (e)=>{
+
+    this.setState({
+      dataDescription:e.target.value
+    })
+  }
+  ruleLogicChange = (value)=>{
+    this.setState({
+      logic: value
+    })
+  }
+
+  addRule = ()=>{
+    //ruleList
+    let data = {}
+    const randomCount = Math.random();
+    const curTime = new Date().getTime();
+    const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+    data.id = asId.toString()
+    data.name = ''
+    data.opera = '='
+    data.value = ''
+    let curRuleList = _.cloneDeep(this.state.ruleList)
+    curRuleList.push(data)
+    this.setState({
+      ruleList: [...curRuleList]
+    })
+  }
+
+
+  setRuleList =(id,value)=>{
+    let curRuleList = _.cloneDeep(this.state.ruleList)
+    let newRuleList = []
+    newRuleList = curRuleList.map(item=>{
+      if(item.id === id){
+        item.name = value.name
+        item.opera = value.opera
+        item.value = value.value
+      }
+      return item
+    })
+    this.setState({
+      ruleList: [...newRuleList]
+    })
+  }
+
+  removeRule = (id)=>{
+    let curRuleList = _.cloneDeep(this.state.ruleList)
+    let newRuleList = []
+    curRuleList.map(item=>{
+      if(item.id !== id){
+        newRuleList.push(item)
+      }
+      return item
+    })
+    this.setState({
+      ruleList: [...newRuleList]
+    })
+  }
+
+  forGroupChange = (value)=>{
+    this.setState({
+      forGroup: [...value]
+    })
+  }
+  handleCancel = ()=>{
+    this.props.onClose()
+  }
+  handlePreview = ()=>{
+    let info = {}
+    info.dataSourceName = this.state.dataSourceName
+    info.tb = this.state.dataType
+    info.twhere = this.state.ruleList
+    info.logic = this.state.logic
+    info.group = this.state.forGroup
+    wyAxiosPost('Source/previewSource',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: [...responseData.xxx],
+        yData: [...responseData.yyy]
+      })
+    })
+  }
+  handleOk = ()=>{
+    const erroList = []
+    if(this.state.dataSourceName === ''){
+      erroList.push('数据名称不能为空')
+    }else if(this.state.dataSourceName !== '' && !forName.test(this.state.dataSourceName)){
+      erroList.push('数据名称格式不正确')
+    }
+    if(this.state.dataType === ''){
+      erroList.push('数据类型不能为空')
+    }
+    if(erroList.length === 0){
+      this.saveDataSource()
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'   '
+      })
+      message.warning(str)
+    }
+  }
+
+  setEditId = ()=>{
+    this.setState({
+      id: ''
+    })
+  }
+  forEdit = (id)=>{
+    this.setState({
+      id: id
+    })
+    wyAxiosPost('Source/editSource',{id:id},(result)=>{
+      const responseData = result.data.msg
+      this.getStandardListBydataType(responseData.tb)
+      this.setState({
+        dataSourceName:responseData.name,//数据源名称
+        dataType:responseData.tb,//数据源类型
+        dataDescription:responseData.decribe,//数据源描述
+        ruleList:responseData.twhere,//添加的条件
+        logic:responseData.logic, //条件满足逻辑
+        forGroup: responseData.group,  //分组依据
+        isSpining: false
+      })
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Tabs defaultActiveKey="1" style={{minHeight:"200px",paddingBottom:"20px"}}>
+          <TabPane tab="数据定义" key="1">
+            <ul>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据名称：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Input type="primary" style={{width:"450px"}} onChange={this.dataSourceNameChange} value={this.state.dataSourceName}/>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据类型：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select value={this.state.dataType} onChange={this.dataTypeChange} style={{width: "450px"}}>
+                    <Option key='mykey' value=''>请选择</Option>
+                    {
+                      this.state.dataTypeList && this.state.dataTypeList.length>0?
+                      this.state.dataTypeList.map(item=>{
+                        return(
+                          <Option key={item.id} value={item.id}>
+                            {item.name}
+                          </Option>
+                        )
+                      })
+                      :
+                      ''
+                    }
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据描述：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <TextArea value={this.state.dataDescription} onChange={this.dataDescriptionChange} placeholder="数据描述" autosize style={{width: "450px"}} />
+                </div>
+              </li>
+            </ul>
+          </TabPane>
+          <TabPane tab="过滤规则" key="2">
+            <span>
+              <span>规则：</span>
+              <Select value={this.state.logic}  onChange={this.ruleLogicChange} style={{minWidth: "120px"}}>
+                <Option key="or" value="or">满足一个</Option>
+                <Option key="and" value="and">满足全部</Option>
+              </Select>
+            </span>
+
+            <ul style={{marginTop: "20px"}}>
+              {
+                this.state.ruleList && this.state.ruleList.length>0?
+                this.state.ruleList.map(item=>{
+                  return(
+                    <OneRule
+                      removeRule={(id)=>this.removeRule(id)}
+                      setRuleList={(id,value)=>this.setRuleList(id,value)}
+                      key={item.id}
+                      id={item.id}
+                      name={item.name}
+                      value={item.value}
+                      opera={item.opera}
+                      standardList={ _.cloneDeep(this.state.standardList) }
+                    />
+                  )
+                })
+                :
+                ''
+              }
+            </ul>
+            <Button type="dashed" onClick={this.addRule} style={{ width: '120px' }}>
+              <i className="fa fa-plus" aria-hidden="true"></i> 添加条件
+            </Button>
+          </TabPane>
+          <TabPane tab="分组设置" key="3">
+            <span>分组依据：</span>
+            <Select onChange={this.forGroupChange} placeholder="请选择" mode="multiple" value={this.state.forGroup} style={{minWidth: "450px"}}>
+              {
+                this.state.groupStandarList && this.state.groupStandarList.length>0?
+                this.state.groupStandarList.map(subItem=>{
+                  if(subItem.is_group === 1){
+                    return(
+                      <Option key={subItem.id} value={subItem.id}>
+                        {subItem.name}
+                      </Option>
+                    )
+                  }
+                })
+                :
+                ''
+              }
+            </Select>
+          </TabPane>
+        </Tabs>
+        <div>
+          <Button style={{marginLeft: "10px"}} onClick={this.handleCancel}> 取消 </Button>
+          <Button style={{marginLeft: "10px"}} onClick={this.handlePreview} type="primary"> 预览 </Button>
+          <Button style={{marginLeft: "10px"}} onClick={this.handleOk} type="primary"> 提交 </Button>
+        </div>
+        <div style={{marginTop:"20px"}}>
+          {
+            this.state.xData.length>0?
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable xData={this.state.xData.length>0?this.state.xData:[]} yData={this.state.yData.length>0?this.state.yData:[]}/>
+            </WySpin>
+            :
+            ''
+          }
+
+        </div>
+      </div>
+    )
+  }
+}
+
+export default StepWindow

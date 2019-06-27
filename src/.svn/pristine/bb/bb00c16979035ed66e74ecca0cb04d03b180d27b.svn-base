@@ -1,0 +1,119 @@
+import React, { Component } from 'react'
+import { wyAxiosPost } from '../components/WyAxios'
+
+class DevInfo extends Component{
+  state={
+    connect:'',
+    hostIp:'',
+    hostName:'',
+    time:'',
+    uptime:''
+  }
+  componentDidMount(){
+    wyAxiosPost('Dev/GetDevInfo',{},(result)=>{
+      const {connect, hostIp, hostName, time, uptime} = result.data.msg
+      this.setState({
+          connect,
+          hostIp,
+          hostName,
+          time,
+          uptime
+      })
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>设备信息</span>
+        </div>
+        <div className="moduleBody" style={{height: "320px",padding: "10px 20px 10px 20px"}}>
+          <ul style={{lineHeight:"30px"}}>
+            <li style={{width:"50%",float: "left", borderRight: "#e8e8e8 dashed 1px",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>主机名称</span>
+              </div>
+              <div>
+                <span>{this.state.hostName}</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>状态</span>
+              </div>
+              <div>
+                <span>流畅</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left", borderRight: "#e8e8e8 dashed 1px",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>IP地址</span>
+              </div>
+              <div>
+                <span>{this.state.hostIp}</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>是否可连接外网</span>
+              </div>
+              <div>
+                <span>{this.state.connect}</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left", borderRight: "#e8e8e8 dashed 1px",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>服务器当前时间</span>
+              </div>
+              <div>
+                <span>{this.state.time}</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>服务器已运行时间</span>
+              </div>
+              <div>
+                <span>{this.state.uptime}</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left", borderRight: "#e8e8e8 dashed 1px",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>型号</span>
+              </div>
+              <div>
+                <span>*********</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left",borderBottom:"#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>序列号</span>
+              </div>
+              <div>
+                <span>**********</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left", borderRight: "#e8e8e8 dashed 1px",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>软件版本</span>
+              </div>
+              <div>
+                <span>NetDipper V4.0</span>
+              </div>
+            </li>
+            <li style={{width:"50%",float: "left",paddingLeft:"20px"}}>
+              <div style={{fontWeight:"bold"}}>
+                <span>License</span>
+              </div>
+              <div>
+                <span>永久</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default DevInfo

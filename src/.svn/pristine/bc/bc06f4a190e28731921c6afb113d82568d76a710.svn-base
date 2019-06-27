@@ -1,0 +1,8 @@
+/*二级页面背景*/
+.subPageContainerIn{
+  background: linear-gradient(228deg, #b0d7cd 0%, #5291c6 32%, #283872 100%);
+}
+.subPageContent{
+  padding: 16px;
+  padding-top: 0px;
+}

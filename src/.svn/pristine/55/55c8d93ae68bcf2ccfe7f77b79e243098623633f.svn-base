@@ -1,0 +1,222 @@
+import React, { Component } from 'react'
+import { Modal, Input, InputNumber, Select, Button, message} from 'antd'
+import _ from 'lodash'
+import propTypes from 'prop-types'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import { appStandard, netStandard, protocolStandard} from '../components/StandarConstant'
+import { forName } from '../components/RegExp'
+const Option = Select.Option
+class AttrWindow extends Component{
+  state= {
+    visible: false,
+    point: '',
+    name:'',
+    top: '1',
+    view:'',
+    only:'',
+    id:'',
+    start_time:'',
+    last_time:''
+  }
+  componentDidMount(){
+    const { id, point, name, top, view, only, start_time, last_time} = this.props.attrData
+    this.setState({
+      point,
+      name,
+      top,
+      view,
+      only,
+      id,
+      start_time,
+      last_time
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if( JSON.stringify(this.props.attrData) !== JSON.stringify(nextProps.attrData) ){
+      const { point, name, top, view, id, start_time, last_time, only} = nextProps.attrData
+      this.setState({
+        point,
+        name,
+        top,
+        view,
+        id,
+        start_time,
+        last_time,
+        only
+      })
+    }
+  }
+  topChange=(value)=>{
+    this.setState({
+      top: value
+    })
+  }
+  nameChange = (e)=>{
+    this.setState({
+      name: e.target.value
+    })
+
+  }
+  viewChange = (value)=>{
+    this.setState({
+      view: value
+    })
+  }
+
+  pointChange = (value)=>{
+    this.setState({
+      point: value
+    })
+
+  }
+
+  showModal = () => {
+    this.setState({
+      visible: true
+    });
+  }
+
+
+  handleCancel = (e) => {
+    this.setState({
+      visible: false
+    })
+  }
+  //提交字段
+  handleOk = (e)=>{
+    let data = {}
+    const { point, name, top, view, id, start_time, last_time } = this.state
+    const erroList = []
+    if(name === ''){
+      erroList.push("名称不能为空")
+    }
+    if(name !== '' && !forName.test(name)){
+      erroList.push("名称格式有误")
+    }
+    if(erroList.length === 0){
+      data.point = point
+      data.name = name
+      data.top = top
+      data.view = view
+      data.id = id
+      data.start_time = start_time
+      data.last_time = last_time
+
+      wyAxiosPost('Dashboard/saveDshAttr',{info:data},(result)=>{
+        this.props.subSetFather(data)
+        message.success(result.data.msg)
+      })
+      this.setState({
+        visible: false
+      });
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+
+  getStandardByType = ()=>{
+    if(this.state.only === "md_app"){
+      return  appStandard.map(item=>{
+        return (
+          <Option key={item.value} value={item.value}>{ item.name }</Option>
+        )
+      })
+    }if(this.state.only === "md_ptl"){
+      return  protocolStandard.map(item=>{
+        return (
+          <Option key={item.value} value={item.value}>{ item.name }</Option>
+        )
+      })
+    }else{
+      return netStandard.map(item=>{
+        return (
+          <Option key={item.value} value={item.value}>{ item.name }</Option>
+        )
+      })
+    }
+  }
+  render(){
+    return(
+      <div>
+        <i onClick={this.showModal} className="fa fa-bars ant-dropdown-trigger" aria-hidden="true">
+        </i>
+        <Modal
+          title="属性"
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+        >
+          <ul style={{lineHeight: "40px"}}>
+            <li>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 76px"}}>
+                  名称：
+                </div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Input onChange={this.nameChange} value={this.state.name} type="text"/>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 76px"}}>
+                  Top：
+                </div>
+                <div style={{flex: "1 1 auto"}}>
+                  <InputNumber onChange={this.topChange} min={1} max={10} value={this.state.top} />
+                </div>
+              </div>
+            </li>
+            <li>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 76px"}}>
+                  视图类型：
+                </div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Select value={this.state.view} onChange={this.viewChange} style={{minWidth: "120px"}}>
+                    <Option key="line" value="line">曲线图</Option>
+                    <Option key="column" value="column">柱状图(横)</Option>
+                    <Option key="bar" value="bar">柱状图(竖)</Option>
+                    <Option key="pie" value="pie">饼图</Option>
+                  </Select>
+                </div>
+              </div>
+            </li>
+            <li>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 76px"}}>
+                  指标：
+                </div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Select style={{minWidth: "120px"}} onChange={this.pointChange}value={this.state.point}>
+                    {
+                      this.getStandardByType()
+                    }
+                  </Select>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </Modal>
+      </div>
+    )
+  }
+}
+
+AttrWindow.propTypes = {
+  id: propTypes.string,
+  point: propTypes.string,
+  name: propTypes.string,
+  top: propTypes.string,
+  view: propTypes.string,
+  only: propTypes.string,
+  start_time: propTypes.string,
+  last_time: propTypes.string
+}
+
+export default AttrWindow

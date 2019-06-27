@@ -1,0 +1,47 @@
+import React ,{ Component } from 'react'
+import RGL, { WidthProvider } from "react-grid-layout"
+require('../../node_modules/react-grid-layout/css/styles.css')
+require('../../node_modules/react-resizable/css/styles.css')
+const ReactGridLayout = WidthProvider(RGL);
+class GenerateView extends Component{
+  static defaultProps = {
+    className: "layout",
+    cols: 24,
+    margin:[10,10],
+    rowHeight: 20,
+    autoSize: true,
+    onLayoutChange: function(){}
+  }
+  state = {
+    layout:[],
+  }
+  componentDidMount(){
+    console.log(this.props)
+  }
+  componentWillReceiveProps(nextProps){
+    alert('哈哈啊')
+    console.log(nextProps)
+  }
+  onLayoutChange = (layout)=>{
+
+  }
+  render(){
+    return (
+      <div>
+        <ReactGridLayout
+          {...this.props}
+          draggableHandle=".moduleHeader"
+          useCSSTransforms={true}
+          onLayoutChange={this.onLayoutChange}
+          style={{position: "relative"}}
+          layout={this.state.layout}
+        >
+
+        </ReactGridLayout>
+      </div>
+    )
+  }
+}
+
+
+export default GenerateView

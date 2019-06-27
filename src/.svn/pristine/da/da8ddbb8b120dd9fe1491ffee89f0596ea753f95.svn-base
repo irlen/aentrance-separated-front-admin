@@ -1,0 +1,9 @@
+import React from 'react'
+import { connect } from 'react-redux'
+
+import DashboardComponent from './DashboardComponent'
+const mapStateToProps = (state)=>({
+  slide: state.navResize.slide
+})
+
+export default connect(mapStateToProps)(DashboardComponent)

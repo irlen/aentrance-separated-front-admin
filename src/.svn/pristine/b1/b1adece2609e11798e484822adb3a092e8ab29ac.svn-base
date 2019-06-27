@@ -1,0 +1,178 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+import { Row, Col, Button, Input, message, Popconfirm, Drawer } from 'antd'
+import { connect } from 'react-redux'
+
+import { getCompiledAuth, setAuth } from '../actions'
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import DrawerPage from './DrawerPage'
+class UserRole extends Component{
+  state={
+    xData: [],
+    yData: [],
+
+    ids: [],
+    id:'',
+    authInfo:{},
+    visible: false,
+    isSpining: false
+  }
+  componentDidMount(){
+    this.getData()
+  }
+  getData = ()=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Auth/getRoleList',{},(result)=>{
+      const responseData = result.data.msg
+      let curxData = _.cloneDeep(responseData.xxx)
+      curxData.push({
+        title: '编辑',
+        dataIndex: 'edit',
+        render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+      })
+      this.setState({
+        xData: curxData,
+        yData: responseData.yyy,
+        isSpining: false,
+        ids: []
+      })
+    })
+  }
+
+
+  //修改角色
+  handleEdit = (id)=>{
+    wyAxiosPost('Auth/editRole',{id:id},(result)=>{
+      const authInfo = result.data.msg
+      this.setState({
+        id,
+        authInfo
+      },()=>{
+        this.showDrawer()
+      })
+    })
+  }
+
+  onClose = () => {
+    this.setState({
+      visible: false,
+      id: '',
+      authInfo:{}
+    })
+  }
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    })
+  }
+  //提交
+  handleOk = ()=>{
+    this.submitData.getControlData(this.state.id)
+    this.onClose()
+  }
+  handleDelete = ()=>{
+    wyAxiosPost('Auth/delRole',{data: this.state.ids},(result)=>{
+      const responseData = result.data
+      if(responseData.status === 1){
+        //如果删除角色为当前用于所属角色，则需要回复到默认角色普通用户，id为2
+        if(this.state.ids.indexOf(JSON.parse(localStorage.getItem('userInfo')).role_id) !== -1){
+          getCompiledAuth('2').then((value)=>{
+            this.props.dispatch(setAuth(value))
+            localStorage.setItem('userAuth', JSON.stringify(value))
+          })
+        }
+        message.success(responseData.msg)
+        this.getData()
+      }
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      },
+      getCheckboxProps: record => ({
+        disabled: record.id === '1' || record.id === '2', // Column configuration not to be checked
+      })
+    }
+    return(
+      <div className='amodule'>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col style={{padding: "20px 0 0 30px"}}>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <div className="moduleBody">
+              <WyTable
+                xData={this.state.xData.length>0?this.state.xData:[]}
+                yData={this.state.yData.length>0?this.state.yData:[]}
+                rowSelection={rowSelection}
+              />
+            </div>
+          </Col>
+        </Row>
+        <Drawer
+          title={this.state.id?"修改":"新建"}
+          width={620}
+          placement="right"
+          onClose={this.onClose}
+          maskClosable={true}
+          visible={this.state.visible}
+          destroyOnClose={true}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <DrawerPage dispatch={this.props.dispatch} getData={this.getData} id={this.state.id} authInfo={_.cloneDeep(this.state.authInfo)} ref={instance=>this.submitData=instance}/>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '100%',
+              borderTop: '1px solid #e8e8e8',
+              padding: '10px 20px',
+              textAlign: 'right',
+              left: 0,
+              background: '#fff',
+              borderRadius: '0 0 4px 4px',
+            }}
+          >
+            <Button
+              style={{
+                marginRight: 8,
+              }}
+              onClick={this.onClose}
+            >
+              取消
+            </Button>
+            <Button onClick={this.handleOk} type="primary">确定</Button>
+          </div>
+        </Drawer>
+
+      </div>
+    )
+  }
+}
+
+export default connect()(UserRole)

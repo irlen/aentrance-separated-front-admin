@@ -1,0 +1,8 @@
+.ant-form-item-label{
+    /* text-align: none; */
+    width: 73px;
+}
+
+.ant-form-item-control > .ant-form-item:last-child, .ant-form-item [class^="ant-col-"] > .ant-form-item:only-child {
+    margin-bottom: 0px;
+}

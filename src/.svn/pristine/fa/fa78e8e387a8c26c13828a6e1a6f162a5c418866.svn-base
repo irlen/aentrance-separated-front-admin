@@ -1,0 +1,95 @@
+import React, { Component } from 'react';
+import { Row, Col, Select, Form, Switch  } from 'antd';
+const name = [{ "key": "demo", "label": "demo" }, { "key": "name", "label": "name" }];
+class SetEmail extends Component {
+    constructor(props) {
+        super(props);
+        this.onSubmit = this.onSubmit.bind(this);
+        const { getInstance } = this.props;
+        if (typeof getInstance === 'function') {
+            getInstance(this); // 在这里把this暴露给`parentComponent`
+        }
+        this.state = {
+           namePeople:name[0],
+           status:false
+        }
+    }
+    handleTypeChange=(item)=>{
+        this.setState({
+            namePeople:item
+        })
+    }
+    onSwitchCahnge=(item)=>{
+        this.setState({
+            status: true
+        })
+    }
+    onSubmit = () => {
+        let obj = {};
+        this.props.form.validateFields((err, fieldsValue) => {
+            
+            if (!err) {
+                obj = fieldsValue
+            }
+           
+        });
+        return obj
+    }
+    render() {
+        const { getFieldDecorator } = this.props.form;      
+        // 左侧表单Item的布局设置
+        const formItemLayout = {
+            labelCol: {
+                xs: { span: 24 },
+                sm: { span: 5 },
+                md: { span: 2 },
+
+            },
+            wrapperCol: {
+                xs: { span: 24 },
+                sm: { span: 16 },
+                md: { span: 16 },
+            },
+        };
+   
+        return (
+            <div  >
+                <Row>
+                    <Col>
+                        <Form   >
+                            <Form.Item
+                            {...formItemLayout}
+                            label="通知对象:"
+                            >
+                                {getFieldDecorator('obj', {
+                                    initialValue: this.state.namePeople ? this.state.namePeople : name[0],
+                                })(
+                                    <Select
+                                        onChange={this.handleTypeChange.bind(this)}
+                                        labelInValue={true}
+                                        mode="multiple"
+                                        style={{"width":"30%"}}
+                                    >
+                                    {name.map((item) => <Select.Option key={item.key} value={item.key} >{item.label}</Select.Option>)}
+                                    </Select>
+                                )}
+                            </Form.Item>
+                            <Form.Item
+                                label= "启用通知:"
+                                {...formItemLayout}
+                            >
+                                {getFieldDecorator('inform', {
+                                    valuePropName: 'checked',
+                                    initialValue: this.state.status ? this.state.status :false,
+                                })(
+                                    <Switch onChange={this.onSwitchCahnge.bind(this)}>启用</Switch>
+                                )}
+                            </Form.Item>
+                        </Form>
+                    </Col>
+                </Row>
+            </div>
+        )
+    }
+}
+export default Form.create()(SetEmail)

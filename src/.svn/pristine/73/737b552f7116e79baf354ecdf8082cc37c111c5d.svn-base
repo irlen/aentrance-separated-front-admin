@@ -1,0 +1,206 @@
+import React, { Component } from 'react'
+import { Select, Input, Slider, Icon, InputNumber } from 'antd'
+
+import { netStandard, appStandard, unitList } from '../components/StandarConstant'
+const Option = Select.Option
+class Standard extends Component{
+  state={
+    bus_server:'',
+    standard_name:'',
+    standard_calc:'',
+    standard_value:'',
+    standard_value_unit:'',
+    standard_time:'',
+    standard_time_unit:'',
+    standard_range:[30,70]
+  }
+  componentDidMount(){
+    const {bus_server,standard_name,standard_calc,standard_value,standard_value_unit,standard_time,standard_time_unit,standard_range} = this.props
+    const rengeValue = []
+    const renge_start = parseInt(standard_range[0])
+    const renge_last = parseInt(standard_range[1])
+    rengeValue.push(renge_start)
+    rengeValue.push(renge_last)
+    this.setState({
+      bus_server,
+      standard_name,
+      standard_calc,
+      standard_value,
+      standard_value_unit,
+      standard_time,
+      standard_time_unit,
+      standard_range: rengeValue
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      !(
+        this.props.bus_server === nextProps.bus_server &&
+        this.props.standard_name === nextProps.standard_name &&
+        this.props.standard_calc === nextProps.standard_calc &&
+        this.props.standard_value === nextProps.standard_value &&
+        this.props.standard_value_unit === nextProps.standard_value_unit &&
+        this.props.standard_time === nextProps.standard_time &&
+        this.props.standard_time_unit === nextProps.standard_time_unit &&
+        JSON.stringify(this.props.standard_range) === JSON.stringify(nextProps.standard_range)
+      )
+    ){
+      const {bus_server,standard_name,standard_calc,standard_value,standard_value_unit,standard_time,standard_time_unit,standard_range} = nextProps
+      const rengeValue = []
+      const renge_start = parseInt(standard_range[0])
+      const renge_last = parseInt(standard_range[1])
+      rengeValue.push(renge_start)
+      rengeValue.push(renge_last)
+      this.setState({
+        bus_server,
+        standard_name,
+        standard_calc,
+        standard_value,
+        standard_value_unit,
+        standard_time,
+        standard_time_unit,
+        standard_range: rengeValue
+      })
+    }
+  }
+  //删除规则
+  delStandard = (id)=>{
+    this.props.delStandard(id)
+  }
+  //获取单位
+  getUnit = ()=>{
+    let serverArray = this.state.bus_server.split('_')
+    let unitType = ''
+    if(serverArray[0] === 'app'){
+      appStandard.map(item=>{
+        if( item.value === this.state.standard_name){
+          unitType = item.unitType
+          return
+        }
+      })
+    }else if(serverArray[0] === 'host'){
+      netStandard.map(item=>{
+        if( item.name === this.state.standard_name){
+          unitType = item.unitType
+          return
+        }
+      })
+    }
+    return unitType
+  }
+  //获取指标
+  getStandard = ()=>{
+    let standardList = []
+    let serverArray = this.state.bus_server.split('_')
+    if(serverArray[0] === 'app'){
+      standardList = appStandard
+    }else if( serverArray[0] === 'host'){
+      standardList = netStandard
+    }
+    return standardList
+  }
+  //指标变动
+  standardChange = (value,obj)=>{
+      this.props.setStandards(this.props.id, obj, value)
+  }
+  render(){
+    return(
+      <li>
+        <div>
+          <span>规则：</span>
+          <Select
+          showSearch
+          filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+          value={this.state.standard_name}
+          onChange={(value)=>{this.standardChange(value,'standard_name')}}
+          style={{minWidth:"160px"}}
+          >
+            <Option key="mykey" value=''>指标</Option>
+            {
+              this.getStandard() && this.getStandard().length>0?
+              this.getStandard().map(item=>{
+                return <Option title={item.name} key={item.value} value={item.value} >{item.name}</Option>
+              })
+              :
+              ''
+            }
+          </Select>
+          <Select
+            value={this.state.standard_calc}
+            onChange={(value)=>{this.standardChange(value,'standard_calc')}}
+          >
+            <Option key="mykey" value=''>运算符</Option>
+            <Option key=">" value=">">大于</Option>
+            <Option key="<" value="<">小于</Option>
+          </Select>
+          <InputNumber
+            value={this.state.standard_value}
+            style={{width:"80px"}}
+            min={0}
+            onChange={(value)=>{this.standardChange(value,'standard_value')}}
+          />
+          <Select
+            value={this.state.standard_value_unit}
+            onChange={(value)=>{this.standardChange(value,'standard_value_unit')}}
+          >
+            <Option key="mykey" value=''>单位</Option>
+            {
+              //根据指标对象判断单位
+              unitList[this.getUnit()] && unitList[this.getUnit()].length>0?
+              unitList[this.getUnit()].map(item=>{
+                return <Option title={item.name} key={item.value} value={item.value}>{item.name}</Option>
+              })
+              :
+              ''
+            }
+          </Select>
+          <span>持续</span>
+          <InputNumber
+            value={this.state.standard_time}
+            style={{width:"80px"}}
+            min={0}
+            onChange={(value)=>{this.standardChange(value,'standard_time')}}
+          />
+          <Select
+            value={this.state.standard_time_unit}
+            onChange={(value)=>{this.standardChange(value,'standard_time_unit')}}
+          >
+            <Option key="min" value="min">min</Option>
+            {
+              // unitList.time && unitList.time.length>0?
+              // unitList.time.map(item=>{
+              //   return <Option title={item.value} key={item.value} value={item.value} >{item.name}</Option>
+              // })
+              // :
+              // ''
+            }
+          </Select>
+          <Icon onClick={()=>{this.delStandard(this.props.id)}} title="删除" style={{cursor:"pointer",marginLeft:"20px"}}><i className="fa fa-trash-o" aria-hidden="true"></i></Icon>
+        </div>
+        <div style={{display:"flex"}}>
+          <div style={{flex:"0 0 60px"}}>告警级别: </div>
+          <div style={{flex:"0 0 205px"}}>
+            <span>0</span>
+            <span title="轻微" style={{display: "inline-block",margin:"0 5px 0 5px",height: "10px",width:"20px",background: "#00FF00"}}></span>
+            <span>{this.state.standard_range[0]}%</span>
+            <span title="一般" style={{display: "inline-block",margin:"0 5px 0 5px",height: "10px",width:"20px",background: "#FFF100"}}></span>
+            <span>{this.state.standard_range[1]}%</span>
+            <span title="严重" style={{display: "inline-block",margin:"0 5px 0 5px",height: "10px",width:"20px",background: "#FF5400"}}></span>
+            <span>100%</span>
+          </div>
+          <div style={{flex:"1 1 auto"}}>
+            <Slider
+              value={ this.state.standard_range }
+              range
+              onChange={(value)=>{this.standardChange(value,'standard_range')}}
+            />
+          </div>
+
+
+        </div>
+      </li>
+
+    )
+  }
+}
+export default Standard

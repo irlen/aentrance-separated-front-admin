@@ -1,0 +1,100 @@
+import React, { Component } from 'react'
+import { Tabs } from 'antd'
+import _ from 'lodash'
+
+import Line from '../components/Line'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+const TabPane = Tabs.TabPane
+
+class ComprehensiveStandar extends Component {
+  state={
+    xData:[],
+    yData:[],
+    aUnit:'',
+    isSpining:false,
+    field: 'rtt',
+    type: 'compre'
+  }
+  getData = (info)=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('NetWork/getHighFilter',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        isSpining: false,
+      })
+    })
+  }
+  componentDidMount(){
+    if(JSON.stringify(this.props.searchRule).length>2){
+      let info = this.props.searchRule
+      info.field = this.state.field
+      info.type = this.state.type
+      this.getData(info)
+    }
+  }
+  tabsChange= (value)=>{
+    this.setState({
+      field: value
+    },()=>{
+      let info = _.cloneDeep(this.props.searchRule)
+      info.field = this.state.field
+      info.type = this.state.type
+      this.getData(info)
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.searchRule) !== JSON.stringify(nextProps.searchRule)){
+      let info = _.cloneDeep(nextProps.searchRule)
+      info.field = this.state.field
+      info.type = this.state.type
+      this.getData(info)
+    }
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">对象综合指标</div>
+        <div className="moduleBody">
+          <Tabs tabPosition="left" style={{height:"300px"}} onChange={this.tabsChange}>
+            <TabPane tab="网络RTT" key="rtt">
+              <WySpin isSpining={this.state.isSpining}>
+                <Line
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                  aUnit={this.state.aUnit}
+                 />
+              </WySpin>
+            </TabPane>
+            <TabPane tab="数据包量" key="packets">
+              <WySpin isSpining={this.state.isSpining}>
+                <Line
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                  aUnit={this.state.aUnit}
+                 />
+              </WySpin>
+            </TabPane>
+            <TabPane tab="丢包量" key="drops">
+              <WySpin isSpining={this.state.isSpining}>
+                <Line
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                  aUnit={this.state.aUnit}
+                 />
+              </WySpin>
+            </TabPane>
+          </Tabs>
+        </div>
+      </div>
+    )
+  }
+}
+
+
+export default ComprehensiveStandar

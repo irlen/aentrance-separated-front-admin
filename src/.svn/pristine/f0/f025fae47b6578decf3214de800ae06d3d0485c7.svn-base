@@ -1,0 +1,197 @@
+import React, { Component } from 'react'
+import { message, Row, Col, Button, Popconfirm, Drawer, Select, Transfer, Input, Switch, Icon } from 'antd'
+import _ from 'lodash'
+import Highlighter from 'react-highlight-words'
+import $ from 'jquery'
+
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+import { wyAxiosPost } from '../components/WyAxios'
+import  WyDatePicker from '../components/WyDatePicker'
+class ReportGenerate extends Component{
+  state = {
+    ids:[],
+    xData:[],
+    yData:[],
+    isSpining: false,
+    pageSize: 5
+  }
+  getTableData = ()=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Report/getRecord',{},(result)=>{
+      const responseData = result.data.msg
+      if(responseData){
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '生成报表',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.key)}><i className="fa fa-file-text" aria-hidden="true"></i></span>
+        })
+        let compiledCurxData = []
+        if(curxData && curxData.length>0){
+        compiledCurxData = curxData.map(item=>{
+            let oneTem = {}
+            if(item.dataIndex === 'name' || item.dataIndex ==='create_time' || item.dataIndex === 'num'){
+              oneTem = {...item,...this.getColumnSearchProps(item.dataIndex)}
+            }else{
+              oneTem = {...item}
+            }
+            return oneTem
+          })
+        }
+        this.setState({
+          xData: compiledCurxData,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      }else{
+        this.setState({
+          isSpining: false
+        })
+      }
+    })
+  }
+  componentDidMount(){
+    this.getTableData()
+  }
+  handleEdit = (id)=>{
+    wyAxiosPost('Report/download',{id},(result)=>{
+      const responseData = result.data.msg
+      //document.querySelector(".down").setAttribute('href',responseData);
+      //$(".downin").click()
+      window.open(responseData)
+    })
+  }
+  //删除模板
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('Report/delRecord',{ids: this.state.ids},(result)=>{
+        const responseData = result.data.msg
+        if(responseData.status === 1){
+          message.success(responseData.msg)
+          this.setState({
+            ids: []
+          },()=>{
+            this.getTableData()
+          })
+        }else{
+          message.warning(responseData.msg)
+        }
+      })
+    }
+  }
+
+  //搜索功能
+  getColumnSearchProps = (dataIndex) => ({
+    filterDropdown: ({
+      setSelectedKeys, selectedKeys, confirm, clearFilters,
+    }) => (
+      <div style={{ padding: 8 ,background:"rgba(0,0,0,0.8)"}}>
+        <Input
+          ref={node => { this.searchInput = node; }}
+          placeholder={`Search ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => this.handleSearch(selectedKeys, confirm)}
+          style={{ width: 188, marginBottom: 8, display: 'block' }}
+        />
+        <Button
+          type="primary"
+          onClick={() => this.handleSearch(selectedKeys, confirm)}
+          icon="search"
+          size="small"
+          style={{ width: 90, marginRight: 8 }}
+        >
+          搜索
+        </Button>
+        <Button
+          onClick={() => this.handleReset(clearFilters)}
+          size="small"
+          style={{ width: 90 }}
+        >
+          重置
+        </Button>
+      </div>
+    ),
+    filterIcon: filtered => <Icon type="search" style={{ color: filtered ? '#1890ff' : undefined }} />,
+    onFilter: (value, record) => record[dataIndex].toString().toLowerCase().includes(value.toLowerCase()),
+    onFilterDropdownVisibleChange: (visible) => {
+      if (visible) {
+        //setTimeout(() => this.searchInput.select());
+      }
+    },
+    render: (text) => (
+      <Highlighter
+        highlightStyle={{ backgroundColor: '#ffc069', padding: 0 }}
+        searchWords={[this.state.searchText]}
+        autoEscape
+        textToHighlight={text?text.toString():''}
+      />
+    ),
+  })
+
+  handleSearch = (selectedKeys, confirm) => {
+    confirm();
+    this.setState({ searchText: selectedKeys[0] });
+  }
+
+  handleReset = (clearFilters) => {
+    clearFilters();
+    this.setState({ searchText: '' });
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return (
+      <div className='amodule'>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col style={{padding: "20px 0 0 30px"}}>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?`确定要删除这${this.state.ids.length}选项？`:'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <div className="moduleBody">
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                  rowSelection={rowSelection}
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                />
+              </WySpin>
+              </div>
+            </WySpin>
+            <a className='down' href='imageData' download="报表"><span className="downin"></span></a>
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+
+export default ReportGenerate

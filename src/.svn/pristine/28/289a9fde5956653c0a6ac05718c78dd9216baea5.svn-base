@@ -1,0 +1,87 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+import $ from 'jquery'
+
+import Line from '../components/Line'
+class NetPic extends Component{
+  state={
+    xData: [],
+    yData: [],
+    aUnit: '',
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(
+      JSON.stringify(this.props.xData) === JSON.stringify(nextProps.xData) &&
+      JSON.stringify(this.props.yData) === JSON.stringify(nextProps.yData) &&
+      this.props.aUnit === nextProps.aUnit
+    )){
+      const { xData, yData, aUnit} = nextProps
+      this.setState({
+        xData,
+        yData,
+        aUnit
+      })
+    }
+  }
+  chartClick = (record)=>{
+    const curTime = []
+    curTime.push(record.name)
+    curTime.push(record.name)
+    this.props.setRepostTime(curTime)
+  }
+  chartContextmenu = (params,id,event)=>{
+    let e = event || window.event
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(e.target).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    const xPosition = e.pageX
+    const yPosition = e.pageY
+    this.setState({
+      dropListInfo: {
+        dropData: [
+         // {name: '端口视图',url:'/subpage/portview',key:'a'},
+         // {name: '主机视图',url:'/subpage/hostview',key:'b'},
+         // {name: '哈哈',url:'www.baidu.com',key:'c'},
+         // {name: '逛街',url:'www.baidu.com',key:'d'}
+       ],
+       dropPosition: {x:xPosition+"px",y:yPosition+"px"},
+       isexist: true
+      }
+    })
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.xData[parseInt(this.state.xData.length-1,0)]
+      }
+      this.props.setRepostTime(flowPicTime)
+    }
+  }
+  render(){
+    return(
+      <Line
+        onChartClick={this.chartClick}
+        xData={this.state.xData?this.state.xData:[]}
+        yData={this.state.yData?this.state.yData:[]}
+        aUnit={this.state.aUnit}
+        brush={true}
+        onBrushSelected={this.brushSelect}
+      />
+    )
+  }
+}
+
+export default NetPic

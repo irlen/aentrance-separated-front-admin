@@ -1,0 +1,740 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, Modal, Input, message, Popconfirm, Select, Steps, TimePicker, Checkbox, Switch  } from 'antd'
+import moment from 'moment'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import { forName } from '../components/RegExp'
+import WySpin from '../components/WySpin'
+import WyTable from '../components/WyTable'
+import Arule from './Arule'
+const Option = Select.Option
+const Step = Steps.Step
+const TextArea = Input.TextArea
+const CheckboxGroup = Checkbox.Group
+const plainOptions = [
+  {
+    label:"周日",
+    value:"0"
+  },
+  {
+    label:"周一",
+    value:"1"
+  },{
+    label:"周二",
+    value:"2"
+  }
+  ,{
+    label:"周三",
+    value:"3"
+  },{
+    label:"周四",
+    value:"4"
+  }
+  ,{
+    label:"周五",
+    value:"5"
+  }
+  ,{
+    label:"周六",
+    value:"6"
+  }
+]
+class AlertList extends Component{
+
+  state={
+    editId:'',
+    ids:[],
+    visible: false,
+    current: 0,
+    windowName:'新建告警策略',
+
+    getNet:[],
+    getApp:[],
+    getNode:[],
+    getEmail:[],
+
+    alert_name:'',
+    alert_type: 'threshold',
+    alert_obj:'',
+    alert_description:'',
+    alert_objval:[],
+    opera: 'and',
+    rule_list: [],
+    day_time:[],
+    checked_list: [],
+    email_adress:[],
+    is_sent: false,
+
+    start_time:null,
+    last_time: null,
+
+    indeterminate: true,
+    checkAll: false,
+
+    pageSize: 10,
+    xData: [],
+    yData: [],
+    isSpining: false
+  }
+  getTableData = ()=>{
+    this.setState({
+      isSining: true
+    })
+    wyAxiosPost('Alert/getAlert',{},(result)=>{
+      const responseData = result.data.msg
+      let curxData = _.cloneDeep(responseData.xxx)
+      curxData.push({
+        title: '编辑',
+        dataIndex: 'edit',
+        render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+      })
+      this.setState({
+        isSpining: false,
+        xData: curxData,
+        yData: responseData.yyy
+      })
+    })
+  }
+  componentDidMount(){
+    this.getTableData()
+    wyAxiosPost('Alert/getNet',{},(result)=>{
+      this.setState({
+        getNet: result.data.msg
+      })
+    })
+    wyAxiosPost('Alert/getApp',{},(result)=>{
+      this.setState({
+        getApp: result.data.msg
+      })
+    })
+    wyAxiosPost('Alert/getNode',{},(result)=>{
+      this.setState({
+        getNode: result.data.msg
+      })
+    })
+    wyAxiosPost('Alert/getEmail',{},(result)=>{
+      this.setState({
+        getEmail: result.data.msg
+      })
+    })
+  }
+  handleEdit = (id)=>{
+    this.setState({
+      editId:id
+    },()=>{
+      wyAxiosPost('Alert/getAlert',{id: this.state.editId},(result)=>{
+        const {
+          alert_name,
+          alert_type,
+          alert_obj,
+          alert_description,
+          alert_objval,
+          opera,
+          rule_list,
+          day_time,
+          checked_list,
+          email_adress,
+          is_sent
+        } = result.data.msg
+        const compiledObjVal = []
+        if(result.data.msg.alert_objval){
+          compiledObjVal.push(result.data.msg.alert_objval)
+        }
+        this.setState({
+          alert_name,
+          alert_type,
+          alert_obj,
+          alert_description,
+          alert_objval:compiledObjVal,
+          opera,
+          rule_list,
+          day_time,
+          checked_list,
+          email_adress,
+          is_sent: is_sent === 'true'?true:false,
+          start_time: moment(day_time[0],'HH:mm'),
+          last_time: moment(day_time[1],'HH:mm'),
+        },()=>{
+          this.showModal()
+        })
+      })
+    })
+  }
+  doSubmit = ()=>{
+
+    const erroList = []
+    //名称验证
+    if(this.state.alert_name === ''){
+      erroList.push('名称不能为空')
+    }
+    if(this.state.alert_name !== '' && !(forName.test(this.state.alert_name)) ){
+      erroList.push('名称格式有误')
+    }
+    //告警对象
+    if(this.state.alert_obj === ''){
+      erroList.push('告警对象不能为空')
+    }
+    //告警对象值
+    if(this.state.alert_obj !== '' && this.state.alert_obj !== 'allflow' && this.state.alert_objval.length === 0){
+      erroList.push('告警对象值不能为空')
+    }
+    //日内时间合法性
+    if(this.state.day_time.length < 2 || (this.state.day_time[0] && this.state.day_time[0] === null) || (this.state.day_time[1] && this.state.day_time[1] === null)){
+      erroList.push('日内时间未填写完整')
+    }
+    if(this.state.day_time.length === 2 && this.state.day_time[0] !== null && this.state.day_time[1] !== null){
+      const startArray = this.state.day_time[0].split(':')
+      const startNumber = parseInt(startArray[0],10)*3600+parseInt(startArray[1],10)*60
+      const lastArray = this.state.day_time[1].split(':')
+      const lastNumber = parseInt(lastArray[0],10)*3600+parseInt(lastArray[1],10)*60
+      if(lastNumber < startNumber){
+        erroList.push('日内起始时间小于截止时间，不符逻辑')
+      }
+    }
+    //星期时间
+    if(this.state.checked_list.length === 0){
+      erroList.push('未选择告警日期')
+    }
+
+    //规则校验
+    if(this.state.rule_list.length === 0){
+      erroList.push('请至少添加一条告警规则')
+    }else{
+      for(let item of this.state.rule_list){
+        let is_break = false
+        for(let subItem of Object.values(item)){
+          if(subItem === ''){
+            erroList.push('请将规则填写完整')
+            is_break = true;
+            break
+          }
+        }
+        if(is_break){
+          break
+        }
+      }
+    }
+    if(erroList.length === 0){
+      const {
+        alert_name,
+        alert_type,
+        alert_obj,
+        alert_description,
+        alert_objval,
+        opera,
+        rule_list,
+        day_time,
+        checked_list,
+        email_adress,
+        is_sent,
+      } = this.state
+      const info = {
+        alert_name,
+        alert_type,
+        alert_obj,
+        alert_description,
+        alert_objval: alert_objval?alert_objval[0]:'',
+        opera,
+        day_time,
+        rule_list,
+        checked_list,
+        email_adress,
+        is_sent,
+      }
+      if(this.state.editId){
+        info.id = this.state.editId
+      }
+      wyAxiosPost('Alert/saveAlert',{info},(result)=>{
+        const responseData = result.data.msg
+        if(responseData.status === 1){
+          message.success(responseData.msg)
+          this.handleCancel()
+          this.getTableData()
+        }else{
+          message.warning(responseData.msg)
+        }
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  next = ()=>{
+    const current = this.state.current + 1;
+    this.setState({ current });
+  }
+  prev = ()=>{
+    const current = this.state.current - 1;
+    this.setState({ current });
+  }
+  showModal = ()=>{
+    this.setState({
+      visible: true,
+      current: 0
+    })
+  }
+  handleCancel = ()=>{
+    this.setState({
+      editId: '',
+      visible: false,
+      alert_name:'',
+      alert_type: 'threshold',
+      alert_obj:'',
+      alert_description:'',
+      alert_objval:[],
+      opera: 'and',
+      rule_list: [],
+      day_time:[],
+      start_time: null,
+      last_time: null,
+      checked_list: [],
+      email_adress:[],
+      is_sent: false,
+    })
+  }
+  alert_typeChange = (value)=>{
+    this.setState({
+      alert_type: value,
+      alert_obj:'',
+      alert_objval:[],
+      rule_list:[]
+    })
+  }
+
+  alert_objChange = (value)=>{
+    this.setState({
+      alert_obj: value,
+      alert_objval:[],
+      rule_list:[]
+    })
+  }
+
+  alert_objvalChange = (value)=>{
+    if(value.length>0){
+      const lastOne = value.pop()
+      let arr =[]
+      arr.push(lastOne)
+      this.setState({
+        alert_objval: [...arr]
+      })
+    }else if(value.length === 0){
+      this.setState({
+        alert_objval: []
+      })
+    }
+  }
+  email_adressChange = (value)=>{
+    this.setState({
+      email_adress: value
+    })
+  }
+  alert_objvalList = ()=>{
+    const opList = []
+    if(this.state.alert_obj === 'net'){
+      if(this.state.getNet && this.state.getNet.length>0){
+        this.state.getNet.map(item=>{
+          opList.push(
+            <Option value={item.id} key={item.id} title={item.name}>{item.name}</Option>
+          )
+        })
+      }
+    }else if(this.state.alert_obj === 'app'){
+      if(this.state.getApp && this.state.getApp.length>0){
+        this.state.getApp.map(item=>{
+          opList.push(
+            <Option value={item.id} key={item.id} title={item.name}>{item.name}</Option>
+          )
+        })
+      }
+    }else if(this.state.alert_obj === 'node'){
+      if(this.state.getNode && this.state.getNode.length>0){
+        this.state.getNode.map(item=>{
+          opList.push(
+            <Option value={item.id} key={item.id} title={item.name}>{item.name}</Option>
+          )
+        })
+      }
+    }
+    return opList
+  }
+  weekChange = (checked_list) => {
+    this.setState({
+      checked_list,
+      indeterminate: !!checked_list.length && (checked_list.length < plainOptions.length),
+      checkAll: checked_list.length === plainOptions.length,
+    });
+  }
+  weekCheckAllChange = (e) => {
+    this.setState({
+      checked_list: e.target.checked ? ['0','1','2','3','4','5','6'] : [],
+      indeterminate: false,
+      checkAll: e.target.checked,
+    });
+  }
+  operaChange = (value)=>{
+    this.setState({
+      opera: value
+    })
+  }
+  is_sentChange = (value)=>{
+    this.setState({
+      is_sent: value
+    })
+  }
+
+  start_timeChange = (time)=>{
+    if(time){
+      const strTime = time.format('HH:mm')
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[0] = strTime
+      this.setState({
+        start_time: time,
+        day_time: curTime
+      })
+    }else{
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[0] = null
+      this.setState({
+        start_time: null,
+        day_time: curTime
+      })
+    }
+  }
+  last_timeChange = (time)=>{
+    if(time){
+      const strTime = time.format('HH:mm')
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[1] = strTime
+      this.setState({
+        last_time: time,
+        day_time: curTime
+      })
+    }else{
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[1] = null
+      this.setState({
+        start_time: null,
+        day_time: curTime
+      })
+    }
+  }
+  alert_nameChange = (e)=>{
+    this.setState({
+      alert_name: e.target.value
+    })
+  }
+  alert_descriptionChange = (e)=>{
+    this.setState({
+      alert_description: e.target.value
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  addRule = ()=>{
+    if(this.state.alert_obj === ''){
+      message.warning('请选选择告警对象')
+    }else{
+      const curList = _.cloneDeep(this.state.rule_list)
+      const randomCount = Math.random();
+      const curTime = new Date().getTime();
+      const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+      const id = asId.toString()
+      curList.push({
+        id,
+        standard: '',
+        standard_opera:'',
+        standard_val:'',
+        standard_unit:'',
+        standard_time:''
+      })
+      this.setState({
+        rule_list: _.cloneDeep(curList)
+      })
+    }
+  }
+  deleteRule = (id)=>{
+    const curList = _.cloneDeep(this.state.rule_list)
+    curList.map((item,index)=>{
+      if(item.id === id){
+        curList.splice(index,1)
+        return
+      }
+    })
+    this.setState({
+      rule_list: _.cloneDeep(curList)
+    })
+  }
+  setRule = (id,data)=>{
+    const curList = _.cloneDeep(this.state.rule_list)
+    curList.map((item,index)=>{
+      if(item.id === id){
+        item.standard = data.standard
+        item.standard_opera = data.standard_opera
+        item.standard_time = data.standard_time
+        item.standard_unit = data.standard_unit
+        item.standard_val = data.standard_val
+        return
+      }
+    })
+    this.setState({
+      rule_list: _.cloneDeep(curList)
+    })
+  }
+  handleDelete = ()=>{
+    wyAxiosPost('Alert/delAlert',{ids: this.state.ids},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+        this.getTableData()
+      }else{
+        message.warning(responseData.msg)
+      }
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    const current = this.state.current
+    const objects = {
+      threshold: [
+        {
+          name: '网络',
+          value: 'net',
+        },{
+          name: '应用',
+          value: 'app'
+        }
+      ],
+      baseline: [
+        {
+          name:'全网',
+          value:'allflow'
+        },{
+          name:'节点',
+          value: 'node'
+        }
+      ]
+    }
+    const steps = [
+      {
+      title: '基本属性',
+      content: <div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>名称：</div>
+          <div style={{flex: "1 1 auto"}}><Input value={this.state.alert_name} onChange={this.alert_nameChange} /></div>
+        </div>
+        <div style={{display: "flex"}}>
+          <div style={{flex: "0 0 100px"}}>告警类型：</div>
+          <div style={{flex: "1 1 auto"}}>
+            <Select style={{width: "100%"}} value={this.state.alert_type} onChange={this.alert_typeChange} >
+              <Option key="threshold" value="threshold">手动阀值</Option>
+              {
+                //<Option key="baseline" value="baseline">自动基线</Option>
+              }
+            </Select>
+          </div>
+        </div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>告警对象：</div>
+          <div style={{flex: "0 0 120px"}}>
+            <Select style={{width: "100%"}} value={this.state.alert_obj} onChange={this.alert_objChange}>
+              {
+                objects[this.state.alert_type].map(item=>{
+                  return <Option key={item.value} value={item.value} title={item.name}>
+                      {item.name}
+                  </Option>
+                })
+              }
+
+            </Select>
+          </div>
+          <div style={{flex: "1 1 auto"}}>
+            {
+              this.state.alert_obj === 'allflow'?
+              ''
+              :
+              <Select mode="tags" style={{width: "100%"}} value={this.state.alert_objval} onChange={this.alert_objvalChange} >
+                {this.alert_objvalList()}
+              </Select>
+            }
+          </div>
+        </div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>描述：</div>
+          <div style={{flex: "1 1 auto"}}><TextArea value={this.state.alert_description} onChange={this.alert_descriptionChange} /></div>
+        </div>
+      </div>,
+    }, {
+      title: '时间选择',
+      content: <div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>日内时间：</div>
+          <div style={{flex: "1 1 auto"}}>
+            <TimePicker value={this.state.start_time} allowClear={false} placeHolder={'请选择时间'}  onChange={this.start_timeChange} format={'HH:mm'} /> -
+            <TimePicker value={this.state.last_time} allowClear={false} placeHolder={'请选择时间'}  onChange={this.last_timeChange} format={'HH:mm'} />
+          </div>
+        </div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>日期：</div>
+          <div style={{flex: "1 1 auto"}}>
+            <Checkbox
+              indeterminate={this.state.indeterminate}
+              onChange={this.weekCheckAllChange}
+              checked={this.state.checkAll}
+            >
+              全选
+            </Checkbox>
+            <CheckboxGroup options={plainOptions} value={this.state.checked_list} onChange={this.weekChange} />
+          </div>
+        </div>
+      </div>,
+    }, {
+      title: '告警规则',
+      content: <div>
+        <div>
+          组合规则：
+          <Select value={this.state.opera} onChange={this.operaChange} style={{width: "120px"}}>
+            <Option value='and' key='and'>满足所有</Option>
+            <Option value='or' key='or'>满足一个</Option>
+          </Select>
+          <Button style={{marginLeft:"20px"}} type="primary" onClick={this.addRule}>添加规则</Button>
+          <div>
+            {
+              this.state.rule_list && this.state.rule_list.length>0?
+              this.state.rule_list.map(item=>{
+                return <Arule
+                  standarType={this.state.alert_obj}
+                  deleteRule={(id)=>{this.deleteRule(id)}}
+                  setRule={(id,data)=>{this.setRule(id,data)}}
+                  key={item.id}
+                  ruleData={item}
+                  />
+              })
+              :
+              ''
+            }
+          </div>
+        </div>
+      </div>,
+    }, {
+      title: '邮件通知',
+      content: <div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>通知对象：</div>
+          <div style={{flex: "1 1 auto"}}>
+            <Select
+              value={this.state.email_adress}
+              onChange={this.email_adressChange}
+              style={{width: "100%"}}
+              mode="multiple"
+            >
+              {
+                this.state.getEmail && this.state.getEmail.length>0?
+                this.state.getEmail.map(item=>{
+                  return <Option key={item.id} value={item.id} title={item.username}>{item.username}</Option>
+                })
+                :
+                ''
+              }
+            </Select>
+          </div>
+        </div>
+        <div style={{display: "flex",lineHeight: "60px"}}>
+          <div style={{flex: "0 0 100px"}}>启用通知：</div>
+          <div style={{flex: "1 1 auto"}}>
+            <Switch checked={this.state.is_sent} onChange={this.is_sentChange} />
+          </div>
+        </div>
+
+      </div>
+        ,
+    }]
+
+    return(
+      <div className="amodule">
+        <Row gutter={16} style={{padding:"20px 0 0 20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showModal}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <div className="moduleBody">
+          <Row gutter={16} style={{marginTop:"16px"}}>
+            <Col span={24}>
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                  rowSelection={rowSelection}
+                  xData={this.state.xData}
+                  yData={this.state.yData}
+                />
+              </WySpin>
+            </Col>
+          </Row>
+        </div>
+        <Modal
+          title={this.state.windowName}
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+          width={800}
+          footer={null}
+        >
+          <div>
+            <Steps size="small" current={current}>
+              {steps.map((item,index) => <Step
+                key={item.title} title={item.title}
+              />)}
+            </Steps>
+            <div className="steps-content" style={{minHeight:"200px",padding: "20px"}}>
+              {steps[current].content}
+            </div>
+            <div className="steps-action">
+              {
+                current > 0
+                && (
+                <Button style={{ marginLeft: 8 }} onClick={() => this.prev()}>
+                  上一步
+                </Button>
+                )
+              }
+              {
+                current < steps.length - 1
+                && <Button style={{ marginLeft: 10 }} type="primary" onClick={() => this.next()}>下一步</Button>
+              }
+              {
+                current === steps.length - 1
+                && <Button style={{ marginLeft: 10 }} type="primary" onClick={this.doSubmit}>提交</Button>
+              }
+            </div>
+          </div>
+        </Modal>
+      </div>
+    )
+  }
+}
+
+export default AlertList

@@ -1,0 +1,111 @@
+import React, { Component } from 'react'
+import { Tabs, Button, Input, Select, Icon } from 'antd'
+const TabPane = Tabs.TabPane;
+const Option = Select.Option
+const { TextArea } = Input
+class StepWindow extends Component {
+  state={
+    dataSourceName:'',
+    dataType:'',
+    dataDescription:'',
+    operator:''
+  }
+  callback = (key)=>{
+    console.log(key);
+  }
+  dataSourceNameChange = ()=>{
+
+  }
+  dataTypeChange = ()=>{
+
+  }
+  dataDescriptionChange = ()=>{
+
+  }
+
+  render(){
+    return(
+      <div>
+        <Tabs defaultActiveKey="1" onChange={this.callback} style={{minHeight:"200px",paddingBottom:"20px"}}>
+          <TabPane tab="数据定义" key="1">
+            <ul>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据名称：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Input type="primary" style={{width:"450px"}} onChange={this.dataSourceNameChange} value={this.state.dataSourceName}/>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据类型：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select defaultValue='' onChange={this.dataTypeChange} style={{width: "450px"}}>
+                    <Option key='mykey' value=''>请选择</Option>
+                    {
+                      // this.state.dataTypeList.map(item=>{
+                      //   return(
+                      //     <Option key={item.id} value={item.id}>
+                      //       {item.name}
+                      //     </Option>
+                      //   )
+                      // })
+                    }
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据描述：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <TextArea value={this.state.dataDescription} onChange={this.dataDescriptionChange} placeholder="数据描述" autosize style={{width: "450px"}} />
+                </div>
+              </li>
+            </ul>
+          </TabPane>
+          <TabPane tab="条件定义" key="2">
+            <span>
+              <span>规则：</span>
+              <Select defaultValue='one'  style={{minWidth: "120px"}}>
+                <Option value="one">满足一个</Option>
+                <Option value="all">满足全部</Option>
+              </Select>
+            </span>
+
+            <ul style={{marginTop: "20px"}}>
+              <li>
+                <Select defaultValue='one'  style={{minWidth: "120px"}}>
+                  <Option value="1">流量</Option>
+                </Select>
+                <Select defaultValue='=' style={{minWidth: "60px"}}>
+                  <Option key='=' value='='>等于</Option>
+                  <Option key='>' value='>'>大于</Option>
+                  <Option key='<' value='<'>小于</Option>
+                  <Option key='>=' value='>='>大于等于</Option>
+                  <Option key='<=' value='<='>小于等于</Option>
+                  <Option key='!=' value='!='>不等于</Option>
+                </Select>
+                <Input type="text" style={{width:"100px"}}/>
+                <Button type="dashed" onClick={this.add} style={{ width: '40px',marginLeft:"10px" }}>
+                  <i className="fa fa-minus" aria-hidden="true"></i>
+                </Button>
+              </li>
+            </ul>
+            <Button type="dashed" onClick={this.add} style={{ width: '120px' }}>
+              <i className="fa fa-plus" aria-hidden="true"></i> 添加条件
+            </Button>
+          </TabPane>
+          <TabPane tab="分组定义" key="3">
+            <span>分组依据：</span>
+            <Select defaultValue='flow'  style={{minWidth: "120px"}}>
+              <Option value="flow">流量</Option>
+            </Select>
+          </TabPane>
+        </Tabs>
+        <div>
+          <Button style={{marginLeft: "10px"}}>预览</Button>
+          <Button style={{marginLeft: "10px"}}>提交</Button>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default StepWindow

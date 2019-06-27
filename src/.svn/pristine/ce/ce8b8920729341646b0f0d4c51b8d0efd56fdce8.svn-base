@@ -1,0 +1,77 @@
+import React, { Component } from 'react'
+import { Row, Col, Checkbox } from 'antd'
+const CheckboxGroup = Checkbox.Group
+class AuthList extends Component{
+  state = {
+    checkedList: [],
+    indeterminate: false,
+    checkAll: false,
+    plainOptions: [],
+    menu: ''
+  }
+
+  componentDidMount(){
+    this.setState({
+      plainOptions: this.props.plainOptions,
+      menu: this.props.menu,
+      checkedList: this.props.checkedList,
+      checkAll: this.props.checkedList.length === this.props.plainOptions.length
+    })
+  }
+  onChange = (checkedList) => {
+    this.setState({
+      checkedList,
+      indeterminate: !!this.state.checkedList.length && (checkedList.length < this.state.plainOptions.length)
+    },()=>{
+      this.props.setData(this.props.page,this.state.checkedList)
+      this.setState({
+        checkAll: this.state.checkedList.length === this.state.plainOptions.length
+      })
+    });
+  }
+
+  onCheckAllChange = (e) => {
+    const checkedList = []
+    if(e.target.checked && this.state.plainOptions.length>0){
+      this.state.plainOptions.map(item=>{
+        checkedList.push(item.value)
+      })
+    }
+    this.setState({
+      checkedList,
+      indeterminate: false,
+      checkAll: e.target.checked,
+    },()=>{
+      this.props.setData(this.props.page,this.state.checkedList)
+    });
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col style={{lineHeight:"40px"}}>
+            <Checkbox
+              indeterminate={this.state.indeterminate}
+              onChange={this.onCheckAllChange}
+              checked={this.state.checkAll}
+            >
+              <span style={{fontSize: "16px",fontWeight:"bold"}}>{this.state.menu}</span>
+            </Checkbox>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <CheckboxGroup
+              options={this.state.plainOptions}
+              value={this.state.checkedList}
+              onChange={this.onChange}
+              style={{lineHeight:"40px", padding: "0 20px 20px 40px"}}
+            />
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default AuthList

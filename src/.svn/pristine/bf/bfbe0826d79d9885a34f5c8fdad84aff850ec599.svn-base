@@ -1,0 +1,144 @@
+import React, { Component } from 'react'
+import { Input, message } from 'antd'
+import _ from 'lodash'
+
+import { getCompiledAuth, setAuth } from '../actions'
+import PageAuth from './PageAuth'
+import DataAuth from './DataAuth'
+import { wyAxiosPost } from '../components/WyAxios'
+import { forName } from '../components/RegExp'
+
+const TextArea = Input.TextArea
+class DrawerPage extends Component{
+  state = {
+    roleName:'',
+    roleDescription:'',
+    id: '',
+    pageSelectedList:[],
+    dataSelectedList:[]
+
+  }
+  //保存增加或修改
+  getControlData = (id)=>{
+    const erroList = []
+    if(this.state.roleName === ''){
+      erroList.push('角色名称不能为空')
+    }
+    if(this.state.roleName !== '' && !forName.test(this.state.roleName)){
+      erroList.push('角色名称格式有误')
+    }
+    if(erroList.length === 0){
+      const curPageAuth = _.cloneDeep(this.pageAuth.state.pageList)
+      const pageAuth = []
+      if(curPageAuth && curPageAuth.length>0){
+        curPageAuth.map(item=>{
+          if(item.checkedList && item.checkedList.length>0){
+            item.checkedList.map(subItem=>{
+              pageAuth.push(subItem)
+            })
+          }
+        })
+      }
+      const curDataAuth = _.cloneDeep(this.dataAuth.state.pageList)
+      const dataAuth = []
+      if(curDataAuth && curDataAuth.length>0){
+        curDataAuth.map(item=>{
+          if(item.checkedList && item.checkedList.length>0){
+            item.checkedList.map(subItem=>{
+              dataAuth.push(subItem)
+            })
+          }
+        })
+      }
+      const info = {}
+      info.pageAuth = pageAuth
+      info.dataAuth = dataAuth
+      info.roleName = this.state.roleName
+      info.id = id?id:''
+      info.roleDescription = this.state.roleDescription
+      wyAxiosPost('Auth/saveRole',{info:info},(result)=>{
+        const responseData = result.data
+        if(responseData.status === 1){
+          message.success(responseData.msg)
+          this.props.getData()
+          //所编辑的角色和当前用户所属角色是同一个的情况，需要更新状态
+          if(info.id && info.id === JSON.parse(localStorage.getItem('userInfo')).role_id){
+            getCompiledAuth(info.id).then((value)=>{
+              this.props.dispatch(setAuth(value))
+              localStorage.setItem('userAuth', JSON.stringify(value))
+            })
+          }
+        }
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+
+  componentDidMount(){
+    this.setState({
+      id: this.props.id?this.props.id:'',
+      roleName: this.props.authInfo.roleName?this.props.authInfo.roleName:'',
+      roleDescription: this.props.authInfo.roleDescription?this.props.authInfo.roleDescription:'',
+      pageSelectedList: this.props.authInfo.pageAuth?this.props.authInfo.pageAuth:[],
+      dataSelectedList: this.props.authInfo.dataAuth?this.props.authInfo.dataAuth:[]
+    })
+  }
+
+  roleNameChange = (e)=>{
+    this.setState({
+      roleName: e.target.value
+    })
+  }
+  roleDescriptionChange = (e)=>{
+    this.setState({
+      roleDescription: e.target.value
+    })
+  }
+  render(){
+    return(
+      <div>
+        <div style={{display:"flex"}}>
+          <div style={{flex:"0 0 100px"}}>角色名称：</div>
+          <div style={{flex:"1 1 auto"}}>
+
+          {
+            this.state.id?
+            <span>{this.state.roleName}</span>
+            :
+            <Input value={this.state.roleName} onChange={this.roleNameChange}/>
+          }
+          </div>
+        </div>
+        <div style={{display:"flex",marginTop:"20px"}}>
+          <div style={{flex:"0 0 100px"}}>
+            角色描述：
+          </div>
+          <div style={{flex:"1 1 auto"}}>
+            <TextArea
+              value={this.state.roleDescription}
+              onChange={this.roleDescriptionChange}
+              autosize={{ minRows: 1 }}
+            />
+          </div>
+        </div>
+        <div style={{display:"flex",marginTop:"20px"}}>
+          <div style={{flex:"1 1 50%", margin:0, paddingLeft: "40px"}} className="amodule">
+            <div style={{lineHeight:"60px",fontSize:"24px"}}>页面访问权限</div>
+            <PageAuth selectedList={this.state.pageSelectedList} ref={instance=>this.pageAuth=instance}/>
+          </div>
+          <div style={{flex:"1 1 50%",margin:0, paddingLeft: "20px"}} className="amodule">
+            <div style={{lineHeight:"60px",fontSize:"24px"}}>功能操作权限</div>
+            <DataAuth selectedList={this.state.dataSelectedList} ref={instance=>this.dataAuth=instance} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default DrawerPage

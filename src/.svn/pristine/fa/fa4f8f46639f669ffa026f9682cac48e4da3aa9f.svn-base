@@ -1,0 +1,70 @@
+import React, { Component } from 'react'
+import { Row, Col, Select } from 'antd'
+import _ from 'lodash'
+import { withRouter } from 'react-router-dom'
+
+
+import LineView from './LineView'
+import TableView from './TableView'
+import WyDatePicker from '../../components/WyDatePicker'
+import { netStandard } from '../../components/StandarConstant'
+const Option = Select.Option
+class TimeresponseView extends Component{
+  state={
+    allTime: [],
+    param: {},
+    allPath:''
+  }
+  componentDidMount(){
+     const param = JSON.parse(decodeURIComponent(this.props.match.params.info))
+     const allTime = []
+     allTime.push(param.start_time)
+     allTime.push(param.last_time)
+     param.field='noOne'
+     this.setState({
+       allTime,
+       param
+     })
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    })
+  }
+  fieldChange = (value)=>{
+    this.setState({
+      field: value
+    })
+  }
+  //控制table的props
+  resetTableData = (tableTime)=>{
+    this.subTable.setSubTime(tableTime)
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col>
+            <div className="amodule" style={{padding:"0 20px 0 20px",lineHeight:"60px"}}>
+              <span style={{marginRight:"20px"}}>
+                <span>全局时间：</span><WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth: "280px"}}/>
+              </span>
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col>
+            <LineView resetTableData={this.resetTableData} subTime={_.cloneDeep(this.state.allTime)} param={_.cloneDeep(this.state.param)} field={this.state.field} />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col>
+            <TableView ref={(constance)=>{this.subTable=constance}}subTime={_.cloneDeep(this.state.allTime)} param={_.cloneDeep(this.state.param)} />
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default withRouter(TimeresponseView)

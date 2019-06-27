@@ -1,0 +1,67 @@
+import React, { Component } from 'react'
+import Line from '../components/Line'
+class LineView extends Component{
+  state={
+    xData: [],
+    yData: [],
+    aUnit: ''
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.viewData) !== JSON.stringify(nextProps.viewData)){
+      const viewData = nextProps.viewData
+	  
+	  this.setState({
+          xData: viewData.xxx,
+          yData: viewData.yyy,
+          aUnit: viewData.unit
+        })
+	  
+	  /*
+      if(this.state.xData.length === 0){
+        this.setState({
+          xData: viewData.xxx,
+          yData: viewData.yyy,
+          aUnit: viewData.unit
+        })
+      }else{
+        const curxxx = this.state.xData
+        curxxx.shift()
+        curxxx.push(viewData.xxx.pop())
+        const curyyy = this.state.yData
+        for(let i=0; i<curyyy.length; i++){
+          const curData = [...curyyy[i].data]
+          curData.shift()
+          curData.push(viewData.yyy[i].data.pop())
+          curyyy[i].data = curData
+        }
+        this.setState({
+          xData: curxxx,
+          yData: curyyy,
+          aUnit: viewData.unit
+        })
+      }*/
+    }
+  }
+  chartClick = (param)=>{
+    this.props.lineClick(param)
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          {this.props.moduleName}
+        </div>
+        <div className="moduleBody">
+          <Line
+            xData={this.state.xData?this.state.xData:[]}
+            yData={this.state.yData?this.state.yData:[]}
+            aUnit={this.state.aUnit}
+            onChartClick={this.chartClick}
+          />
+        </div>
+      </div>
+    )
+  }
+}
+
+export default LineView

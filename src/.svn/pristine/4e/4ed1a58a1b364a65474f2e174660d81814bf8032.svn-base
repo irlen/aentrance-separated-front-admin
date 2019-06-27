@@ -1,0 +1,249 @@
+import React, { Component } from 'react'
+import { Input, Select, Row, Col, Button, message } from 'antd'
+import propTypes from 'prop-types'
+import _ from 'lodash'
+
+import WyDatePicker from '../components/WyDatePicker'
+import StandarListTable from './StandarListTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import AppTimePic from './AppTimePic'
+const Option = Select.Option
+class AppTimeResponse extends Component{
+  state={
+    appList: [],
+    ifaceList:[],
+    appName: '',
+    ifaceName:'',
+    custom:'',
+    allTime: [],
+    //xData: [],
+    //yData: [],
+    searchRule:{},
+    //picType: 'time'
+  }
+  componentDidMount(){
+    wyAxiosPost('App/getIfaceList',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        ifaceList: responseData
+      })
+    })
+    wyAxiosPost('App/getAppList',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        appList: responseData
+      })
+    })
+  }
+  ifaceNameChange = (value)=>{
+    this.setState({
+      ifaceName: value
+    })
+  }
+  appNameChange = (value)=>{
+    this.setState({
+      appName: value
+    })
+  }
+  customChange = (e)=>{
+    this.setState({
+      custom: e.target.value
+    })
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    })
+  }
+  doFilter = ()=>{
+    let info = {}
+    if(this.state.allTime.length>0){
+      info.start_time= this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+      info.custom = this.state.custom
+      info.ifaceName = this.state.ifaceName
+      info.appName = this.state.appName
+      this.setState({
+        searchRule: info
+      })
+
+    }else{
+      message.warning('请选择时间')
+    }
+  }
+  setSubTime = (value)=>{
+    this.firstTable.setTime(value)
+    this.secondTable.setTime(value)
+    this.thirdTable.setTime(value)
+  }
+  render(){
+    return(
+      <div>
+        <div className="amodule" style={{padding: "0 20px 0 20px", lineHeight: "60px"}}>
+          <Row gutter={16}>
+            <Col sm={{span:24}} md={{span: 11}} lg={{span: 5}}>
+              <div style={{display:"flex"}}>
+                <div style={{flex:"0 0 60px"}}>
+                  <span>客户端：</span>
+                </div>
+                <div style={{flex:"1 1 auto"}}>
+                  <Input value={this.state.custom} onChange={this.customChange} type="text" style={{width:"90%"}}/>
+                </div>
+              </div>
+            </Col>
+            <Col sm={{span:24}} md={{span: 13}} lg={{span: 5}}>
+              <div style={{display:"flex"}}>
+                <div style={{flex:"0 0 60px"}}>
+                  <span>接口：</span>
+                </div>
+                <div style={{flex:"1 1 auto"}}>
+                  <Select value={this.state.ifaceName} onChange={this.ifaceNameChange} style={{width:"90%"}} placeholder="不限">
+                    <Option key="mykey" value="">不限</Option>
+                    {
+                      this.state.ifaceList && this.state.ifaceList.length>0?
+                      this.state.ifaceList.map(item=>{
+                        return(
+                          <Option key={item.id} value={item.old_name} title={item.new_name}>{item.new_name}</Option>
+                        )
+                      })
+                      :
+                      ''
+                    }
+                  </Select>
+                </div>
+              </div>
+            </Col>
+            <Col sm={{span:24}} md={{span: 11}} lg={{span: 5}}>
+              <div style={{display:"flex"}}>
+                <div style={{flex:"0 0 60px"}}>
+                  <span>应用：</span>
+                </div>
+                <div style={{flex:"1 1 auto"}}>
+                  <Select value={this.state.appName} onChange={this.appNameChange} style={{width:"90%"}} placeholder="所有">
+                    <Option key="mykey" value="">所有</Option>
+                    {
+                      this.state.appList && this.state.appList.length>0?
+                      this.state.appList.map(item=>{
+                        return(
+                          <Option key={item.id} value={item.id} title={item.name}>{item.name}</Option>
+                        )
+                      })
+                      :
+                      ''
+                    }
+                  </Select>
+                </div>
+              </div>
+            </Col>
+            <Col sm={{span:24}} md={{span: 13}} lg={{span: 9}}>
+              <div style={{display:"flex"}}>
+                <div style={{flex:"0 0 60px"}}>
+                  <span>时间：</span>
+                </div>
+                <div style={{flex:"1 1 auto"}}>
+                  <WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} style={{width:"90%"}} size="default" />
+                </div>
+              </div>
+            </Col>
+            <Col sm={{span:24}} md={{span: 13}} lg={{span: 9}}>
+              <div>
+                <div>
+                  <Button type="primary" onClick={this.doFilter} >过滤</Button>
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+        {
+          this.state.searchRule && JSON.stringify(this.state.searchRule).length>2?
+          <div>
+            <Row gutter={16}>
+              <Col>
+                <AppTimePic
+                  searchRule={_.cloneDeep(this.state.searchRule)}
+                  setSubTime={(value)=>{this.setSubTime(value)}}
+                />
+
+
+
+
+              {
+                // <div className="amodule">
+                //   <div className="moduleHeader">
+                //     <span></span>
+                //     <span style={{float:"right"}}>
+                //       <Select value={this.state.picType} onChange={this.picTypeChange} placeholder="不限">
+                //         <Option key="time" value="time">时间类</Option>
+                //         <Option key="bytes" value="bytes">流量类</Option>
+                //         <Option key="packets" value="packets">数据包类</Option>
+                //         <Option key="request" value="request">请求类</Option>
+                //         <Option key="ret" value="ret">重传类</Option>
+                //       </Select>
+                //     </span>
+                //   </div>
+                //   <div className="moduleBody">
+                //     <Line
+                //       xData={this.state.xData?this.state.xData:[]}
+                //       yData={this.state.yData?this.state.yData:[]}
+                //       aUnit={this.state.aUnit}
+                //       brush={true}
+                //       onBrushSelected={this.brushSelect}
+                //       nozoom={true}
+                //     />
+                //   </div>
+                // </div>
+
+              }
+
+
+
+
+
+
+
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                <StandarListTable
+                  type="app"
+                  searchRule={_.cloneDeep(this.state.searchRule)}
+                  moduleName="时间范围内应用"
+                  getInstance={(instance)=>this.firstTable = instance}
+                />
+              </Col>
+              <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                <StandarListTable
+                  type="ip"
+                  searchRule={_.cloneDeep(this.state.searchRule)}
+                  moduleName="时间范围内IP"
+                  getInstance={(instance)=>this.secondTable=instance}
+                  objType='host'
+                />
+              </Col>
+            </Row>
+            <Row>
+              <Col>
+                <StandarListTable
+                  type="msg"
+                  searchRule={_.cloneDeep(this.state.searchRule)}
+                  getInstance={(instance)=>this.thirdTable=instance}
+                  moduleName="会话"
+                />
+              </Col>
+            </Row>
+
+          </div>
+          :
+          ''
+        }
+      </div>
+    )
+  }
+}
+
+AppTimeResponse.propTypes={
+  moduleName: propTypes.string
+}
+
+export default AppTimeResponse

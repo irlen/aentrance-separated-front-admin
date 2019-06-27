@@ -1,0 +1,146 @@
+import React , { Component } from 'react'
+import { Row, Col, Switch, message} from 'antd'
+import _ from 'lodash'
+
+import LineView from './LineView'
+import TableView from './TableView'
+import { wyAxiosPost } from '../components/WyAxios'
+
+
+class AppAnalysis extends Component{
+  state={
+    bytes: {},
+    packets: {},
+    ip: {},
+    port: {},
+    session: {},
+    isOn: true,
+	Mymd5_string:'',
+  }
+
+  getData = (flag, tcount, md5_string)=>{
+
+    const info = {}
+    info.flag = flag
+    info.tcount = tcount
+    info.md5_string = md5_string
+    wyAxiosPost('Monitor/getAppAnalysis',{info:info},(result)=>{
+      const responseData = result.data
+      const { bytes, packets, ip, port, session }  = responseData
+      this.setState({
+        bytes,
+        packets,
+        ip,
+        port,
+        session
+      })
+    })
+  }
+  runPage = ()=>{
+	  let flag = 0
+	  const tcount = 60*3
+	  const md5_string = this.state.Mymd5_string
+    window.timer = setInterval(()=>{
+      this.getData(flag, tcount, md5_string)
+	  flag = 0
+    },1000)
+  }
+  componentDidMount(){
+	  function myguid()
+		{
+			function S4()
+			{
+				return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+			}
+			return (S4()+S4()+S4()+S4()+S4()+S4()+S4()+S4());
+		}
+	this.state.Mymd5_string = myguid()
+	this.runPage()
+  }
+  bClick = ()=>{
+    this.setState({
+      isOn: !this.state.isOn
+    },()=>{
+      this.state.isOn?
+      this.runPage()
+      :
+      clearInterval(window.timer)
+    })
+  }
+  //曲线图点击事件
+  lineClick = (param)=>{
+    if(!this.state.isOn){
+      if(!param.name)
+    	{
+    		message.warning('没有数据')
+    		return
+    	}
+
+    	const info = {}
+        info.search_time = param.name
+        info.md5_string = this.state.Mymd5_string
+
+    	 wyAxiosPost('Monitor/searchAnalysis',{info:info},(result)=>{
+          const responseData = result.data
+          const {ip, port, session }  = responseData
+          this.ipTable.upDateData(ip)
+          this.portTable.upDateData(port)
+          this.sessionTable.upDateData(session)
+        })
+    }
+  }
+  componentWillUnmount(){
+    clearInterval(window.timer)
+  }
+
+  render(){
+    return (
+      <div>
+        <Row>
+          <Col span={24}>
+            <div style={{height: "40px",lineHeight:"30px"}}>
+              <Switch onClick={this.bClick} defaultChecked checkedChildren="已开启监控" unCheckedChildren="已停止监控" />
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col sm={24} md={24} lg={24}>
+            <LineView
+            viewData={_.cloneDeep(this.state.bytes)}
+            moduleName='总流量'
+            lineClick={this.lineClick}
+            />
+          </Col>
+
+        </Row>
+        <Row gutter={16}>
+          <Col sm={24} md={24} lg={12}>
+            <TableView
+              viewData={_.cloneDeep(this.state.ip)}
+              moduleName='TOP10Ip'
+              ref={(constance)=>this.ipTable=constance}
+            />
+          </Col>
+          <Col sm={24} md={24} lg={12}>
+          <TableView
+            viewData={_.cloneDeep(this.state.port)}
+            moduleName='TOP10Port'
+            ref={(constance)=>this.portTable=constance}
+          />
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={24}>
+            <TableView
+              viewData={_.cloneDeep(this.state.session)}
+              moduleName='TOP10Session'
+              ref={(constance)=>this.sessionTable=constance}
+            />
+          </Col>
+        </Row>
+       </div>
+    )
+  }
+}
+
+export default AppAnalysis

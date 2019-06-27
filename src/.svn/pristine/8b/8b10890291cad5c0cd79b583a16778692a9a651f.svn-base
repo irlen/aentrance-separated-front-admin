@@ -1,0 +1,200 @@
+import React, { Component } from 'react'
+import { Select, Input, Button } from 'antd'
+const Option = Select.Option
+
+class OneRule extends Component{
+  state = {
+    standardList: [],
+    operaList:[],
+    valueList:[],
+    name:'',
+    opera:'',
+    value:''
+  }
+  //onChange={(value)=>this.nameChange(item,value)}
+  componentDidMount(){
+    this.setState({
+      standardList: this.props.standardList,
+      name: this.props.name
+    },()=>{
+      this.state.standardList.map(item=>{
+        //根据name确定operaList和valueList
+        if(item.id === this.state.name){
+          this.setState({
+            operaList: item.opera_array,
+            opera: this.props.opera
+          })
+          if(item.list_array){
+            this.setState({
+              valueList: item.list_array,
+              value: this.props.value
+            })
+          }else{
+            this.setState({
+              valueList: [],
+              value: this.props.value
+            })
+          }
+        }
+      })
+    })
+  }
+
+  componentsWillReceiveProps(nextProps){
+    if(!(
+      JSON.stringify(this.props.standardList) === JSON.stringify(nextProps.standardList) &&
+      this.props.name === nextProps.name &&
+      this.props.value === nextProps.value &&
+      this.props.opera === nextProps.opera
+    )){
+      this.setState({
+        standardList: nextProps.standardList,
+        name: nextProps.name
+      },()=>{
+        this.state.standardList.map(item=>{
+          //根据name确定operaList和valueList
+          if(item.id === this.state.name){
+            this.setState({
+              operaList: item.opera_array,
+              opera: nextProps.opera
+            })
+            if(item.list_array){
+              this.setState({
+                valueList: item.list_array,
+                value: nextProps.value
+              })
+            }else{
+              this.setState({
+                valueList: [],
+                value: nextProps.value
+              })
+            }
+          }
+        })
+      })
+    }
+  }
+  nameChange = (value)=>{
+    this.state.standardList.map(item=>{
+      if(item.id === value){
+        this.setState({
+          operaList: item.opera_array,
+          name: value
+        })
+        if(item.list_array){
+          this.setState({
+            valueList: item.list_array,
+            value: ''
+          })
+        }else{
+          this.setState({
+            valueList: [],
+            value: ''
+          })
+        }
+      }
+    })
+    this.props.setRuleList(this.props.id,{
+      name: value,
+      opera: this.state.opera,
+      value: this.state.value
+    })
+  }
+
+
+
+
+
+  operaChange = (value)=>{
+    this.setState({
+      opera: value
+    })
+    this.props.setRuleList(this.props.id,{
+      name: this.state.name,
+      opera: value,
+      value: this.state.value
+    })
+  }
+  inputValueChange = (e)=>{
+    this.setState({
+      value: e.target.value
+    })
+    this.props.setRuleList(this.props.id,{
+      name: this.state.name,
+      opera: this.state.opera,
+      value: e.target.value
+    })
+  }
+  selectValueChange = (value)=>{
+    this.setState({
+      value: value
+    })
+    this.props.setRuleList(this.props.id,{
+      name: this.state.name,
+      opera: this.state.opera,
+      value: value
+    })
+  }
+  removeRule = ()=>{
+    console.log("remove")
+    const id = this.props.id
+    this.props.removeRule(id)
+  }
+  render(){
+    return(
+      <div style={{marginTop: "5px"}}>
+        <Select  value={this.state.name} onChange={this.nameChange} style={{minWidth: "120px"}}>
+          <Option key="mykey" value="">请选择</Option>
+          {
+            this.state.standardList && this.state.standardList.length>0?
+            this.state.standardList.map(subItem=>{
+              return(
+                <Option key={subItem.id} value={subItem.id} title={subItem.name}>
+                  {subItem.name}
+                </Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+        <Select onChange={this.operaChange} value={this.state.opera} style={{minWidth: "60px"}}>
+          <Option key="mykey" value="">请选择</Option>
+          {
+            this.state.operaList && this.state.operaList.length>0?
+            this.state.operaList.map(item=>{
+              return(
+                <Option key={item.key} value={item.key} title={item.value}>{item.value}</Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+        {
+          this.state.valueList && this.state.valueList.length>0?
+          <Select onChange={this.selectValueChange} value={this.state.value} style={{minWidth: "60px"}}>
+            <Option key="mykey" value=''>请选择</Option>
+            {
+              this.state.valueList && this.state.valueList.length>0?
+              this.state.valueList.map(item=>{
+                return(
+                  <Option key={item.id} value={item.id} title={item.name}>{item.name}</Option>
+                )
+              })
+              :
+              ''
+            }
+          </Select>
+          :
+          <Input onChange={this.inputValueChange} value={this.state.value} type="text" style={{width:"100px"}}/>
+        }
+        <Button onClick={this.removeRule} type="dashed" style={{ width: '40px',marginLeft:"10px" }}>
+          <i className="fa fa-minus" aria-hidden="true"></i>
+        </Button>
+      </div>
+    )
+  }
+}
+
+export default OneRule

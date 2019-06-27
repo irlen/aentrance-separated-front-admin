@@ -1,0 +1,357 @@
+import React, { Component } from 'react'
+import { Select, Input, Button, Row, Col, message } from 'antd'
+import _ from 'lodash'
+import { Scrollbars } from 'react-custom-scrollbars'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyDatePicker from '../components/WyDatePicker'
+import AppListPic from './AppListPic'
+import WyTable from '../components/WyTable'
+import { appStandard, appStatStandard } from '../components/StandarConstant'
+import { wyAxiosPost } from '../components/WyAxios'
+import { forNumber } from '../components/RegExp'
+import contextList from '../SubPage/ContextList'
+import WySpin from '../components/WySpin'
+const Option = Select.Option
+
+class AppList extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+    this.objList = [...appStatStandard]
+    this.liuliang = [
+      {
+        value: "B",
+        name:"B"
+      },{
+        value: "KB",
+        name:"KB"
+      },{
+        value: "MB",
+        name:"MB"
+      },{
+        value: "GB",
+        name:"GB"
+      }
+    ]
+    this.cishu = [
+      {
+        value:'次',
+        name:"次"
+      },{
+        value: "万次",
+        name:"万次"
+      }
+    ]
+    this.shijian = [
+      {
+        value: "us",
+        name:"us"
+      },{
+        value: "ms",
+        name:"ms"
+      },{
+        value: "s",
+        name:"s"
+      }
+    ]
+    this.geshu = [
+      {
+        value:"个",
+        name:"个"
+      },{
+        value: "十万",
+        name:"十万"
+      },{
+        value: "百万",
+        name:"百万"
+      }
+    ]
+    this.operaterForMohu = [
+      {
+        value:"~",
+        name:"约等于"
+      }
+    ]
+    this.operaterForCommon = [
+      {
+        value:">",
+        name:"大于"
+      },{
+        value:"<",
+        name:"小于"
+      },{
+        value:"=",
+        name:"等于"
+      },{
+        value:"!=",
+        name:"不等于"
+      },{
+        value:">=",
+        name:"大于等于"
+      },{
+        value:"<=",
+        name:"小于等于"
+      }
+    ]
+  }
+  state={
+    selStandarList: ['name','bytes'],
+    standarLength:'2',
+
+    filterField:'',
+    operator:'',
+    filterVal:'',
+    filterUnit:'',
+    unitList: [],
+
+    xData:[],
+    yData:[],
+    initColumns:[],
+    activeRowKey:'',
+    allTime:[],
+
+    appName: '',
+    stringName: '',
+
+    isSpining: false,
+    pageSize: 20,
+    isSearch: false,
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  getAppDataList = (isSearch,rangeTime)=>{
+    let info = {}
+    info.filterField = this.state.filterField
+    info.operator = this.state.operator
+    info.filterVal = ''
+    if(isSearch){
+      info.filterVal = this.state.filterVal
+    }
+    info.filterUnit = this.state.filterUnit
+    if(!rangeTime){
+      info.start_time = ''
+      info.last_time = ''
+    }else{
+      info.start_time = rangeTime[0]
+      info.last_time = rangeTime[1]
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('App/getFilterAppList',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let newxxx = []
+      if(responseData.xxx && responseData.xxx.length>0){
+        responseData.xxx.map(item=>{
+          if(this.state.selStandarList.indexOf(item.dataIndex) !== -1){
+            newxxx.push(item)
+          }
+        })
+      }
+      const activeRowKey = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+      const appName = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+      const stringName = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].name:''
+      const newColumns = this.compileColumns(activeRowKey,newxxx)
+      let allTime = []
+      if(this.state.allTime.length === 0){
+        allTime.push(responseData.start_time)
+        allTime.push(responseData.last_time)
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          allTime,
+          activeRowKey,
+          appName,
+          stringName,
+          isSpining: false,
+          isSearch: false
+        })
+      }else{
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          activeRowKey,
+          appName,
+          stringName,
+          isSpining: false,
+          isSearch: false,
+          allTime: rangeTime
+        })
+      }
+    })
+  }
+  componentDidMount(){
+    this.getAppDataList(this.state.isSearch)
+  }
+  selStandarListChange = (value)=>{
+    let newxxx = []
+    if(this.state.initColumns && this.state.initColumns.length>0){
+      this.state.initColumns.map(item=>{
+        if(value.indexOf(item.dataIndex) !== -1){
+          newxxx.push(item)
+        }
+      })
+    }
+    const activeRowKey = this.state.activeRowKey
+    let newColumns = []
+    if(value.length>0){
+      newColumns = this.compileColumns(activeRowKey,newxxx)
+    }
+    this.setState({
+      selStandarList: value,
+      standarLength: value.length,
+      xData: newColumns
+    })
+  }
+  allTimeChange = (value)=>{
+    this.getAppDataList(this.state.isSearch,value)
+  }
+  tableClick = (record)=>{
+    const activeRowKey = record.key
+    let newColumns = []
+    newColumns = this.compileColumns(activeRowKey,this.state.xData)
+    this.setState({
+      xData: newColumns,
+      appName: record.key,
+      stringName: record.name
+    })
+  }
+
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: record.type == 'know_app'?'apply':'apply_not',
+      start_time: this.state.allTime[0],
+      last_time: this.state.allTime[1],
+      obj: record.name,
+      objType: record.objtype,
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div>
+        <div className="amodule" style={{padding:"0 20px 0 20px",lineHeight:"60px"}}>
+          <Row gutter={16}>
+            <Col sm={{span: 24}} md={{span: 16}} lg={{span: 12}}>
+              <WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth: "280px"}}/>
+            </Col>
+            <Col sm={{span: 24}} md={{span: 8}} lg={{span: 12}}>
+              <span style={{float: "right"}}>
+
+              </span>
+            </Col>
+          </Row>
+        </div>
+        <div style={{display: "flex",flexShrink:"1"}}>
+          <div style={{flex:"0 0 400px"}}>
+            <Row gutter={16}>
+              <Col span={24}>
+                <div className="amodule">
+                  <div className="moduleHeader">
+                    <span>应用</span>
+                    <span style={{float:"right"}}>
+                      <span>指标显示：</span>
+                      <Select
+                        style={{minWidth: "120px"}}
+                        mode="tags"
+                        size="small"
+                        onChange={this.selStandarListChange}
+                        maxTagCount={0}
+                        maxTagPlaceholder={()=>('已选'+this.state.standarLength+'项')}
+                        value={this.state.selStandarList}
+                      >
+                        <Option key="myapp" value="name">应用</Option>
+                        {
+                          appStatStandard && appStatStandard.length>0?
+                          appStatStandard.map(item=>{
+                            return(
+                              <Option key={item.value} value={item.value}>{item.name}</Option>
+                            )
+                          })
+                          :
+                          ''
+                        }
+                      </Select>
+                    </span>
+                  </div>
+                  <div className="moduleBody">
+                  <Scrollbars
+                    autoHide
+                    autoHideTimeout={100}
+                    autoHideDuration={200}
+                    universal={true}
+                    style={{height: "686px"}}
+                    >
+                      <WySpin isSpining={this.state.isSpining}>
+                        <WyTable
+                          activeRowKey={this.state.activeRowKey}
+                          xData={this.state.xData?this.state.xData:[]}
+                          yData={this.state.yData?this.state.yData:[]}
+                          onTableClick={this.tableClick}
+                          pageSize={this.state.pageSize}
+                          onShowSizeChange={this.pageSizeChange}
+                          onTableContextmenu={this.tableContextmenu}
+                          dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                        />
+                      </WySpin>
+                    </Scrollbars>
+                  </div>
+                </div>
+              </Col>
+            </Row>
+          </div>
+          <div style={{flex:"1 1 auto",paddingLeft: "16px"}}>
+            <Row gutter={16}>
+              <Col span={24}>
+                <AppListPic moduleName="对象"
+                  appName={this.state.appName}
+                  stringName={this.state.stringName}
+                  subTime={_.cloneDeep(this.state.allTime)}
+                />
+              </Col>
+            </Row>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(AppList)

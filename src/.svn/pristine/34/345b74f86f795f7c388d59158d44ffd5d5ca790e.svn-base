@@ -1,0 +1,11 @@
+const homeview = (state={modules: []},action)=>{
+   switch(action.type){
+    case 'ADD_MODULE':
+      state.modules.push(action.moduleData)
+      return state
+    default:
+      return state
+  }
+}
+
+export default homeview

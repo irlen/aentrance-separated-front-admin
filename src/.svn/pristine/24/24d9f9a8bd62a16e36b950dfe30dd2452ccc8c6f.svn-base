@@ -1,0 +1,79 @@
+import React, { Component } from 'react'
+import { Button, Modal, Row, Col, Input, message } from 'antd'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import { domainName, singleIp } from '../components/RegExp'
+export default class Ping extends Component{
+  state={
+    ip:'',
+    resultList:[],
+    isSpining:false
+  }
+  goPing = ()=>{
+    const erroList = []
+    if(this.state.ip === ''){
+      erroList.push('ip或域名不能为空')
+    }
+
+    if(this.state.ip !== '' && !( domainName.test(this.state.ip) || singleIp.test(this.state.ip)) ){
+      erroList.push('ip或域名格式有误')
+    }
+
+    if(erroList.length === 0){
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('Tool/ping',{ip:this.state.ip},(result)=>{
+        const responseData = result.data.msg
+        this.setState({
+          isSpining: false,
+          resultList: responseData
+        })
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  ipChange = (e)=>{
+    e.preventDefault()
+    this.setState({
+      ip:e.target.value
+    })
+  }
+  render(){
+    return(
+      <div style={{padding: "20px"}}>
+        <Row>
+          <Col style={{lineHeight:"40px"}}>
+              <span>ip或域名：</span>
+              <span><Input style={{width:"160px"}} value={this.state.ip} onChange={this.ipChange} /></span>
+              <Button onClick={this.goPing} type="primary">ping</Button>
+            </Col>
+        </Row>
+        <Row>
+          <Col>
+            <WySpin isSpining={this.state.isSpining}>
+              <div style={{minHeight:"200px",background:"rgba(0,0,0,0.6)",padding:"30px",marginTop:"40px"}}>
+              {
+                this.state.resultList && this.state.resultList.length>0?
+                this.state.resultList.map((item,index)=>{
+                  return (
+                    <p key={index}>{item}</p>
+                  )
+                })
+                :
+                ''
+              }
+              </div>
+            </WySpin>
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}

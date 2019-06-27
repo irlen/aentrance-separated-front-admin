@@ -1,0 +1,1185 @@
+//应用指标
+
+//http stat表专用
+const HttpStatStandard = [
+	{
+		name:'响应时间',
+		value:'average_data_time',
+		unitType: 'time'
+	},{
+		name:'请求数',
+		value:'request',
+		unitType: 'count'
+	},{
+		name:'100次数',
+		value:'num_100',
+		unitType: 'count'
+	},{
+		name:'200次数',
+		value:'num_200',
+		unitType: 'count'
+	},{
+		name:'300次数',
+		value:'num_300',
+		unitType: 'count'
+	},{
+		name:'400次数',
+		value:'num_400',
+		unitType: 'count'
+	},{
+		name:'500次数',
+		value:'num_500',
+		unitType: 'count'
+	}
+];
+
+
+//bpm  会话专用
+const appSessionStandard = [
+	{
+		name:'总流量',
+		value:'bytes',
+		unitType: 'flow'
+	},{
+		name:'总流量流入',
+		value:'bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总流量流出',
+		value:'bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总数据包',
+		value:'packets',
+		unitType: 'count'
+	},{
+		name:'总数据包流入',
+		value:'packets_client',
+		unitType: 'count'
+	},{
+		name:'总数据包流出',
+		value:'packets_server',
+		unitType: 'count'
+	},{
+		name:'总净荷',
+		value:'app_bytes',
+		unitType: 'flow'
+	},{
+		name:'总净荷流入',
+		value:'app_bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总净荷流出',
+		value:'app_bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总净荷数据包',
+		value:'app_packets',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流入',
+		value:'app_packets_client',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流出',
+		value:'app_packets_server',
+		unitType: 'count'
+	},{
+		name:'重传',
+		value:'ret',
+		unitType: 'cishu'
+	},{
+		name:'重传流入',
+		value:'ret_client',
+		unitType: 'cishu'
+	},{
+		name:'重传流出',
+		value:'ret_server',
+		unitType: 'cishu'
+	},{
+		name:'丢包',
+		value:'drop',
+		unitType: 'count'
+	},{
+		name:'丢包流入',
+		value:'drop_client',
+		unitType: 'count'
+	},{
+		name:'丢包流出',
+		value:'drop_server',
+		unitType: 'count'
+	},{
+		name:'重置数',
+		value:'rst',
+		unitType:'count'
+	},{
+		name:'重置数流入',
+		value:'rst_client',
+		unitType:'count'
+	},{
+		name:'重置数流出',
+		value:'rst_server',
+		unitType:'count'
+	},{
+		name:'零窗口数',
+		value:'zero_window',
+		unitType:'count'
+	},{
+		name:'零窗口数流入',
+		value:'zero_window_client',
+		unitType:'count'
+	},{
+		name:'零窗口数流出',
+		value:'zero_window_server',
+		unitType:'count'
+	},{
+		name:'请求数',
+		value:'request_num',
+		unitType: 'cishu'
+	},{
+		name:'成功请求数',
+		value:'succeed_request',
+		unitType: 'cishu'
+	},{
+		name:'失败请求数',
+		value:'fail_request',
+		unitType: 'cishu'
+	},{
+		name:'RTT_IN',
+		value:'rttin',
+		unitType: 'time'
+	},{
+		name:'RTT_OUT',
+		value:'rttout',
+		unitType: 'time'
+	},{
+		name:'数据传输时间',
+		value:'tran_time',
+		unitType: 'time'
+	},{
+		name:'服务器响应时间',
+		value:'server_time',
+		unitType: 'time'
+	},{
+		name:'重传时间',
+		value:'ret_time',
+		unitType: 'time'
+	},{
+		name:'客户端重传时间',
+		value:'ret_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器重传时间',
+		value:'ret_time_server',
+		unitType: 'time'
+	},{
+		name:'丢包时间',
+		value:'drop_time',
+		unitType: 'time'
+	},{
+		name:'客户端丢包时间',
+		value:'drop_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器丢包时间',
+		value:'drop_time_server',
+		unitType: 'time'
+	},{
+		name:'三次握手时间',
+		value:'conn_time',
+		unitType: 'time'
+	},{
+		name:'服务器握手时间',
+		value:'server_conn_time',
+		unitType: 'time'
+	},{
+		name:'客户端握手时间',
+		value:'client_conn_time',
+		unitType: 'time'
+	},{
+		name:'会话连接时间',
+		value:'lianjie_time',
+		unitType: 'time'
+	},{
+		name:'结束时间',
+		value:'fin_time',
+		unitType: 'time'
+	},{
+		name:'会话开始时间',
+		value:'start_time',
+		unitType: 'get_time'
+	},{
+		name:'会话结束时间',
+		value:'end_time',
+		unitType: 'get_time'
+	},{
+		name:'描述',
+		value:'decribe',
+		unitType: 'str'
+	},{
+		name:'协议',
+		value:'protocol_name',
+		unitType: 'str'
+	}
+];
+
+
+//bpm  group 专用
+const appGroupStandard = [
+	{
+		name:'总流量',
+		value:'bytes',
+		unitType: 'flow'
+	},{
+		name:'总流量流入',
+		value:'bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总流量流出',
+		value:'bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总数据包',
+		value:'packets',
+		unitType: 'count'
+	},{
+		name:'总数据包流入',
+		value:'packets_client',
+		unitType: 'count'
+	},{
+		name:'总数据包流出',
+		value:'packets_server',
+		unitType: 'count'
+	},{
+		name:'总净荷',
+		value:'app_bytes',
+		unitType: 'flow'
+	},{
+		name:'总净荷流入',
+		value:'app_bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总净荷流出',
+		value:'app_bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总净荷数据包',
+		value:'app_packets',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流入',
+		value:'app_packets_client',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流出',
+		value:'app_packets_server',
+		unitType: 'count'
+	},{
+		name:'重传',
+		value:'ret',
+		unitType: 'cishu'
+	},{
+		name:'重传流入',
+		value:'ret_client',
+		unitType: 'cishu'
+	},{
+		name:'重传流出',
+		value:'ret_server',
+		unitType: 'cishu'
+	},{
+		name:'丢包',
+		value:'drop',
+		unitType: 'count'
+	},{
+		name:'丢包流入',
+		value:'drop_client',
+		unitType: 'count'
+	},{
+		name:'丢包流出',
+		value:'drop_server',
+		unitType: 'count'
+	},{
+		name:'重置数',
+		value:'rst',
+		unitType:'count'
+	},{
+		name:'重置数流入',
+		value:'rst_client',
+		unitType:'count'
+	},{
+		name:'重置数流出',
+		value:'rst_server',
+		unitType:'count'
+	},{
+		name:'零窗口数',
+		value:'zero_window',
+		unitType:'count'
+	},{
+		name:'零窗口数流入',
+		value:'zero_window_client',
+		unitType:'count'
+	},{
+		name:'零窗口数流出',
+		value:'zero_window_server',
+		unitType:'count'
+	},{
+		name:'请求数',
+		value:'request_num',
+		unitType: 'cishu'
+	},{
+		name:'成功请求数',
+		value:'succeed_request',
+		unitType: 'cishu'
+	},{
+		name:'失败请求数',
+		value:'fail_request',
+		unitType: 'cishu'
+	},{
+		name:'RTT_IN',
+		value:'rttin',
+		unitType: 'time'
+	},{
+		name:'RTT_OUT',
+		value:'rttout',
+		unitType: 'time'
+	},{
+		name:'数据传输时间',
+		value:'tran_time',
+		unitType: 'time'
+	},{
+		name:'服务器响应时间',
+		value:'server_time',
+		unitType: 'time'
+	},{
+		name:'重传时间',
+		value:'ret_time',
+		unitType: 'time'
+	},{
+		name:'客户端重传时间',
+		value:'ret_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器重传时间',
+		value:'ret_time_server',
+		unitType: 'time'
+	},{
+		name:'丢包时间',
+		value:'drop_time',
+		unitType: 'time'
+	},{
+		name:'客户端丢包时间',
+		value:'drop_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器丢包时间',
+		value:'drop_time_server',
+		unitType: 'time'
+	},{
+		name:'三次握手时间',
+		value:'conn_time',
+		unitType: 'time'
+	},{
+		name:'服务器握手时间',
+		value:'server_conn_time',
+		unitType: 'time'
+	},{
+		name:'客户端握手时间',
+		value:'client_conn_time',
+		unitType: 'time'
+	},{
+		name:'会话连接时间',
+		value:'lianjie_time',
+		unitType: 'time'
+	},{
+		name:'结束时间',
+		value:'fin_time',
+		unitType: 'time'
+	}
+];
+
+
+
+//取stat 专用
+const appStatStandard = [
+	{
+		name:'总流量',
+		value:'bytes',
+		unitType: 'flow'
+	},{
+		name:'总流量流入',
+		value:'bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总流量流出',
+		value:'bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总数据包',
+		value:'packets',
+		unitType: 'count'
+	},{
+		name:'总数据包流入',
+		value:'packets_client',
+		unitType: 'count'
+	},{
+		name:'总数据包流出',
+		value:'packets_server',
+		unitType: 'count'
+	},{
+		name:'总净荷',
+		value:'app_bytes',
+		unitType: 'flow'
+	},{
+		name:'总净荷流入',
+		value:'app_bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总净荷流出',
+		value:'app_bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总净荷数据包',
+		value:'app_packets',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流入',
+		value:'app_packets_client',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流出',
+		value:'app_packets_server',
+		unitType: 'count'
+	},{
+		name:'重传',
+		value:'ret',
+		unitType: 'cishu'
+	},{
+		name:'重传流入',
+		value:'ret_client',
+		unitType: 'cishu'
+	},{
+		name:'重传流出',
+		value:'ret_server',
+		unitType: 'cishu'
+	},{
+		name:'丢包',
+		value:'drop',
+		unitType: 'count'
+	},{
+		name:'丢包流入',
+		value:'drop_client',
+		unitType: 'count'
+	},{
+		name:'丢包流出',
+		value:'drop_server',
+		unitType: 'count'
+	},{
+		name:'重置数',
+		value:'rst',
+		unitType:'count'
+	},{
+		name:'重置数流入',
+		value:'rst_client',
+		unitType:'count'
+	},{
+		name:'重置数流出',
+		value:'rst_server',
+		unitType:'count'
+	},{
+		name:'零窗口数',
+		value:'zero_window',
+		unitType:'count'
+	},{
+		name:'零窗口数流入',
+		value:'zero_window_client',
+		unitType:'count'
+	},{
+		name:'零窗口数流出',
+		value:'zero_window_server',
+		unitType:'count'
+	},{
+		name:'请求数',
+		value:'request_num',
+		unitType: 'cishu'
+	},{
+		name:'成功请求数',
+		value:'succeed_request',
+		unitType: 'cishu'
+	},{
+		name:'失败请求数',
+		value:'fail_request',
+		unitType: 'cishu'
+	},{
+		name:'RTT_IN',
+		value:'rttin',
+		unitType: 'time'
+	},{
+		name:'RTT_OUT',
+		value:'rttout',
+		unitType: 'time'
+	},{
+		name:'数据传输时间',
+		value:'tran_time',
+		unitType: 'time'
+	},{
+		name:'服务器响应时间',
+		value:'server_time',
+		unitType: 'time'
+	},{
+		name:'重传时间',
+		value:'ret_time',
+		unitType: 'time'
+	},{
+		name:'客户端重传时间',
+		value:'ret_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器重传时间',
+		value:'ret_time_server',
+		unitType: 'time'
+	},{
+		name:'丢包时间',
+		value:'drop_time',
+		unitType: 'time'
+	},{
+		name:'客户端丢包时间',
+		value:'drop_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器丢包时间',
+		value:'drop_time_server',
+		unitType: 'time'
+	},{
+		name:'三次握手时间',
+		value:'conn_time',
+		unitType: 'time'
+	},{
+		name:'服务器握手时间',
+		value:'server_conn_time',
+		unitType: 'time'
+	},{
+		name:'客户端握手时间',
+		value:'client_conn_time',
+		unitType: 'time'
+	},{
+		name:'会话连接时间',
+		value:'lianjie_time',
+		unitType: 'time'
+	},{
+		name:'结束时间',
+		value:'fin_time',
+		unitType: 'time'
+	},{
+		name:'活动会话',
+		value:'activity',
+		unitType: 'count'
+	},{
+		name:'会话数',
+		value:'tol_app',
+		unitType: 'count'
+	},{
+		name:'成功会话数',
+		value:'succeed_app',
+		unitType: 'count'
+	},{
+		name:'失败会话数',
+		value:'fail_app',
+		unitType: 'count'
+	},{
+		name:'慢响应时间',
+		value:'slow_res_time',
+		unitType: 'time'
+	}
+];
+
+
+
+//应用指标
+const appStandard = [
+	{
+		name:'总流量',
+		value:'bytes',
+		unitType: 'flow'
+	},{
+		name:'总流量流入',
+		value:'bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总流量流出',
+		value:'bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总数据包',
+		value:'packets',
+		unitType: 'count'
+	},{
+		name:'总数据包流入',
+		value:'packets_client',
+		unitType: 'count'
+	},{
+		name:'总数据包流出',
+		value:'packets_server',
+		unitType: 'count'
+	},{
+		name:'总净荷',
+		value:'app_bytes',
+		unitType: 'flow'
+	},{
+		name:'总净荷流入',
+		value:'app_bytes_client',
+		unitType: 'flow'
+	},{
+		name:'总净荷流出',
+		value:'app_bytes_server',
+		unitType: 'flow'
+	},{
+		name:'总净荷数据包',
+		value:'app_packets',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流入',
+		value:'app_packets_client',
+		unitType: 'count'
+	},{
+		name:'总净荷数据包流出',
+		value:'app_packets_server',
+		unitType: 'count'
+	},{
+		name:'重传',
+		value:'ret',
+		unitType: 'cishu'
+	},{
+		name:'重传流入',
+		value:'ret_client',
+		unitType: 'cishu'
+	},{
+		name:'重传流出',
+		value:'ret_server',
+		unitType: 'cishu'
+	},{
+		name:'丢包',
+		value:'drop',
+		unitType: 'count'
+	},{
+		name:'丢包流入',
+		value:'drop_client',
+		unitType: 'count'
+	},{
+		name:'丢包流出',
+		value:'drop_server',
+		unitType: 'count'
+	},{
+		name:'请求数',
+		value:'request_num',
+		unitType: 'cishu'
+	},{
+		name:'成功请求数',
+		value:'succeed_request',
+		unitType: 'cishu'
+	},{
+		name:'失败请求数',
+		value:'fail_request',
+		unitType: 'cishu'
+	},{
+		name:'三次握手时间',
+		value:'conn_time',
+		unitType: 'time'
+	},{
+		name:'服务器握手时间',
+		value:'server_conn_time',
+		unitType: 'time'
+	},{
+		name:'客户端握手时间',
+		value:'client_conn_time',
+		unitType: 'time'
+	},{
+		name:'数据传输时间',
+		value:'tran_time',
+		unitType: 'time'
+	},{
+		name:'服务器响应时间',
+		value:'server_time',
+		unitType: 'time'
+	},{
+		name:'连接时间',
+		value:'lianjie_time',
+		unitType: 'time'
+	},{
+		name:'重传时间',
+		value:'ret_time',
+		unitType: 'time'
+	},{
+		name:'客户端重传时间',
+		value:'ret_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器重传时间',
+		value:'ret_time_server',
+		unitType: 'time'
+	},{
+		name:'RTT_IN',
+		value:'rttin',
+		unitType: 'time'
+	},{
+		name:'RTT_OUT',
+		value:'rttout',
+		unitType: 'time'
+	},{
+		name:'丢包时间',
+		value:'drop_time',
+		unitType: 'time'
+	},{
+		name:'客户端丢包时间',
+		value:'drop_time_client',
+		unitType: 'time'
+	},{
+		name:'服务器丢包时间',
+		value:'drop_time_server',
+		unitType: 'time'
+	},{
+		name:'零窗口数',
+		value:'zero_window',
+		unitType: 'count'
+	},{
+		name:'零窗口数流入',
+		value:'zero_window_client',
+		unitType: 'count'
+	},{
+		name:'零窗口数流出',
+		value:'zero_window_server',
+		unitType: 'count'
+	}
+];
+//网络指标
+const netStandard = [
+	{
+		name:'总流量',
+		value:'bytes',
+		unitType: 'flow'
+	},{
+		name:'总流量(最大值)',
+		value:'bytes_max',
+		unitType: 'flow'
+	},{
+		name:'总流量(平均值)',
+		value:'bytes_avg',
+		unitType: 'flow'
+	},{
+		name:'总流量流入',
+		value:'bytes_in',
+		unitType: 'flow'
+	},{
+		name:'总流量流入(最大值)',
+		value:'bytes_in_max',
+		unitType: 'flow'
+	},{
+		name:'总流量流入(平均值)',
+		value:'bytes_in_avg',
+		unitType: 'flow'
+	},{
+		name:'总流量流出',
+		value:'bytes_out',
+		unitType: 'flow'
+	},{
+		name:'总流量流出(最大值)',
+		value:'bytes_out_max',
+		unitType: 'flow'
+	},{
+		name:'总流量流出(平均值)',
+		value:'bytes_out_avg',
+		unitType: 'flow'
+	},{
+		name:'总数据包',
+		value:'packets',
+		unitType: 'count'
+	},{
+		name:'总数据包(最大值)',
+		value:'packets_max',
+		unitType: 'count'
+	},{
+		name:'总数据包(平均值)',
+		value:'packets_avg',
+		unitType: 'count'
+	},{
+		name:'总数据包流入',
+		value:'packets_in',
+		unitType: 'count'
+	},{
+		name:'总数据包流入(最大值)',
+		value:'packets_in_max',
+		unitType: 'count'
+	},{
+		name:'总数据包流入(平均值)',
+		value:'packets_in_avg',
+		unitType: 'count'
+	},{
+		name:'总数据包流出',
+		value:'packets_out',
+		unitType: 'count'
+	},{
+		name:'总数据包流出(最大值)',
+		value:'packets_out_max',
+		unitType: 'count'
+	},{
+		name:'总数据包流出(平均值)',
+		value:'packets_out_avg',
+		unitType: 'count'
+	},
+]
+
+//协议指标
+const protocolStandard = [
+	{
+		name:'总流量',
+		value:'bytes'
+	},{
+		name:'总流量(最大值)',
+		value:'bytes_max'
+	},{
+		name:'总流量(平均值)',
+		value:'bytes_avg'
+	},{
+		name:'总数据包',
+		value:'packets'
+	},{
+		name:'总数据包(最大值)',
+		value:'packets_max'
+	},{
+		name:'总数据包(平均值)',
+		value:'packets_avg'
+	},
+]
+
+//网络高级过滤指标-曲线图
+const netFilterPic = [
+	{
+		name:'总流量',
+		value:'bytes'
+	},{
+		name:'总流量(最大值)',
+		value:'bytes_max'
+	},{
+		name:'总流量(平均值)',
+		value:'bytes_avg'
+	},{
+		name:'总流量流入',
+		value:'bytes_in'
+	},{
+		name:'总流量流入(最大值)',
+		value:'bytes_in_max'
+	},{
+		name:'总流量流入(平均值)',
+		value:'bytes_in_avg'
+	},{
+		name:'总流量流出',
+		value:'bytes_out'
+	},{
+		name:'总流量流出(最大值)',
+		value:'bytes_out_max'
+	},{
+		name:'总流量流出(平均值)',
+		value:'bytes_out_avg'
+	},{
+		name:'总数据包',
+		value:'packets'
+	},{
+		name:'总数据包(最大值)',
+		value:'packets_max'
+	},{
+		name:'总数据包(平均值)',
+		value:'packets_avg'
+	},{
+		name:'总数据包流入',
+		value:'packets_in'
+	},{
+		name:'总数据包流入(最大值)',
+		value:'packets_in_max'
+	},{
+		name:'总数据包流入(平均值)',
+		value:'packets_in_avg'
+	},{
+		name:'总数据包流出',
+		value:'packets_out'
+	},{
+		name:'总数据包流出(最大值)',
+		value:'packets_out_max'
+	},{
+		name:'总数据包流出(平均值)',
+		value:'packets_out_avg'
+	},{
+		name:'重传',
+		value:'ret'
+	},{
+		name:'重传(最大值)',
+		value:'ret_max'
+	},{
+		name:'重传(平均值)',
+		value:'ret_avg'
+	},{
+		name:'重传流入',
+		value:'ret_in'
+	},{
+		name:'重传流入(最大值)',
+		value:'ret_in_max'
+	},{
+		name:'重传流入(平均值)',
+		value:'ret_in_avg'
+	},{
+		name:'重传流出',
+		value:'ret_out'
+	},{
+		name:'重传流出(最大值)',
+		value:'ret_out_max'
+	},{
+		name:'重传流出(平均值)',
+		value:'ret_out_avg'
+	},{
+		name:'丢包',
+		value:'drops'
+	},{
+		name:'丢包(最大值)',
+		value:'drops_max'
+	},{
+		name:'丢包(平均值)',
+		value:'drops_avg'
+	},{
+		name:'丢包流入',
+		value:'drops_in'
+	},{
+		name:'丢包流入(最大值)',
+		value:'drops_in_max'
+	},{
+		name:'丢包流入(平均值)',
+		value:'drops_in_avg'
+	},{
+		name:'丢包流出',
+		value:'drops_out'
+	},{
+		name:'丢包流出(最大值)',
+		value:'drops_out_max'
+	},{
+		name:'丢包流出(平均值)',
+		value:'drops_out_avg'
+	},{
+		name:'网络RTT流入',
+		value:'rtt_in'
+	},{
+		name:'网络RTT流入(最大值)',
+		value:'rtt_in_max'
+	},{
+		name:'网络RTT流入(平均值)',
+		value:'rtt_in_avg'
+	},{
+		name:'网络RTT流出',
+		value:'rtt_out'
+	},{
+		name:'网络RTT流出(最大值)',
+		value:'rtt_out_max'
+	},{
+		name:'网络RTT流出(平均值)',
+		value:'rtt_out_avg'
+	}
+]
+
+const IfaceStandard = [
+	{
+		name:'总流量',
+		value:'bytes'
+	},{
+		name:'总流量(最大值)',
+		value:'bytes_max'
+	},{
+		name:'总流量(平均值)',
+		value:'bytes_avg'
+	},{
+		name:'总流量流入',
+		value:'bytes_in'
+	},{
+		name:'总流量流入(最大值)',
+		value:'bytes_in_max'
+	},{
+		name:'总流量流入(平均值)',
+		value:'bytes_in_avg'
+	},{
+		name:'总流量流出',
+		value:'bytes_out'
+	},{
+		name:'总流量流出(最大值)',
+		value:'bytes_out_max'
+	},{
+		name:'总流量流出(平均值)',
+		value:'bytes_out_avg'
+	},{
+		name:'总数据包',
+		value:'packets'
+	},{
+		name:'总数据包(最大值)',
+		value:'packets_max'
+	},{
+		name:'总数据包(平均值)',
+		value:'packets_avg'
+	},{
+		name:'总数据包流入',
+		value:'packets_in'
+	},{
+		name:'总数据包流入(最大值)',
+		value:'packets_in_max'
+	},{
+		name:'总数据包流入(平均值)',
+		value:'packets_in_avg'
+	},{
+		name:'总数据包流出',
+		value:'packets_out'
+	},{
+		name:'总数据包流出(最大值)',
+		value:'packets_out_max'
+	},{
+		name:'总数据包流出(平均值)',
+		value:'packets_out_avg'
+	},{
+		name:'重传',
+		value:'ret'
+	},{
+		name:'重传(最大值)',
+		value:'ret_max'
+	},{
+		name:'重传(平均值)',
+		value:'ret_avg'
+	},{
+		name:'重传流入',
+		value:'ret_in'
+	},{
+		name:'重传流入(最大值)',
+		value:'ret_in_max'
+	},{
+		name:'重传流入(平均值)',
+		value:'ret_in_avg'
+	},{
+		name:'重传流出',
+		value:'ret_out'
+	},{
+		name:'重传流出(最大值)',
+		value:'ret_out_max'
+	},{
+		name:'重传流出(平均值)',
+		value:'ret_out_avg'
+	},
+	/*{
+		name:'丢包',
+		value:'drops'
+	},{
+		name:'丢包(最大值)',
+		value:'drops_max'
+	},{
+		name:'丢包(平均值)',
+		value:'drops_avg'
+	},{
+		name:'丢包流入',
+		value:'drops_in'
+	},{
+		name:'丢包流入(最大值)',
+		value:'drops_in_max'
+	},{
+		name:'丢包流入(平均值)',
+		value:'drops_in_avg'
+	},{
+		name:'丢包流出',
+		value:'drops_out'
+	},{
+		name:'丢包流出(最大值)',
+		value:'drops_out_max'
+	},{
+		name:'丢包流出(平均值)',
+		value:'drops_out_avg'
+	},*/{
+		name:'RTT_IN',
+		value:'rttin'
+	},{
+		name:'RTT_OUT',
+		value:'rttout'
+	},{
+		name:'连接数',
+		value:'conn'
+	}
+]
+
+//单位匹配
+const unitList = {
+	flow:[
+		{
+			name:'b',
+			value:'b'
+		},{
+			name:'Kb',
+			value:'Kb'
+		},{
+			name:'Mb',
+			value:'Mb'
+		},{
+			name:'Gb',
+			value:'Gb'
+		},{
+			name:'B',
+			value:'B'
+		},{
+			name:'KB',
+			value:'KB'
+		},{
+			name:'MB',
+			value:'MB'
+		},{
+			name:'GB',
+			value:'GB'
+		}
+	],
+	count:[
+		{
+			name:'个',
+			value:'sec_num'
+		},{
+			name:'百万个',
+			value:'mili_num'
+		},{
+			name:'千万个',
+			value:'must_num'
+		},{
+			name:'亿个',
+			value:'bili_num'
+		}
+	],
+	cishu:[
+		{
+			name: '次',
+			value:'sec_time'
+		},{
+			name:'万次',
+			value:'tenth_time'
+		}
+	],
+	time:[
+		{
+			name:'ms',
+			value:'ms'
+		},{
+			name:'s',
+			value:'s'
+		},{
+			name:'min',
+			value:'min'
+		}
+	]
+}
+
+
+export {
+		 HttpStatStandard,
+		 appSessionStandard,
+		 appStandard,
+		 appGroupStandard,
+		 appStatStandard,
+		 netStandard,
+		 netFilterPic,
+		 protocolStandard,
+		 IfaceStandard,
+		 unitList
+		}

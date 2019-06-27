@@ -1,0 +1,182 @@
+import React, { Component } from 'react';
+import { Row, Col, Button, Drawer, Input, message, Popconfirm, Select } from 'antd'
+import _ from 'lodash'
+
+import WySpin from '../components/WySpin'
+import WyTable from '../components/WyTable'
+import StepWindow from './StepWindow'
+import { wyAxiosPost } from '../components/WyAxios'
+import Column from 'antd/lib/table/Column';
+const Option = Select.Option
+class AlertManage extends Component {
+
+  state={
+    ids:[],
+    visible: false,
+    dataArray:{},
+    xData:[],
+    yData:[],
+    flag: false,
+    isSpining: true,
+    pageSize: 10
+  }
+ 
+ 
+  //显示抽屉
+  showDrawer = () => {
+    this.setState({
+      visible: true,
+      flag: false
+    })
+  }
+  editorDrawer = () => {
+    this.setState({
+      visible: true,
+      flag: true
+    })
+  }
+  //关闭抽屉
+  onClose = () => {
+    this.setState({
+      visible: false,
+      flag: false
+    })
+  }
+  componentDidMount = () => {
+    wyAxiosPost('Alert/getAlert', { info: '' }, (result) => {
+      // console.log(result)
+      if (result.ret === 200) {
+        if (result.data.status === 1) {
+          let msg = result.data.msg
+          var columns = Object.keys(msg).length > 0 ? msg.xxx : []
+          columns.length > 0 ? columns.push(
+            {
+              title: '操作',
+              key: 'action',
+              render: () => {
+                return (
+                  <span>
+                    <span style={{ "marginRight": "20px", "cursor": "default" }} onClick={this.editorDrawer.bind(this)}>编辑</span>
+
+                  </span>
+                )
+
+              }
+            }
+          )
+            : columns;
+
+            msg.xxx = columns
+          this.setState({
+            dataArray: msg,
+            isSpining: false,
+            yData: _.cloneDeep(msg.yyy)
+          })
+        }
+      }
+    })
+
+    // wyAxiosPost('Alert/getAlert', { info: '' }, (result) => {
+    //   // console.log(result)
+    //   if (result.ret === 200) {
+    //     if (result.data.status === 1) {
+    //       this.setState({
+    //         dataArray: result.data.msg,
+    //         isSpining: false
+    //       })
+    //     }
+    //   }
+    // })
+
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+   //删除告警
+  itemDel = (id) => {
+    let dataArray = this.state.dataArray
+    let idArr = id
+    let yyy = dataArray.yyy
+    idArr.forEach((element,index) => {
+      idArr[index] = yyy[element].id
+      yyy.splice(parseInt(element,10),1)
+      console.log(yyy)
+    });    
+    // wyAxiosPost('Alert/delAlert', { info: idArr }, (result) => {
+    //    console.log(result)
+    // })
+    dataArray.yyy = yyy
+    this.setState({
+      dataArray,
+      yData: _.cloneDeep(dataArray.yyy)
+    })
+  }
+
+
+  render() {
+    console.log(this.state.yData)
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    
+    
+    return (
+      
+      <div>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0 ? this.itemDel.bind(this,this.state.ids) : ()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}  >
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                rowSelection={rowSelection}
+                xData={this.state.dataArray.xxx}
+                yData={this.state.yData}
+              />
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title="新建告警策略"
+          width={"90%"}
+          placement="right"
+          destroyOnClose={true}
+          onClose={this.onClose.bind(this)}
+          maskClosable={true}
+          visible={this.state.visible}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+           {!this.state.flag ?  <StepWindow  onClose={this.onClose.bind(this)}/> :  <StepWindow flag='editor' onClose={this.onClose.bind(this)}/>}
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+export default AlertManage

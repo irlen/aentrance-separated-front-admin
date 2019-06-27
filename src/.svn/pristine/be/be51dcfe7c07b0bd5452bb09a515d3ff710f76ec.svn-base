@@ -1,0 +1,669 @@
+import React, { Component } from 'react'
+import { Steps, Button, message, Select, Input } from 'antd'
+import _ from 'lodash'
+
+import * as regions from './regions'
+import mapList from '../components/Map/maps/mapList'
+import { wyAxiosPost } from '../components/WyAxios'
+import Custom from './Custom'
+import Standard from './Standard'
+import { forName, singleIp, groupIp } from '../components/RegExp'
+const Step = Steps.Step
+const { Option, OptGroup } = Select
+const { TextArea } = Input
+class Stepset extends Component{
+  state={
+    current: 0,
+    serverList:[], //服务端列表
+    interfaceList:[], //接口列表
+
+    bus_name:'', //业务名称
+    bus_map:'china', //所用地图
+    bus_server:'', //服务端
+    bus_server_city:'', //服务端所在城市
+    bus_interface: '', //可选接口
+    bus_vlan:'', //可选vlan
+    bus_customs:[],//客户端数组
+    bus_calc: 'or',
+    bus_standards:[], //指标数组
+    bus_note:''
+
+
+  }
+  componentDidMount(){
+    wyAxiosPost('Map/getServer',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        serverList: responseData
+      })
+    })
+    wyAxiosPost('Map/getIface',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        interfaceList: responseData
+      })
+    })
+    const {editId} = this.props
+    if(editId){
+      wyAxiosPost('Map/getMap',{id: editId},(result)=>{
+        const responseData = result.data.msg
+        const {
+          bus_name, //业务名称
+          bus_map, //所用地图
+          bus_server, //服务端
+          bus_server_city, //服务端所在城市
+          bus_interface, //可选接口
+          bus_vlan, //可选vlan
+          bus_customs,//客户端数组
+          bus_calc,
+          bus_standards, //指标数组
+          bus_note
+        } = responseData
+        this.setState({
+          bus_name, //业务名称
+          bus_map, //所用地图
+          bus_server, //服务端
+          bus_server_city, //服务端所在城市
+          bus_interface, //可选接口
+          bus_vlan, //可选vlan
+          bus_customs,//客户端数组
+          bus_calc,
+          bus_standards, //指标数组
+          bus_note,
+          current: 0
+        })
+      })
+    }else{
+      this.setState({
+        bus_name:'', //业务名称
+        bus_map:'china', //所用地图
+        bus_server:'', //服务端
+        bus_server_city:'', //服务端所在城市
+        bus_interface: '', //可选接口
+        bus_vlan:'', //可选vlan
+        bus_customs:[],//客户端数组
+        bus_calc: 'or',
+        bus_standards:[], //指标数组
+        bus_note:'',
+        current: 0
+      })
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    const {editId} = nextProps
+    if(editId){
+      wyAxiosPost('Map/getMap',{id: editId},(result)=>{
+        const responseData = result.data.msg
+        const {
+          bus_name, //业务名称
+          bus_map, //所用地图
+          bus_server, //服务端
+          bus_server_city, //服务端所在城市
+          bus_interface, //可选接口
+          bus_vlan, //可选vlan
+          bus_customs,//客户端数组
+          bus_calc,
+          bus_standards, //指标数组
+          bus_note
+        } = responseData
+        this.setState({
+          bus_name, //业务名称
+          bus_map, //所用地图
+          bus_server, //服务端
+          bus_server_city, //服务端所在城市
+          bus_interface, //可选接口
+          bus_vlan, //可选vlan
+          bus_customs,//客户端数组
+          bus_calc,
+          bus_standards, //指标数组
+          bus_note,
+          current: 0
+        })
+      })
+    }else{
+      this.setState({
+        bus_name:'', //业务名称
+        bus_map:'china', //所用地图
+        bus_server:'', //服务端
+        bus_server_city:'', //服务端所在城市
+        bus_interface: '', //可选接口
+        bus_vlan:'', //可选vlan
+        bus_customs:[],//客户端数组
+        bus_calc: 'or',
+        bus_standards:[], //指标数组
+        bus_note:'',
+        current: 0
+      })
+    }
+  }
+  next = ()=>{
+    const current = this.state.current + 1;
+    this.setState({ current });
+  }
+  prev = ()=>{
+    const current = this.state.current - 1;
+    this.setState({ current });
+  }
+  //名称
+  bus_nameChange = (e)=>{
+    e.preventDefault()
+    this.setState({
+      bus_name: e.target.value
+    })
+  }
+  //地图
+  bus_mapChange = (value)=>{
+    const newCustoms = []
+    if(this.state.bus_customs && this.state.bus_customs.length>0){
+      this.state.bus_customs.map(item=>{
+        item.custom_city = ''
+        newCustoms.push(item)
+      })
+    }
+    this.setState({
+      bus_map: value,
+      bus_server_city:'',
+      bus_customs: newCustoms
+    })
+  }
+  //服务端城市
+  bus_server_cityChange = (value)=>{
+    this.setState({
+      bus_server_city: value
+    })
+  }
+  //获取服务端
+  getServerList = (value)=>{
+    const newServeList = _.cloneDeep(this.state.serverList)
+    let compiled_serverList = []
+    if(newServeList && newServeList.length>0){
+      compiled_serverList = newServeList.filter((item)=>{
+        const serverArray = item.type.split('_')
+        return (serverArray[0] === value)
+      })
+    }
+    return compiled_serverList
+  }
+  //服务端
+  bus_serverChange = (value)=>{
+    const newBus_standards = _.cloneDeep(this.state.bus_standards)
+    if(newBus_standards && newBus_standards.length>0){
+      newBus_standards.map(item=>{
+        item.standard_name = ''
+        item.standard_value_unit = ''
+      })
+      this.setState({
+        bus_server: value,
+        bus_standards: newBus_standards
+      })
+    }else{
+      this.setState({
+        bus_server: value
+      })
+    }
+  }
+  //接口
+  bus_interfaceChange = (value)=>{
+    this.setState({
+      bus_interface: value
+    })
+  }
+  //vlan
+  bus_vlanChange = (e)=>{
+    this.setState({
+      bus_vlan: e.target.value
+    })
+  }
+  //计算方式
+  bus_calcChange = (value)=>{
+    this.setState({
+      bus_calc: value
+    })
+  }
+  //备注
+  bus_noteChange = (e)=>{
+    this.setState({
+      bus_note: e.target.value
+    })
+  }
+  //添加客户端
+  addCustom = ()=>{
+    const randomCount = Math.random();
+    const curTime = new Date().getTime();
+    const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+    const id = asId.toString()
+    const custom = {
+      id,
+      custom_areaName:'',
+      custom_city:'',
+      custom_ip:''
+    }
+    let newCustoms = _.cloneDeep(this.state.bus_customs)
+    newCustoms.push(custom)
+    this.setState({
+      bus_customs: [...newCustoms]
+    })
+  }
+  //添加指标规则
+  addStandard = ()=>{
+    const randomCount = Math.random();
+    const curTime = new Date().getTime();
+    const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+    const id = asId.toString()
+    const standard = {
+      id,
+      standard_name:'',
+      standard_calc:'>',
+      standard_value:'',
+      standard_value_unit:'',
+      standard_time:'',
+      standard_time_unit:'min',
+      standard_range:[30,70]
+    }
+    let newStandards = this.state.bus_standards?_.cloneDeep(this.state.bus_standards):[]
+    newStandards.push(standard)
+    this.setState({
+      bus_standards: [...newStandards]
+    })
+  }
+  //客户端变动
+  setCustom = (id,obj,value)=>{
+    const newCustoms = _.cloneDeep(this.state.bus_customs)
+    newCustoms.map((item,index)=>{
+      if(item.id === id){
+        newCustoms[index][obj] = value
+        return
+      }
+    })
+    this.setState({
+      bus_customs: [...newCustoms]
+    })
+  }
+  //指标变动
+  setStandards = (id,obj,value)=>{
+    const newStandards = _.cloneDeep(this.state.bus_standards)
+    newStandards.map((item,index)=>{
+      if(item.id === id){
+        newStandards[index][obj] = value
+        if(obj === 'standard_name'){
+          newStandards[index]['standard_value_unit'] = ''
+        }
+        return
+      }
+    })
+    this.setState({
+      bus_standards: [...newStandards]
+    })
+  }
+  //删除客户端
+  delCustom = (id)=>{
+    const newCustoms = _.cloneDeep(this.state.bus_customs)
+    newCustoms.map((item,index)=>{
+      if(item.id === id){
+        newCustoms.splice(index,1)
+      }
+    })
+    this.setState({
+      bus_customs: [...newCustoms]
+    })
+  }
+  //删除规则
+  delStandard = (id)=>{
+    const newStandards = _.cloneDeep(this.state.bus_standards)
+    newStandards.map((item,index)=>{
+      if(item.id === id){
+        newStandards.splice(index,1)
+      }
+    })
+    this.setState({
+      bus_standards: [...newStandards]
+    })
+  }
+  //提交数据
+  doSubmit = ()=>{
+    const {
+            bus_name, //业务名称
+            bus_map, //所用地图
+            bus_server, //服务端
+            bus_server_city, //服务端所在城市
+            bus_interface, //可选接口
+            bus_customs,//客户端数组
+            bus_calc, //计算方式
+            bus_standards, //指标数组} = this.state
+            bus_note,  //备注
+            bus_vlan
+          } = this.state
+    const info = {
+            bus_name, //业务名称
+            bus_map, //所用地图
+            bus_server, //服务端
+            bus_server_city, //服务端所在城市
+            bus_interface, //可选接口
+            bus_customs,//客户端数组
+            bus_calc, //计算方式
+            bus_standards, //指标数组} = this.state
+            bus_note,  //备注
+            bus_vlan
+          }
+    //验证各字段合法性
+    const erroList = []
+    if(bus_name === ''){
+      erroList.push('名称不能为空')
+    }else{
+      if(!forName.test(bus_name)){
+        erroList.push('名称格式不正确')
+      }
+    }
+    if(bus_server === ''){
+      erroList.push('服务端不能为空')
+    }
+    if(bus_server_city === ''){
+      erroList.push('服务端所在城市不能为空')
+    }
+
+    if(bus_customs.length === 0){
+      erroList.push('请添加客户端')
+    }else{
+      bus_customs.map(item=>{
+        let isIpRight = true
+        if(item.custom_ip.length>0){
+          const ipArray = item.custom_ip.split(',')
+          ipArray.map(subItem=>{
+            if(!(singleIp.test(subItem) || groupIp.test(subItem))){
+              isIpRight = false
+              return
+            }
+          })
+        }else{
+          isIpRight = false
+        }
+        if(!(
+           item.custom_areaName !== '' &&
+           forName.test(item.custom_areaName) &&
+           item.custom_city !== '' &&
+           isIpRight
+         )){
+           erroList.push('客户端添加有误，请保证各项不为空且格式正确')
+           return
+         }
+      })
+    }
+
+    if(bus_standards.length !== 0){
+      bus_standards.map(item=>{
+        if(
+          !(item.standard_name !== '' &&
+          item.standard_calc !== '' &&
+          item.standard_time !== '' &&
+          item.standard_value !==''
+        )
+        ){
+          erroList.push('指标未填写完整')
+        }
+      })
+    }
+
+    if(erroList.length === 0){
+      this.props.setMapSetData(info)
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  render(){
+    const steps = [{
+      title: '常规设置',
+      content: <div>
+        <ul>
+          <li style={{display:"flex",lineHeight:"40px"}}>
+            <div style={{flex:"0 0 60px"}}>名称：</div>
+            <div style={{flex:"1 1 auto"}}><Input value={this.state.bus_name} onChange={this.bus_nameChange}/></div>
+          </li>
+          <li style={{display:"flex",lineHeight:"40px"}}>
+            <div style={{flex:"0 0 60px"}}>地图：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Select
+                showSearch
+                filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                style={{width:"100%"}}
+                value={this.state.bus_map}
+                onChange={this.bus_mapChange}
+              >
+                {
+                  mapList && mapList.length>0?
+                  mapList.map(item=>{
+                    return <Option key={item.value} value={item.value}>{item.name}</Option>
+                  })
+                  :
+                  ''
+                }
+              </Select>
+            </div>
+          </li>
+        </ul>
+      </div>,
+    }, {
+      title: '服务端',
+      content: <div>
+        <ul>
+          <li style={{display:"flex",lineHeight:"40px"}}>
+            <div style={{flex:"0 0 100px"}}>服务端：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Select
+                showSearch
+                filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                style={{width:"100%"}}
+                value={this.state.bus_server}
+                onChange={this.bus_serverChange}
+              >
+                <OptGroup label="应用">
+                  {
+                    this.getServerList('app') && this.getServerList('app').length>0?
+                    this.getServerList('app').map(item=>{
+                      return (<Option key={item.type} value={item.type}>{item.name}</Option>)
+                    })
+                    :
+                    ''
+                  }
+                </OptGroup>
+                <OptGroup label="主机组">
+                  {
+                    this.getServerList('host') && this.getServerList('host').length>0?
+                    this.getServerList('host').map(item=>{
+                      return (<Option key={item.type} value={item.type}>{item.name}</Option>)
+                    })
+                    :
+                    ''
+                  }
+                </OptGroup>
+              </Select>
+            </div>
+          </li>
+          <li style={{display:"flex",lineHeight:"40px"}}>
+            <div style={{flex:"0 0 100px"}}>所在城市：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Select
+                showSearch
+                filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                style={{width:"100%"}}
+                value={this.state.bus_server_city}
+                onChange={this.bus_server_cityChange}
+              >
+                {
+                  regions[this.state.bus_map] && regions[this.state.bus_map].length>0?
+                  regions[this.state.bus_map].map((item,index)=>{
+                    return <Option key={index} value={item.name}>{item.name}</Option>
+                  })
+                  :
+                  ''
+                }
+              </Select>
+            </div>
+          </li>
+          <li style={{display:"flex",lineHeight:"40px"}}>
+            <div style={{flex:"0 0 100px"}}>可选接口：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Select
+                showSearch
+                filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
+                style={{width:"100%"}}
+                value={this.state.bus_interface}
+                onChange={this.bus_interfaceChange}
+              >
+                <Option key='mykey' value=''>默认不限</Option>
+                {
+                  this.state.interfaceList && this.state.interfaceList.length>0?
+                  this.state.interfaceList.map(item=>{
+                    return <Option key={item.old_name} value={item.old_name}>{item.new_name}</Option>
+                  })
+                  :
+                  ''
+                }
+              </Select>
+            </div>
+          </li>
+          <li style={{display:"flex",lineHeight:"40px"}}>
+            <div style={{flex:"0 0 100px"}}>可选VLAN：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Input
+                value={this.state.bus_vlan}
+                onChange={this.bus_vlanChange}
+              />
+
+            </div>
+          </li>
+        </ul>
+      </div>,
+    }, {
+      title: '客户端',
+      content: <div>
+        <ul style={{lineHeight:"40px"}}>
+          <li style={{display: "flex"}}>
+            <div style={{flex:"0 0 180px",padding:"0 20px 0 10px"}}>区域名称</div>
+            <div style={{flex:"0 0 180px",padding:"0 20px 0 10px"}}>所在城市</div>
+            <div style={{flex:"0 0 180px",padding:"0 20px 0 10px"}}>ip/ip段</div>
+            <div style={{flex:"1 1 auto",padding:"0 20px 0 10px"}}>操作</div>
+          </li>
+          {
+            this.state.bus_customs && this.state.bus_customs.length>0?
+            this.state.bus_customs.map(item=>{
+              return <Custom
+                bus_map={this.state.bus_map}
+                id={item.id}
+                key={item.id}
+                custom_areaName={item.custom_areaName}
+                custom_city={item.custom_city}
+                custom_ip={item.custom_ip}
+                setCustom={this.setCustom}
+                delCustom={this.delCustom}
+              />
+            })
+            :
+            ''
+          }
+        </ul>
+        <Button size={'small'} type="dashed" onClick={this.addCustom}>
+          <i className="fa fa-plus" aria-hidden="true"></i>
+          添加客户端
+        </Button>
+      </div>,
+    }, {
+      title: '指标配置',
+      content: <div>
+        <ul style={{lineHeight:"40px"}}>
+          <li>
+            <span>计算方式：</span>
+            <Select
+              style={{minWidth: "120px"}}
+              value={this.state.bus_calc}
+              onChange={this.bus_calcChange}
+            >
+            <Option key="or" value="or">满足一个</Option>
+            <Option key="and" value="and">满足全部</Option>
+            </Select>
+          </li>
+          {
+            this.state.bus_standards && this.state.bus_standards.length>0?
+            this.state.bus_standards.map(item=>{
+              return <Standard
+                bus_server={this.state.bus_server}
+                id={item.id}
+                key={item.id}
+                standard_name={item.standard_name}
+                standard_calc={item.standard_calc}
+                standard_value={item.standard_value}
+                standard_value_unit={item.standard_value_unit}
+                standard_time={item.standard_time}
+                standard_time_unit={item.standard_time_unit}
+                standard_range={item.standard_range}
+                setStandards={this.setStandards}
+                delStandard={this.delStandard}
+              />
+            })
+            :
+            ''
+          }
+        </ul>
+        <Button size={'small'} type="dashed" onClick={this.addStandard}>
+          <i className="fa fa-plus" aria-hidden="true"></i>
+          添加规则
+        </Button>
+      </div>
+        ,
+    }, {
+      title: '备注',
+      content: <div>
+        <ul>
+          <li style={{display:"flex",lineHeight:"34px"}}>
+            <div style={{flex:"0 0 56px"}}>备注：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <TextArea
+                autosize
+                autosize={{ minRows: 1, maxRows: 6 }}
+                value={this.state.bus_note}
+                onChange={this.bus_noteChange}
+              />
+            </div>
+          </li>
+        </ul>
+      </div>,
+    }]
+    const current = this.state.current
+    return (
+      <div>
+        <Steps size="small" current={current}>
+          {steps.map((item,index) => <Step
+            key={item.title} title={item.title}
+          />)}
+        </Steps>
+        <div className="steps-content" style={{minHeight:"200px",padding: "20px"}}>
+          {steps[current].content}
+        </div>
+        <div className="steps-action">
+          {
+            current > 0
+            && (
+            <Button style={{ marginLeft: 8 }} onClick={() => this.prev()}>
+              上一步
+            </Button>
+            )
+          }
+          {
+            current < steps.length - 1
+            && <Button style={{ marginLeft: 10 }} type="primary" onClick={() => this.next()}>下一步</Button>
+          }
+          {
+            current === steps.length - 1
+            && <Button style={{ marginLeft: 10 }} type="primary" onClick={this.doSubmit}>提交</Button>
+          }
+        </div>
+      </div>
+    )
+  }
+}
+
+
+export default Stepset

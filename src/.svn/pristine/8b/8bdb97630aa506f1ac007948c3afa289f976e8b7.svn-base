@@ -1,0 +1,222 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import contextList from '../ContextList'
+import WyTable from '../../components/WyTable'
+import { wyAxiosPost } from '../../components/WyAxios'
+import WySpin from '../../components/WySpin'
+const Option = Select.Option
+class TableView extends Component{
+  state={
+    subTime: [],
+    xData: [],
+    yData: [],
+
+    initColumns: [],//原始title行
+    standarList: [],//被选中要显示的指标
+    curLen: 0,//被选中指标的长度
+    isSpining: false,
+    subTime:[],
+    pageSize:5,
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   }
+  }
+
+  componentWillReceiveProps(nextProps){
+    console.log(nextProps.param.obj)
+    let standarList = []
+    let curLen = 0
+    if(nextProps.param.obj === 'Danger_getPortScan'){
+      standarList = [
+        'dport','bytes','bytes_in','bytes_out','packets','rtt_in','rtt_out'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_lowPerformance'){
+      standarList = [
+        'ip','bytes','bytes_in','bytes_out','window0','window0_in','window0_out','rtt_in_avg','rtt_out_avg'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_webFailure'){
+      standarList = [
+        'name','sip','dip','url','method','status','status_mean','data_time'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_dbFailure'){
+      standarList = [
+        'name','sip','dip','client_sql','err_msg','user_name','data_time'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_zeroNetFlow'){
+      standarList = [
+        'ip','app_bytes','app_bytes_in','app_bytes_out','rtt_in_avg','rtt_out_avg'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_botHost'){
+      standarList = [
+        'ip','bytes','bytes_in','bytes_out','app_bytes','rtt_in_avg','rtt_out_avg','tcp_conn_num','udp_conn_num'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_lowLink'){
+      standarList = [
+        'sip','dip','used'
+      ]
+      curLen = standarList.length
+    }else if(nextProps.param.obj === 'Danger_linkPacketLoss'){
+      standarList = [
+        'sip','dip','used','packets','drops','drops_in','drops_out','rtt_in','rtt_out'
+      ]
+      curLen = standarList.length
+    }
+    if(!(
+      JSON.stringify(this.props.subTime) === JSON.stringify(nextProps.subTime)
+    )){
+      let info = Object.assign({},nextProps.param,{dataType:''},{field: nextProps.field},{start_time:nextProps.subTime[0]},{last_time:nextProps.subTime[1]})
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('TwoView/getTwoTable',{info: info},(result)=>{
+        const responseData = result.data.msg
+        const newxxx = []
+        if(responseData.xxx && responseData.xxx.length>0){
+          responseData.xxx.map(item=>{
+            if(standarList.indexOf(item.key) !== -1){
+              newxxx.push(item)
+            }
+          })
+        }
+        const subTime = []
+        subTime.push(info.start_time)
+        subTime.push(info.last_time)
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          isSpining: false,
+          subTime,
+          standarList,
+          curLen
+        })
+      })
+    }
+  }
+  standarChange = (value)=>{
+    this.setState({
+      standarList: value,
+      curLen: value.length
+    },()=>{
+      const newxxx = []
+      if(this.state.initColumns && this.state.initColumns.length>0){
+        this.state.initColumns.map(item=>{
+          if(this.state.standarList.indexOf(item.key) !== -1){
+            newxxx.push(item)
+          }
+        })
+        this.setState({
+          xData: newxxx
+        })
+      }
+    })
+  }
+  setSubTime = (tableTime)=>{
+    this.setState({
+      subTime: tableTime
+    },()=>{
+      let info = Object.assign({},this.props.param,{dataType:'group'},{field: this.props.field},{start_time:this.state.subTime[0]},{last_time:this.state.subTime[1]})
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('TwoView/getTwoTable',{info: info},(result)=>{
+        const responseData = result.data.msg
+        const newxxx = []
+        if(responseData.xxx && responseData.xxx.length>0){
+          responseData.xxx.map(item=>{
+            if(this.state.standarList.indexOf(item.key) !== -1){
+              newxxx.push(item)
+            }
+          })
+        }
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType:'hostgroup',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: record.hostname,
+      objType: 'group',
+      previousPath:this.props.param.previousPath
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span style={{float:"right"}}>
+            <span>指标显示：</span>
+            <Select
+              style={{minWidth: "180px"}}
+              mode="tags"
+              size="small"
+              onChange={this.standarChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+this.state.curLen+'项')}
+              value={this.state.standarList}
+            >
+              {
+                this.state.initColumns && this.state.initColumns.length>0?
+                this.state.initColumns.map(item=>{
+                  return(
+                    <Option key={item.key}>{item.title}</Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <WyTable
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              pageSize={this.state.pageSize}
+              onShowSizeChange={this.pageSizeChange}
+              onTableContextmenu={this.tableContextmenu}
+              dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+            />
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default TableView

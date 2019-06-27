@@ -1,0 +1,348 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+import { Row, Col } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import contextList from '../SubPage/ContextList'
+
+class FirstTable extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+    const { getInstance } = props
+    if(typeof getInstance === 'function'){
+      getInstance(this)
+    }
+  }
+  state={
+    subTime: [],
+    id:'',
+    field:[],
+    portId: '',
+    ipId:'',
+
+    firstXdata: [],
+    firstYdata: [],
+    firstActiveRowKey:'',
+    firstInitColumns:[],
+
+    secondXdata: [],
+    secondYdata: [],
+    secondActiveRowKey:'',
+    secondInitColumns:[],
+
+    thirdXdata: [],
+    thirdYdata: [],
+
+    firstSpining: false,
+    secondSpining: false,
+    thirdSpining: false,
+
+    pageSizeOne: 5,
+    pageSizeTwo: 5,
+    pageSizeThree: 5,
+
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  resetSubTime = (value)=>{
+    this.setState({
+      subTime: value
+    },()=>{
+      this.getFirstTableData()
+    })
+  }
+  getFirstTableData = ()=>{
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.subTime.length>0){
+      info.start_time = this.state.subTime[0]
+      info.last_time = this.state.subTime[1]
+    }
+    info.id = this.state.id
+    info.field = this.state.field
+    this.setState({
+      firstSpining: true
+    })
+    wyAxiosPost('App/getAppTopGroup',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let firstActiveRowKey = 'mykey'
+      if(responseData.yyy && responseData.yyy.length>0){
+        firstActiveRowKey = responseData.yyy[0].key
+      }
+      const firstInitColumns = responseData.xxx
+      const newColumns = this.compileColumns(firstActiveRowKey,firstInitColumns)
+      this.setState({
+        firstXdata: newColumns,
+        firstYdata: responseData.yyy,
+        firstInitColumns,
+        firstActiveRowKey,
+        portId: firstActiveRowKey,
+        firstSpining: false
+      },()=>{
+        this.getSecondTableData()
+      })
+    })
+  }
+  getSecondTableData = ()=>{
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.subTime.length>0){
+      info.start_time = this.state.subTime[0]
+      info.last_time = this.state.subTime[1]
+    }
+    info.id = this.state.id
+    info.field = this.state.field
+    info.portId = this.state.portId
+    this.setState({
+      secondSpining: true
+    })
+    wyAxiosPost('App/getAppTopIp',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let secondActiveRowKey = 'mykey'
+      if(responseData.yyy && responseData.yyy.length>0){
+        secondActiveRowKey = responseData.yyy[0].key
+      }
+      const secondInitColumns = responseData.xxx
+      const newColumns = this.compileColumns(secondActiveRowKey,secondInitColumns)
+      this.setState({
+        secondXdata: newColumns,
+        secondYdata: responseData.yyy,
+        secondInitColumns,
+        secondActiveRowKey,
+        ipId: secondActiveRowKey,
+        secondSpining: false
+      },()=>{
+        this.getThirdTableData()
+      })
+    })
+  }
+  getThirdTableData = ()=>{
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.subTime.length>0){
+      info.start_time = this.state.subTime[0]
+      info.last_time = this.state.subTime[1]
+    }
+    info.id = this.state.id
+    info.field = this.state.field
+    info.portId = this.state.portId
+    info.ipId = this.state.ipId
+    this.setState({
+      thirdSpining: true
+    })
+    wyAxiosPost('App/getAppCrossIp',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        thirdXdata: responseData.xxx,
+        thirdYdata: responseData.yyy,
+        thirdSpining: false
+      })
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(
+        this.props.id === nextProps.id &&
+        this.props.field === nextProps.field &&
+        JSON.stringify(this.props.subTime) === JSON.stringify(nextProps.subTime)
+      ) &&
+      nextProps.id !== '' &&
+      nextProps.field !== '' &&
+      nextProps.subTime.length>0
+    ){
+        const { subTime, id, field } = nextProps
+        this.setState({
+          subTime,
+          id,
+          field
+        },()=>{
+          this.getFirstTableData()
+        })
+    }
+  }
+  onTableClick = (record)=>{
+    const firstActiveRowKey = record.key
+    const firstInitColumns = this.state.firstInitColumns
+    const newColumns = this.compileColumns(firstActiveRowKey,firstInitColumns)
+    this.setState({
+      firstXdata: [...newColumns],
+      portId: firstActiveRowKey,
+      firstActiveRowKey,
+    },()=>{
+      this.getSecondTableData()
+    })
+  }
+  onSecondTableClick = (record)=>{
+    const secondActiveRowKey = record.key
+    const secondInitColumns = this.state.secondInitColumns
+    const newColumns = this.compileColumns(secondActiveRowKey,secondInitColumns)
+    this.setState({
+      secondXdata: [...newColumns],
+      ipId: secondActiveRowKey,
+      secondActiveRowKey,
+    },()=>{
+      this.getThirdTableData()
+    })
+  }
+  pageSizeOneChange = (current, size)=>{
+    this.setState({
+      pageSizeOne: size
+    })
+  }
+  pageSizeTwoChange = (current, size)=>{
+    this.setState({
+      pageSizeTwo: size
+    })
+  }
+  pageSizeThreeChange = (current, size)=>{
+    this.setState({
+      pageSizeThree: size
+    })
+  }
+
+  tableContextmenu = (record,position,dom,listType,obj,objType)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType,
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj,
+      objType,
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  table1Contextmenu =(record,position,dom)=>{
+    const listType = 'hostgroup'
+    const obj = record.name
+    const objType = 'group'
+    this.tableContextmenu(record,position,dom,listType,obj,objType)
+  }
+  table2Contextmenu =(record,position,dom)=>{
+    const listType = 'host'
+    const obj = record.ip
+    const objType = 'host'
+    this.tableContextmenu(record,position,dom,listType,obj,objType)
+  }
+  render(){
+    return(
+      <Row gutter={16}>
+        <Col sm={{span: 24}} md={{span: 8}} lg={{span: 8}}>
+          <div className="amodule">
+            <div className="moduleHeader">Top 10组</div>
+            <div className="moduleBody">
+            <Scrollbars
+              autoHide
+              autoHideTimeout={100}
+              autoHideDuration={200}
+              universal={true}
+              style={{height: "300px"}}
+              >
+                <WySpin isSpining={this.state.firstSpining}>
+                  <WyTable
+                    xData={this.state.firstXdata?this.state.firstXdata:[]}
+                    yData={this.state.firstYdata?this.state.firstYdata:[]}
+                    activeRowKey={this.state.firstActiveRowKey}
+                    onTableClick={this.onTableClick}
+                    pageSize={this.state.pageSizeOne}
+                    onShowSizeChange={this.pageSizeOneChange}
+                    onTableContextmenu={this.table1Contextmenu}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </WySpin>
+              </Scrollbars>
+            </div>
+          </div>
+        </Col>
+        <Col sm={{span: 24}} md={{span: 8}} lg={{span: 8}}>
+          <div className="amodule">
+            <div className="moduleHeader">组Top 10 ip</div>
+            <div className="moduleBody">
+              <Scrollbars
+                autoHide
+                autoHideTimeout={100}
+                autoHideDuration={200}
+                universal={true}
+                style={{height: "300px"}}
+                >
+                  <WySpin isSpining={this.state.secondSpining}>
+                    <WyTable
+                      xData={this.state.secondXdata?this.state.secondXdata:[]}
+                      yData={this.state.secondYdata?this.state.secondYdata:[]}
+                      activeRowKey={this.state.secondActiveRowKey}
+                      onTableClick={this.onSecondTableClick}
+                      pageSize={this.state.pageSizeTwo}
+                      onShowSizeChange={this.pageSizeTwoChange}
+                      onTableContextmenu={this.table2Contextmenu}
+                      dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                    />
+                  </WySpin>
+                </Scrollbars>
+            </div>
+          </div>
+        </Col>
+        <Col sm={{span: 24}} md={{span: 8}} lg={{span: 8}}>
+          <div className="amodule">
+            <div className="moduleHeader">交互的Top ip</div>
+            <div className="moduleBody">
+              <Scrollbars
+                autoHide
+                autoHideTimeout={100}
+                autoHideDuration={200}
+                universal={true}
+                style={{height: "300px"}}
+                >
+                  <WySpin isSpining={this.state.thirdSpining}>
+                    <WyTable
+                      xData={this.state.thirdXdata?this.state.thirdXdata:[]}
+                      yData={this.state.thirdYdata?this.state.thirdYdata:[]}
+                      pageSize={this.state.pageSizeThree}
+                      onShowSizeChange={this.pageSizeThreeChange}
+                      onTableContextmenu={this.table2Contextmenu}
+                      dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                    />
+                  </WySpin>
+              </Scrollbars>
+            </div>
+          </div>
+        </Col>
+      </Row>
+    )
+  }
+}
+
+export default withRouter(FirstTable)

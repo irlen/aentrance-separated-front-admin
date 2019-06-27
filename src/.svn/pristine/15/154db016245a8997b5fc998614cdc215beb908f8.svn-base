@@ -1,0 +1,245 @@
+import React, { Component } from 'react'
+import { Button, message } from 'antd'
+import { Col, Row } from 'antd'
+import RGL, { WidthProvider } from "react-grid-layout"
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import * as regions from './regions'
+import MapModule from './mapModule/MapModule'
+import RegionModule from './mapModule/RegionModule'
+require('../../node_modules/react-grid-layout/css/styles.css')
+require('../../node_modules/react-resizable/css/styles.css')
+
+
+const ReactGridLayout = WidthProvider(RGL);
+
+class DragArea extends Component{
+  static defaultProps = {
+    className: "layout",
+    cols: 24,
+    margin:[10,10],
+    rowHeight: 20,
+    autoSize: true,
+    onLayoutChange: function(){}
+  };
+  constructor(props) {
+    super(props);
+  }
+  state = {
+    layout:[],
+    id:'',
+    mapData:{},//地图数据
+    cityListData:{xData:[],yData:[]},
+    showModules:[]
+  }
+  //获取地图数据
+  getMapData = ()=>{
+    const id = this.state.id
+    wyAxiosPost('Map/loadMap',{id},(result)=>{
+      const responseData = result.data.msg
+      let checkCityList = {}
+      const cityList = regions[responseData.region]
+      if(cityList && cityList.length>0){
+        cityList.map(item=>{
+          checkCityList[item.name] = item.coordinate
+        })
+      }
+      const compiledLineData = ()=>{
+        const lineData = _.cloneDeep(responseData.lineData)
+        if(lineData && lineData.length>0){
+          lineData.map(item=>{
+              const coords = []
+              coords.push(checkCityList[item.fromCity])
+              coords.push(checkCityList[item.toCity])
+              item.coords = coords
+              if(item.value === '0'){
+                //流量为零的时候，控制发光效果和线条颜色
+                item.lightColor= 'rgba(255,255,255,0)' //无流量时发光效果的颜色
+                item.lineColor = 'rgba(0,248,255,1)' //无流量时线条颜色
+              }else{
+                item.lightColor= 'rgba(255,255,255,0.64)' //有流量时发光效果颜色
+                item.lineColor = 'rgba(255,255,0,1)' //有流量时线条颜色
+              }
+          })
+        }
+        return lineData
+      }
+      const compiledPointData = ()=>{
+        const pointData = _.cloneDeep(responseData.pointData)
+        if(pointData && pointData.length>0){
+          pointData.map(item=>{
+            let newValue = []
+            newValue = checkCityList[item.city]
+            newValue.push(item.value)
+            item.value = newValue
+            if(item.warning === 'normal'){
+              item.color="rgba(0,255,0,1)" //无告警时候节点颜色
+            }else if(item.warning === 'slight'){
+              item.color="rgba(255,241,0,1)" //轻微告警节点颜色
+            }else if(item.warning === 'serious'){
+              item.color="rgba(255,123,69,1)" //严重告警节点颜色
+            }
+          })
+        }
+        return pointData
+      }
+      const mapData = {}
+      mapData.lineData = compiledLineData()
+      mapData.pointData = compiledPointData()
+      mapData.region = responseData.region
+      mapData.unit = responseData.unit
+      mapData.mapName = responseData.map_name
+      this.setState({
+        mapData
+      })
+    })
+  }
+  //城市列表表格
+  getCityListData = ()=>{
+    const id = this.state.id
+    wyAxiosPost('Map/getPerform',{id},(result)=>{
+      const responseData = result.data.msg
+      const cityListData = {}
+      cityListData.xData = responseData.xxx
+      cityListData.yData = responseData.yyy
+      this.setState({
+        cityListData
+      })
+    })
+  }
+  getAllData = ()=>{
+    this.getMapData()
+    this.getCityListData()
+  }
+
+  componentWillReceiveProps(nextProps){
+
+    if(!(
+      this.props.id === nextProps.id &&
+      this.props.forceUpdateFlag === nextProps.forceUpdateFlag
+    )){
+      const id = nextProps.id
+      if(id !== ''){
+        wyAxiosPost('Map/getMap',{id},(result)=>{
+          const responseData = result.data.msg.modules
+          if(responseData && responseData.length>0){
+            const showModules = responseData.filter(item=>{
+              return JSON.parse(item.show)
+            })
+            const layout = []
+            if(showModules && showModules.length>0){
+              showModules.map(item=>{
+                const {h,w,x,y} = item.position
+                const loadAtom = {i:item.id,h:parseInt(h),w:parseInt(w),x:parseInt(x),y:parseInt(y)}
+                layout.push(loadAtom)
+              })
+            }
+            this.setState({
+              id,
+              showModules,
+              layout
+            },()=>{
+              if(this.state.showModules && this.state.showModules.length>0){
+                this.state.showModules.map(item=>{
+                  const getData = item.method
+                  this[getData]()
+                })
+              }
+            })
+          }
+        })
+      }
+     }
+  }
+  //存储位置信息
+  savePosition = ()=>{
+    const data = []
+    if(this.state.layout && this.state.layout.length>0){
+      this.state.layout.map(item=>{
+        const {i,h,w,x,y} = item
+        const position = {i,h,w,x,y}
+        data.push(position)
+      })
+      const info = {}
+      info.id = this.state.id
+      info.data = data
+      wyAxiosPost('Map/savePosition',{info},(result)=>{
+        const responseData = result.data
+        if(responseData.status === 1){
+          this.props.getMapTable()
+        }
+      })
+    }
+  }
+  //zoom事件监听
+  onLayoutChange = (layout)=>{
+    const newLayout = []
+    if(layout && layout.length>0){
+      layout.map(item=>{
+        const {i,h,w,x,y} = item
+        newLayout.push({i,h,w,x,y})
+      })
+    }
+    //JSON.stringify(this.state.layout) !== JSON.stringify(newLayout) 避免一开始都为空的时候进行存储
+    if(this.state.id !== '' && layout.length>0 && this.state.layout.length>0 && JSON.stringify(this.state.layout) !== JSON.stringify(newLayout)){
+       this.setState({ layout:newLayout },()=>{
+         this.savePosition()
+       })
+    }
+    /*eslint no-console: 0*/
+  }
+  generatedView =()=>{
+    // data-grid={position?position:{h:13,w:12,x:0,y:13*index}}
+    let divArry = []
+    if(this.state.showModules && this.state.showModules.length>0){
+      this.state.showModules.map((item,index)=>{
+        const position = {h:13,w:12,x:0,y:13*index}
+        position.h = parseInt(item.position.h)
+        position.w = parseInt(item.position.w)
+        position.x = parseInt(item.position.x)
+        position.y = parseInt(item.position.y)
+        if(item.id === 'map'){
+          divArry.push(
+            <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} >
+              <MapModule height={position?position.h*30-10-70:13*30-10-70} mapData={ this.state.mapData} position={position}/>
+            </div>
+          )
+        }else if(item.id === 'cityList'){
+          divArry.push(
+            <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} >
+              <RegionModule autoHeight={position?position.h*30-10-70:13*30-10-70} cityListData={ this.state.cityListData} position={position} />
+            </div>
+          )
+        }
+      })
+    }
+    return divArry
+  }
+
+  render() {
+    return (
+      <div>
+        <ReactGridLayout
+          {...this.props}
+          draggableHandle=".moduleHeader"
+          useCSSTransforms={true}
+          onLayoutChange={this.onLayoutChange}
+          style={{position: "relative"}}
+          layout={this.state.layout}
+        >
+          {
+            this.state.showModules.length>0?
+            this.generatedView()
+            :
+            <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key='mykey' data-grid={{h:13,w:12,x:0,y:13}} >
+
+            </div>
+          }
+        </ReactGridLayout>
+      </div>
+    )
+  }
+}
+
+export default DragArea

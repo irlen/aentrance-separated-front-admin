@@ -1,0 +1,191 @@
+import React ,{ Component } from 'react'
+import RGL, { WidthProvider } from "react-grid-layout"
+import _ from 'lodash'
+import { Icon, Button, Modal, Input, Select } from 'antd'
+
+import { wyAxiosPost } from '../components/WyAxios'
+require('../../node_modules/react-grid-layout/css/styles.css')
+require('../../node_modules/react-resizable/css/styles.css')
+const ReactGridLayout = WidthProvider(RGL);
+const Option = Select.Option
+class GenerateView extends Component{
+  static defaultProps = {
+    className: "layout",
+    cols: 24,
+    margin:[10,10],
+    rowHeight: 20,
+    autoSize: true,
+    onLayoutChange: function(){}
+  }
+  state = {
+    modules:[],
+    layout:[],
+
+    setId:'',
+    viewType:'',
+    moduleName:'',
+    dataMethod:'',
+
+    visible: false,
+    dataSourceList:[]
+  }
+  componentDidMount(){
+
+  }
+  componentWillReceiveProps(nextProps){
+    if(!_.isEqual(this.props.modules,nextProps.modules)){
+      this.setState({
+        modules: _.cloneDeep(nextProps.modules)
+      })
+    }
+  }
+
+  onLayoutChange = (layout)=>{
+    const newLayout = []
+    if(layout && layout.length>0){
+      layout.map(item=>{
+        const {i,h,w,x,y} = item
+        newLayout.push({i,h,w,x,y})
+      })
+    }
+    if(newLayout.length>0){
+      this.props.doSetPosition(newLayout)
+    }
+  }
+  showModal = (id,viewType) => {
+    this.setState({
+      visible: true,
+      setId: id,
+      viewType
+    },()=>{
+      wyAxiosPost('Screen/getScreenApi',{viewType: this.state.viewType},(result)=>{
+
+      })
+    });
+  }
+
+  handleOk = (e) => {
+    let dataInfo = {}
+    const { setId, moduleName, dataMethod }  = this.state
+    dataInfo = { setId, moduleName, dataMethod }
+    this.props.doSetData(dataInfo)
+  }
+  handleCancel = (e) => {
+    this.setState({
+      visible: false,
+      setId: '',
+      viewType:''
+    });
+  }
+  moduleNameChange = (e)=>{
+    this.setState({
+      moduleName: e.target.value
+    })
+  }
+  dataMethodChange = (value)=>{
+    this.setState({
+      dataMethod: value
+    })
+  }
+  generatedView =()=>{
+    let divArry = []
+    if(this.state.modules && this.state.modules.length>0){
+      this.state.modules.map((item,index)=>{
+        let compiledPosition = {}
+        if(item.position){
+          const h = parseInt(item.position.h)
+          const w = parseInt(item.position.w)
+          const x = parseInt(item.position.x)
+          const y = parseInt(item.position.y)
+          compiledPosition = Object.assign({},{h,w,x,y})
+        }
+        if(Object.keys(compiledPosition).length > 0){
+          // if(content.viewType === 'line' || content.viewType === 'bar'){
+          //   divArry.push(
+          //     <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+          //       <TemplateForLine autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+          //     </div>
+          //   )
+          // }else if(content.viewType === 'wytable'){
+          //   divArry.push(
+          //     <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+          //      <TemplateForTable autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+          //     </div>
+          //   )
+          // }
+          divArry.push(
+            <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+              <div className="moduleHeader" style={{width: "100%",height:"30px",lineHeight:"30px"}}>
+                <Icon
+                  style={{float:"right",marginTop:"6px", cursor:"pointer"}}
+                  title="删除此模块"
+                  onClick={()=>{this.props.doDeleteModule(item.id)}}
+                >
+                <i className="fa fa-times" aria-hidden="true"></i>
+                </Icon>
+                <Icon
+                  style={{float:"right",margin:"6px 10px 0 0", cursor:"pointer"}}
+                  title="模块设置"
+                  onClick={()=>(this.showModal(item.id,item.viewType))}
+                >
+                  <i className="fa fa-cog" aria-hidden="true"></i>
+                </Icon>
+              </div>
+              我是{item.viewType}
+            </div>
+          )
+        }
+      })
+    }
+    return divArry
+  }
+  render(){
+    return (
+      <div>
+        <div style={{width: "100%",height:"30px",lineHeight:"30px", textAlign: "right"}}>
+          {
+            this.state.modules.length>0?
+            <Button size="small" type="primary">保存</Button>
+            :
+            ''
+          }
+        </div>
+        <ReactGridLayout
+          {...this.props}
+          draggableHandle=".moduleHeader"
+          useCSSTransforms={true}
+          onLayoutChange={this.onLayoutChange}
+          style={{position: "relative"}}
+          layout={this.state.layout}
+        >
+          {this.generatedView()}
+        </ReactGridLayout>
+        <Modal
+          title="模块设置"
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+        >
+          <div style={{display:"flex"}}>
+            <div style={{flex:"0 0 100px"}}>模块名称：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Input value={this.state.moduleName} onChange={this.moduleNameChange}/>
+            </div>
+          </div>
+          <div style={{display:"flex",marginTop:"20px"}}>
+            <div style={{flex:"0 0 100px"}}>绑定数据：</div>
+            <div style={{flex:"1 1 auto"}}>
+              <Select style={{width:"100%"}} value={this.state.dataMethod} onChange={this.dataMethodChange}>
+                <Option value="top10ip">Top10ip</Option>
+                <Option value="top10port">Top10端口</Option>
+              </Select>
+            </div>
+          </div>
+        </Modal>
+      </div>
+    )
+  }
+}
+
+
+export default GenerateView

@@ -1,0 +1,829 @@
+import React, { Component } from 'react';
+//import cloneDeep from 'lodash.clonedeep';
+import echarts from 'echarts'
+import ReactEcharts from 'echarts-for-react';
+//import axios from 'axios'
+import { Row, Col, Switch} from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+import { wyAxiosPost } from '../components/WyAxios'
+import WyTable from '../components/WyTable'
+
+//import { host } from '../components/Host'
+import { themeOne } from '../components/echartTheme'
+export default class Dynamic extends Component {
+
+  state={
+  	//bxxx:[],	//流量曲线图X轴
+  	//byyy:[],	//流量曲线图数据
+  	//pxxx:[],	//数据包曲线图X轴
+  	//pyyy:[],	//数据包曲线图数据
+    option1: {},
+    option2: {},
+  	txxx:[],	//ipXXX
+  	tyyy:[],	//IPyyy
+	tpxxx:[],	//portXXX
+  	tpyyy:[],	//portyyy
+	sxxx:[],	//sessionxxx
+  	syyy:[],	//sessionyyy
+  	tc:0,
+  	tpc:0,
+  	sc:0,
+    isOn: false,
+    pageSizeOne: 5,
+    pageSizeTwo: 5,
+    pageSizeThree: 5
+  }
+  pageSizeOneChange = (current, size)=>{
+    this.setState({
+      pageSizeOne: size
+    })
+  }
+  pageSizeTwoChange = (current, size)=>{
+    this.setState({
+      pageSizeTwo: size
+    })
+  }
+  pageSizeThreeChange = (current, size)=>{
+    this.setState({
+      pageSizeThree: size
+    })
+  }
+  bClick = ()=>{
+    !this.state.isOn?
+    this.mytime2()
+    :
+    clearInterval(this.timer)
+
+    this.setState({
+      isOn: !this.state.isOn
+    })
+  }
+
+  getOption=(xData,yData,aUnit)=>({
+    tooltip: {
+      trigger: 'axis',
+      axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+        type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+      }
+    },
+    // toolbox: {
+      // feature: {
+        // dataZoom: {
+          // yAxisIndex: 'none'
+        // },
+        // restore: {},
+        // saveAsImage: {}
+      // }
+    // },
+    grid:{ //视图个容器间距
+      top: 30,
+      bottom: 60,
+      left: 60,
+      right: 20
+    },
+    legend: {
+      type: 'scroll',
+      orient: 'horizontal',
+      center: 0,
+      bottom: 10,
+    },
+    xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: xData
+    },
+    yAxis: {
+        axisLabel: {
+            formatter: '{value}'+aUnit //这里是单位
+        }
+    },
+    series: yData
+  });
+
+	mytime2(){
+		const uuid = myguid()
+		let flag = 1
+		let mcount=60
+		this.timer = setInterval(()=>{
+			const _this = this
+			let info = {}
+			info['md5_string'] = uuid
+			info['flag'] = flag
+			info['tcount'] = mcount
+			wyAxiosPost('Monitor/getAppAnalysis',{info:info},function(result){
+				//流量曲线图
+				if (result.data.status === 1 &&
+					result.data.bytes &&
+					result.data.bytes.yyy &&
+					result.data.bytes.yyy.length > 0)
+				{
+					let xxx = result.data.bytes.xxx
+					let yyy = result.data.bytes.yyy
+					let aUnit = result.data.bytes.unit
+					let moption = _this.getOption(xxx,yyy,aUnit)
+					_this.setState({
+					   //bxxx:xxx,
+					   //byyy:yyy,
+					   option1: moption,
+				   })
+				}
+				//数据包曲线图
+				if (result.data.status === 1 &&
+					result.data.packets &&
+					result.data.packets.yyy &&
+					result.data.packets.yyy.length > 0)
+				{
+					let xxx = result.data.packets.xxx
+					let yyy = result.data.packets.yyy
+					let aUnit = result.data.packets.unit
+					let moption = _this.getOption(xxx,yyy,aUnit)
+					_this.setState({
+					   //bxxx:xxx,
+					   //byyy:yyy,
+					   option2: moption,
+				   })
+				}
+				//IP表格
+
+				if (result.data.status === 1 &&
+					result.data.ip)
+				{
+					_this.setState({
+						txxx:result.data.ip.xxx,
+						tyyy:result.data.ip.yyy,
+						tc:result.data.ip.len,
+				   })
+				}
+
+				//PORT表格
+				if (result.data.status === 1 &&
+					result.data.port &&
+					result.data.port.yyy &&
+					result.data.port.yyy.length > 0)
+				{
+					_this.setState({
+						tpxxx:result.data.port.xxx,
+						tpyyy:result.data.port.yyy,
+						tpc:result.data.port.len,
+				   })
+				}
+				//session表格
+				if (result.data.status === 1 &&
+					result.data.session &&
+					result.data.session.yyy &&
+					result.data.session.yyy.length > 0)
+				{
+					_this.setState({
+						sxxx:result.data.session.xxx,
+						syyy:result.data.session.yyy,
+						sc:result.data.session.len,
+				   })
+				}
+				
+			})
+			flag = 0
+		},1000)
+
+		function myguid()
+		{
+			function S4()
+			{
+				return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+			}
+			return (S4()+S4()+S4()+S4()+S4()+S4()+S4()+S4());
+		}
+	}
+
+
+
+  mytime(){
+	let tList = []
+	let pList = []
+	let sList = []
+	let bxxx  = []
+	let byyy  = []
+	let pxxx  = []
+	let pyyy  = []
+	let mcount=60;
+	console.log('mytime');
+    this.timer = setInterval(()=>{
+      //axios.get(host+'Monitor/getPerDT').then(result=>{
+	  const _this = this
+	 wyAxiosPost('Monitor/getPerDT',{},function(result){
+		//流量曲线图
+		if (result.data.status === 1 && result.data.bytes && result.data.bytes.yyy && result.data.bytes.yyy.length > 0)
+		{
+			let xData = result.data.bytes.xxx
+			let yData = result.data.bytes.yyy
+			let aUnit = result.data.bytes.unit
+			let xxx = [];
+			let yyy = [];
+
+			if (bxxx.length === 0)
+			{
+				//初始化X轴
+				for(let i = 0; i < mcount; i++)
+				{
+					xxx[i] = '';
+				}
+				 xxx[mcount-1] =  xData[0];
+			}
+			else
+			{
+				xxx = bxxx
+			}
+
+			if (xxx.length >= mcount)
+				xxx.splice(0,1)
+			xxx = xxx.concat(xData)
+
+			if (byyy.length === 0)
+			{
+				//初始化Y轴
+				let ylen = yData.length
+				for(let i = 0; i < ylen; i++)
+				{
+					yyy[i] = {}
+					yyy[i]['key'] = yData[i]['key']
+					yyy[i]['name'] = yData[i]['name']
+					yyy[i]['type'] = yData[i]['type']
+					yyy[i]['data'] = []
+					for(let j = 0; j < mcount; j++)
+					{
+					  yyy[i]['data'][j] = 0;
+					}
+					yyy[i]['data'][mcount-1] = yData[i]['data'][0]
+				}
+			}
+			else
+			{
+				yyy = byyy
+			}
+
+			//去除最久时间 并致0
+			for(let i = 0; i < yyy.length; i++)
+			{
+				//移除第一位
+				yyy[i]['data'].splice(0,1);
+				yyy[i]['data'][mcount-1] = 0;
+			}
+
+			for(let i = 0; i < yData.length; i++)
+			{
+				let have_yyy = false;
+				for(let j = 0; j < yyy.length; j++)
+				{
+					//如果name一样则更新数据
+					if (yData[i]['name'] === yyy[j]['name'])
+					{
+						yyy[j]['data'][mcount-1] = yData[i]['data'][0];
+						have_yyy = true;
+						break;
+					}
+				}
+				//新增
+				if (have_yyy === false)
+				{
+					let tmp = {}
+				    tmp['key'] = yData[i]['key']
+				    tmp['name'] = yData[i]['name']
+				    tmp['type'] = yData[i]['type']
+				    tmp['data'] = []
+					for(let j = 0; j < mcount; j++)
+				    {
+					  tmp['data'][j] = 0;
+				    }
+				    tmp['data'][mcount-1] = yData[i]['data'][0]
+					yyy.concat(tmp)
+				}
+			}
+			let moption = _this.getOption(xxx,yyy,aUnit)
+			bxxx = xxx
+			byyy = yyy
+			_this.setState({
+			   //bxxx:xxx,
+			   //byyy:yyy,
+			   option1: moption,
+		   })
+		}
+		//数据包曲线图
+		if (result.data.status === 1 && result.data.packets && result.data.packets.yyy && result.data.packets.yyy.length > 0)
+		{
+			let xData = result.data.packets.xxx
+			let xxx = [];
+			let yyy = [];
+			let yData = result.data.packets.yyy;
+			let aUnit = result.data.packets.unit
+
+			if (pxxx.length === 0)
+			{
+				//初始化X轴
+				for(let i = 0; i < mcount; i++)
+				{
+					xxx[i] = '';
+				}
+				 xxx[mcount-1] =  xData[0];
+			}
+			else
+			{
+				xxx = pxxx
+			}
+
+			if (xxx.length >= mcount)
+				xxx.splice(0,1)
+			xxx = xxx.concat(xData);
+
+			if (pyyy.length === 0)
+			{
+				//初始化Y轴
+				let ylen = yData.length
+				for(let i = 0; i < ylen; i++)
+				{
+					yyy[i] = {}
+					yyy[i]['key'] = yData[i]['key']
+					yyy[i]['name'] = yData[i]['name']
+					yyy[i]['type'] = yData[i]['type']
+					yyy[i]['data'] = []
+					for(let j = 0; j < mcount; j++)
+					{
+					  yyy[i]['data'][j] = 0;
+					}
+					yyy[i]['data'][mcount-1] = yData[i]['data'][0]
+				}
+			}
+			else
+			{
+				yyy = pyyy
+			}
+
+			//去除最久时间 并致0
+			for(let i = 0; i < yyy.length; i++)
+			{
+				//移除第一位
+				yyy[i]['data'].splice(0,1);
+				yyy[i]['data'][mcount-1] = 0;
+			}
+
+			for(let i = 0; i < yData.length; i++)
+			{
+				let have_yyy = false;
+				for(let j = 0; j < yyy.length; j++)
+				{
+					//如果name一样则更新数据
+					if (yData[i]['name'] === yyy[j]['name'])
+					{
+						yyy[j]['data'][mcount-1] = yData[i]['data'][0];
+						have_yyy = true;
+						break;
+					}
+				}
+				//新增
+				if (have_yyy === false)
+				{
+					let tmp = {}
+				    tmp['key'] = yData[i]['key']
+				    tmp['name'] = yData[i]['name']
+				    tmp['type'] = yData[i]['type']
+				    tmp['data'] = []
+					for(let j = 0; j < mcount; j++)
+				    {
+					  tmp['data'][j] = 0;
+				    }
+				    tmp['data'][mcount-1] = yData[i]['data'][0]
+					yyy.concat(tmp)
+				}
+			}
+
+			let moption = _this.getOption(xxx,yyy,aUnit)
+			pxxx = xxx
+			pyyy = yyy
+			_this.setState({
+			   // pxxx:xxx,
+			   // pyyy:yyy,
+			   option2: moption,
+		   })
+		}
+
+		let now = Math.round(new Date()/1000)
+		//清理超时空间
+		if (0 && now % 60 === 0)
+		{
+			//ip
+			{
+				let tlen = tList.length
+				for(let i = 0; i < tlen; )
+				{
+					if (now - tList[i].时间 > mcount)
+					{
+						tList.splice(i,1);
+						tlen -= 1;
+						continue;
+					}
+					i++
+				}
+			}
+			//port
+			{
+				let tlen = pList.length
+				for(let i = 0; i < tlen; )
+				{
+					if (now - pList[i].时间 > mcount)
+					{
+						pList.splice(i,1);
+						tlen -= 1;
+						continue;
+					}
+					i++
+				}
+			}
+			//session
+			{
+				let tlen = sList.length
+				for(let i = 0; i < tlen; )
+				{
+					if (now - sList[i].时间 > mcount)
+					{
+						sList.splice(i,1);
+						tlen -= 1;
+						continue;
+					}
+					i++
+				}
+			}
+		}
+		//IPbiao
+		if (0 && result.data.status === 1 && result.data.ip && result.data.ip.yyy && result.data.ip.yyy.length > 0)
+		{
+			if (tList.length === 0)
+				tList = [...result.data.ip.yyy]
+			if (_this.state.txxx.length === 0)
+				_this.state.txxx = result.data.ip.xxx
+
+			let tyy = [...result.data.ip.yyy]
+			const tlen = tyy.length;
+
+			for (let i=0; i < tlen; i++)
+			{
+				tyy[i].时间 = now
+				var tylen = tList.length;
+				let is_exist = 0;
+				for (let j=0; j < tylen; j++)
+				{
+					if (tList[j].IP   === tyy[i].IP &&
+						tList[j].网口 === tyy[i].网口)
+					{
+						tList[j].时间 = now
+						tList[j].流量 += tyy[i].流量;
+						tList[j].流量流入 += tyy[i].流量流入;
+						tList[j].流量流出 += tyy[i].流量流出;
+						tList[j].数据包 += tyy[i].数据包;
+						tList[j].数据包流入 += tyy[i].数据包流入;
+						tList[j].数据包流出 += tyy[i].数据包流出;
+						is_exist = 1;
+						break;
+					}
+				}
+				if (is_exist === 0)
+				{
+					tList = tList.concat(tyy[i]);
+				}
+			}
+			tList = tList.sort(function (a,b){return b.流量-a.流量})
+
+			//IP table
+			let tttt = [];
+			const ttlen = tList.length
+			for(let i = 0; i < ttlen; i++)
+			{
+				tttt[i] = {}
+				tttt[i].key = i
+				tttt[i].IP = tList[i].IP
+				tttt[i].网口 = tList[i].网口
+				tttt[i].数据包 = decodeNum(tList[i].数据包)
+				tttt[i].数据包流入 = decodeNum(tList[i].数据包流入)
+				tttt[i].数据包流出 = decodeNum(tList[i].数据包流出)
+				tttt[i].流量 = decodeBytes(tList[i].流量)
+				tttt[i].流量流入 = decodeBytes(tList[i].流量流入)
+				tttt[i].流量流出 = decodeBytes(tList[i].流量流出)
+				if (i > 8) break;
+			}
+
+			_this.setState({
+				tyyy:[...tttt],
+				tc:ttlen,
+			})
+		}
+		//PORTbiao
+		if (0 && result.data.status === 1 && result.data.port && result.data.port.yyy && result.data.port.yyy.length > 0)
+		{
+			if (pList.length === 0)
+				pList = [...result.data.port.yyy]
+			if (_this.state.tpxxx.length === 0)
+				_this.state.tpxxx = result.data.port.xxx
+
+			let tpyy = [...result.data.port.yyy]
+			const tplen = tpyy.length;
+
+			for (let i=0; i < tplen; i++)
+			{
+				tpyy[i].时间 = now
+				var tpylen = pList.length;
+				let is_exist = 0;
+				for (let j=0; j < tpylen;j++)
+				{
+					if (pList[j].端口 === tpyy[i].端口 &&
+						pList[j].网口 === tpyy[i].网口)
+					{
+						pList[j].时间 = now
+						pList[j].流量 += tpyy[i].流量;
+						pList[j].流量流入 += tpyy[i].流量流入;
+						pList[j].流量流出 += tpyy[i].流量流出;
+						pList[j].数据包 += tpyy[i].数据包;
+						pList[j].数据包流入 += tpyy[i].数据包流入;
+						pList[j].数据包流出 += tpyy[i].数据包流出;
+						is_exist = 1;
+						break;
+					}
+				}
+				if (is_exist === 0)
+				{
+					pList = pList.concat(tpyy[i]);
+				}
+			}
+			pList = pList.sort(function (a,b){return b.流量-a.流量})
+
+			//PORT table
+			let ttttp = [];
+			const ttplen = pList.length
+			for(let i = 0; i < ttplen; i++)
+			{
+				ttttp[i] = {}
+				ttttp[i].key = i
+				ttttp[i].端口 = pList[i].端口
+				ttttp[i].网口 = pList[i].网口
+				ttttp[i].数据包 = decodeNum(pList[i].数据包)
+				ttttp[i].数据包流入 = decodeNum(pList[i].数据包流入)
+				ttttp[i].数据包流出 = decodeNum(pList[i].数据包流出)
+				ttttp[i].流量 = decodeBytes(pList[i].流量)
+				ttttp[i].流量流入 = decodeBytes(pList[i].流量流入)
+				ttttp[i].流量流出 = decodeBytes(pList[i].流量流出)
+				if (i > 8) break;
+			}
+			_this.setState({
+				tpyyy:[...ttttp],
+				tpc:ttplen,
+			})
+		}
+		//Sessionbiao
+		if (0 && result.data.status === 1 && result.data.session && result.data.session.yyy && result.data.session.yyy.length)
+		{
+			if (sList.length === 0)
+				sList = [...result.data.session.yyy]
+			if (_this.state.sxxx.length === 0)
+				_this.state.sxxx = result.data.session.xxx
+
+			let syy = [...result.data.session.yyy]
+			const slen = syy.length;
+			for (let i=0; i < slen; i++)
+			{
+				syy[i].时间 = now
+				var tslen = sList.length;
+				let is_exist = 0;
+				for (let j=0; j < tslen;j++)
+				{
+					if (sList[j].会话元组 === syy[i].会话元组 &&
+						sList[j].网口 === syy[i].网口)
+					{
+						sList[j].时间 = now
+						sList[j].流量 += syy[i].流量;
+						sList[j].流量流入 += syy[i].流量流入;
+						sList[j].流量流出 += syy[i].流量流出;
+						sList[j].数据包 += syy[i].数据包;
+						sList[j].数据包流入 += syy[i].数据包流入;
+						sList[j].数据包流出 += syy[i].数据包流出;
+						is_exist = 1;
+						break;
+					}
+
+				}
+				if (is_exist === 0)
+				{
+					sList = sList.concat(syy[i]);
+				}
+			}
+			sList = sList.sort(function (a,b){return b.流量-a.流量})
+			//session table
+			let table = [];
+			const ttplen = sList.length
+			for(let i = 0; i < ttplen; i++)
+			{
+				table[i] = {}
+				table[i].key = i
+				table[i].会话元组 = sList[i].会话元组
+				table[i].网口 = sList[i].网口
+				table[i].数据包 = decodeNum(sList[i].数据包)
+				table[i].数据包流入 = decodeNum(sList[i].数据包流入)
+				table[i].数据包流出 = decodeNum(sList[i].数据包流出)
+				table[i].流量 = decodeBytes(sList[i].流量)
+				table[i].流量流入 = decodeBytes(sList[i].流量流入)
+				table[i].流量流出 = decodeBytes(sList[i].流量流出)
+				if (i > 8) break;
+			}
+			_this.setState({
+				syyy:[...table],
+				sc:ttplen,
+			})
+		}
+      })
+    },1000)
+
+
+
+	function decodeBytes(isize)
+	{
+		let ret = '';
+		let value = 0;
+		let last = 'b'
+		let unit = ' ';
+		let size = isize * 8
+		if ( size > 1024 && size <= 1024*1024)
+		{
+			value = size / (1024)
+			unit =  ' K'
+		}
+		else if ( size > 1024*1024 && size <= 1024*1024*1024)
+		{
+			value = size / (1024*1024)
+			unit =  ' M'
+		}
+		else if ( size > 1024*1024*1024 && size <= 1024*1024*1024*1024)
+		{
+			value = size / (1024*1024*1024);
+			unit =  ' G'
+		}
+		else if ( size > 1024*1024*1024*1024 && size <= 1024*1024*1024*1024*1024)
+		{
+			value = size / (1024*1024*1024*1024);
+			unit =  ' M'
+		}
+		else if ( size > 1024*1024*1024*1024*1024 && size <= 1024*1024*1024*1024*1024*1024)
+		{
+			value = size / (1024*1024*1024*1024*1024);
+			unit =  ' P'
+		}
+		ret = value.toFixed(2) + unit + last
+		return ret
+	}
+	function decodeNum(size)
+	{
+		let ret = '';
+		let value = 0;
+		if ( size > 10000 && size <= 10000*100)
+		{
+			value = size / (10000);
+			ret = value.toFixed(2) + ' 万'
+		}
+		else if ( size > 10000*100 && size <= 10000*1000)
+		{
+			value = size / (10000*100);
+			ret = value.toFixed(2) + ' 百万'
+		}
+		else if ( size > 10000*1000 && size <= 10000*10000)
+		{
+			value = size / (10000*1000);
+			ret = value.toFixed(2) + ' 千万'
+		}
+		else if ( size > 10000*10000 && size <= 10000*100000)
+		{
+			value = size / (10000*10000);
+			ret = value.toFixed(2) + ' 亿'
+		}
+		else
+		{
+			value = size;
+			ret = value + ' 个'
+		}
+		return ret
+	}
+
+  }
+  componentWillUnmount(){
+    clearInterval(this.timer)
+  }
+  render() {
+    echarts.registerTheme('my_theme',
+      themeOne
+    )
+    return (
+      <div>
+  		<Row>
+        <Col span={24}>
+          <div style={{height: "40px",lineHeight:"30px"}}>
+            <Switch onClick={this.bClick} checkedChildren="已开启监控" unCheckedChildren="已停止监控" />
+          </div>
+        </Col>
+      </Row>
+      <Row gutter={16}>
+        <Col span={12}>
+          <div className="amodule">
+            <div className="moduleHeader">
+             <span>总流量</span>
+            </div>
+            <ReactEcharts
+              option={this.state.option1}
+              theme="my_theme"
+            />
+          </div>
+        </Col>
+         <Col span={12}>
+          <div className="amodule">
+            <div className="moduleHeader">
+             <span>数据包</span>
+            </div>
+            <ReactEcharts
+              option={this.state.option2}
+              theme="my_theme"
+            />
+          </div>
+         </Col>
+        </Row>
+  		  <Row gutter={16} >
+    		  <Col span={12}>
+             <div className="amodule">
+               <div className="moduleHeader">
+                <span>TOP10IP(共:{this.state.tc}) </span>
+               </div>
+               <div className="moduleBody">
+                 <Scrollbars
+                   autoHide
+                   autoHideTimeout={100}
+                   autoHideDuration={200}
+                   universal={true}
+                   className='containerIn'
+                   style={{height: "300px"}}
+                   >
+                   <WyTable
+                     xData={this.state.txxx}
+                     yData={this.state.tyyy}
+                     pageSize={this.state.pageSizeOne}
+                     onShowSizeChange={this.pageSizeOneChange}
+                   />
+                  </Scrollbars>
+                </div>
+             </div>
+    		  </Col>
+    		  <Col span={12}>
+           <div className="amodule">
+             <div className="moduleHeader">
+              <span>TOP10Port(共:{this.state.tpc})</span>
+             </div>
+             <div className="moduleBody">
+               <Scrollbars
+                 autoHide
+                 autoHideTimeout={100}
+                 autoHideDuration={200}
+                 universal={true}
+                 className='containerIn'
+                 style={{height: "300px"}}
+                 >
+                  <WyTable
+                    xData={this.state.tpxxx}
+                    yData={this.state.tpyyy}
+                    pageSize={this.state.pageSizeTwo}
+                    onShowSizeChange={this.pageSizeTwoChange}
+                  />
+                </Scrollbars>
+              </div>
+           </div>
+    		  </Col>
+    		  </Row>
+    		  <Row gutter={16} >
+    		  <Col span={24}>
+           <div className="amodule">
+             <div className="moduleHeader">
+              <span>TOP10Session(共:{this.state.sc})</span>
+             </div>
+             <div className="moduleBody">
+               <Scrollbars
+                 autoHide
+                 autoHideTimeout={100}
+                 autoHideDuration={200}
+                 universal={true}
+                 className='containerIn'
+                 style={{height: "300px"}}
+                 >
+                 <WyTable
+                   xData={this.state.sxxx}
+                   yData={this.state.syyy}
+                   pageSize={this.state.pageSizeThree}
+                   onShowSizeChange={this.pageSizeThreeChange}
+                 />
+                </Scrollbars>
+              </div>
+           </div>
+    		  </Col>
+  		  </Row>
+      </div>
+    );
+  }
+}

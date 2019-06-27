@@ -1,0 +1,629 @@
+import React, { Component } from 'react'
+import { Select, Row, Col, Button, Modal, Input, Divider, message } from 'antd'
+import axios from 'axios'
+import propTypes from 'prop-types'
+import _ from 'lodash'
+
+
+import { wyAxiosPost } from '../components/WyAxios'
+import LineSet from './LineSet'
+import TemplateForLineWhenNew from './TemplateForLineWhenNew'
+import TemplateForTableWhenNew from './TemplateForTableWhenNew'
+import WyTableSet from './WyTableSet'
+import { host } from '../components/Host'
+import { forName } from '../components/RegExp'
+import OneRule from './OneRule'
+const Option = Select.Option
+const TextArea = Input.TextArea
+class OneTab extends Component{
+  constructor(props){
+    super(props);
+    this.viewState = null;
+  }
+  state = {
+    visible: false,
+    saveVisible: false,
+    moduleName:'',
+    dataSourceList:[],
+    dataSource:'',
+    viewType: '',
+    oneTab:[],
+    viewPageName:'',
+    //新增数据源数据
+    dataTypeList:[], //数据类型列表
+    dataSourceName:'',//数据源名称
+    dataType:'',//数据源类型
+    dataDescription:'',//数据源描述
+
+    standardList:[],//供条件选择的指标
+
+
+    groupStandarList:[],//供分组选择的指标
+    ruleList:[],//添加的条件
+    operaList:[], //供选择运算符列表
+    valueList:[],//供选择的值列表，为空时为输入值
+    logic:'or', //条件满足逻辑
+    forGroup: [], //分组依据
+  }
+
+  //获取数据源
+  getDataSourceList = ()=>{
+    wyAxiosPost('Source/getSource',{},(ret)=>{
+    		this.setState({
+    			dataSourceList: [...ret.data.msg],
+    		})
+    })
+  }
+  //获取数据类型
+  getDataTypeList = ()=>{
+    wyAxiosPost('Table/getTableList',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        dataTypeList: [...responseData]
+      })
+    })
+  }
+  componentDidMount(){
+    this.getDataSourceList()
+    this.getDataTypeList()
+  }
+//dataSourceChange事件
+  dataSourceChange = (value)=>{
+    this.setState({
+      dataSource: value,
+      dataSourceName:'',//数据源名称
+      dataType:'',//数据源类型
+      dataDescription:'',//数据源描述
+      standardList:[],//供条件选择的指标
+      groupStandarList:[],//供分组选择的指标
+      ruleList:[],//添加的条件
+      operaList:[], //供选择运算符列表
+      valueList:[],//供选择的值列表，为空时为输入值
+      logic:'or', //条件满足逻辑
+      forGroup: [], //分组依据
+    })
+  }
+//viewTypeChange事件
+  viewTypeChange = (value) => {
+    this.setState({
+      viewType: value
+    })
+  }
+  //模态框事件
+  showModal = () => {
+    this.setState({
+      visible: true,
+      moduleName:'',
+      dataSource:'',
+      viewType: '',
+
+      //dataTypeList:[], //数据类型列表
+      dataSourceName:'',//数据源名称
+      dataType:'',//数据源类型
+      dataDescription:'',//数据源描述
+      standardList:[],//供条件选择的指标
+      groupStandarList:[],//供分组选择的指标
+      ruleList:[],//添加的条件
+      operaList:[], //供选择运算符列表
+      valueList:[],//供选择的值列表，为空时为输入值
+      logic:'or', //条件满足逻辑
+      forGroup: [], //分组依据
+    });
+  }
+  saveShowModal = () => {
+    this.setState({
+      saveVisible: true,
+    });
+  }
+  //生成视图
+  generateView = (isclose)=>{
+    const viewData = this.viewState.state
+    const erroList = []
+    //验证viewType为曲线和柱状的时候
+    if(this.state.viewType === 'line' || this.state.viewType === 'bar'){
+      if(viewData.xdata === ''){
+        erroList.push('x轴不能为空')
+      }
+      if(viewData.yydata === '' && viewData.alldata.length === 0 && viewData.adata === ''){
+        erroList.push('y轴和数据列不能同时为空')
+      }
+    }
+    if(this.state.viewType === 'wytable'){
+      if(viewData.tableTitle.length === 0){
+        erroList.push('数据列不能为空')
+      }
+    }
+    if(erroList.length === 0){
+      let data = {}
+      const randomCount = Math.random();
+      const curTime = new Date().getTime();
+      const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+      data.id = asId.toString()
+      if(this.state.viewType === 'line' || this.state.viewType === 'bar'){
+        data.xdata = viewData.xdata
+        data.yydata = viewData.yydata
+        data.ydata = viewData.ydata
+        data.alldata = viewData.alldata
+        data.adata = viewData.adata
+        data.orderSort = viewData.orderSort
+        data.order = viewData.order
+        data.time_unit = viewData.time_unit
+        data.limitCount = viewData.limitCount
+        data.viewWidth = viewData.viewWidth
+        data.dataSource = this.state.dataSource
+        data.viewType = this.state.viewType
+        data.moduleName = this.state.moduleName
+      }else if(this.state.viewType === 'wytable'){
+        data.tableTitle = viewData.tableTitle
+        data.orderSort = viewData.orderSort
+        data.order = viewData.order
+        data.time_unit = viewData.time_unit
+        data.limitCount = viewData.limitCount
+        data.viewWidth = viewData.viewWidth
+        data.dataSource = this.state.dataSource
+        data.viewType = this.state.viewType
+        data.moduleName = this.state.moduleName
+      }
+      let subArr = [...this.state.oneTab]
+      subArr.push(data)
+      this.setState({
+        oneTab: [...subArr],
+        moduleName:'',
+        dataSource:'',
+        viewType: ''
+      })
+      if(isclose){
+        this.setState({
+          visible: false,
+        });
+      }
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'   '
+      })
+      message.warning(str)
+    }
+  }
+  //存储dataSource
+  saveDataSource = ()=>{
+    let info = {}
+    info.dataSourceName = this.state.dataSourceName
+    info.tb = this.state.dataType
+    info.twhere = this.state.ruleList
+    info.logic = this.state.logic
+    info.group = this.state.forGroup
+    info.decribe = this.state.dataDescription
+    info.id = this.state.id
+    wyAxiosPost('Source/saveSource',{info: info},(result)=>{
+      const responseData = result.data.msg
+      if(responseData && responseData.status === 1){
+
+        this.setState({
+          dataSource: responseData.id
+        },()=>{
+          this.getDataSourceList()
+        })
+      }else{
+        message.warning(responseData.msg)
+      }
+    })
+  }
+  //确认按钮获取所有数据
+  handleOk = (isclose) => {
+    const aerroList = []
+    if(this.state.moduleName === ''){
+      aerroList.push('名称不能为空')
+    }else if(this.state.moduleName !== '' && !forName.test(this.state.moduleName)){
+      aerroList.push('名称格式错误')
+    }
+    if(this.state.dataSource === '' || this.state.dataSource === 'newsource'){
+      aerroList.push('数据源不能为空')
+    }
+    if(this.state.viewType === ''){
+      aerroList.push('视图类型不能为空')
+    }
+
+    if(aerroList.length === 0){
+      //生成视图
+      this.generateView(isclose)
+    }else{
+      let str = ''
+      aerroList.map((item,index)=>{
+        str += index+1+'.'+item+'   '
+      })
+      message.warning(str)
+    }
+  }
+  saveHandleOk = (e)=>{
+    let pageData = {}
+    pageData.name = this.state.viewPageName
+    pageData.content = this.state.oneTab
+  	wyAxiosPost('View/saveView',{info:pageData},(result)=>{
+		  this.props.updatePanes(result.data.id)
+      this.setState({
+        xxx: result.data.xxx,
+        yyy: result.data.yyy,
+        unit: result.data.unit,
+        oneTab: [],
+        saveVisible: false
+      })
+      message.success(result.data.msg)
+    })
+  }
+
+  handleCancel = (e) => {
+    this.setState({
+      visible: false,
+    });
+  }
+  saveHandleCancel = (e) => {
+    this.setState({
+      saveVisible: false,
+    });
+  }
+  //viewPageNameChange事件
+  viewPageNameChange = (e)=>{
+    this.setState({
+      viewPageName: e.target.value
+    })
+  }
+  //moduleNameChange事件
+  moduleNameChange = (e) => {
+    this.setState({
+      moduleName: e.target.value
+    })
+  }
+  //deleteModule事件
+  deleteModule = (curId)=>{
+    let subArr = [...this.state.oneTab]
+    subArr.map((item,index)=>{
+      if(item.id === curId){
+        subArr.splice(index, 1);
+      }
+    })
+    this.setState({
+      oneTab: [...subArr]
+    })
+  }
+
+  //获取图标组件
+  getChart = (viewType)=>{
+    if(viewType === 'line' || viewType === 'bar'){
+      return <LineSet ref={(instance)=>{this.viewState=instance}} dataSource={this.state.dataSource} />
+
+    }else if(viewType === 'wytable'){
+      return <WyTableSet ref={(instance)=>{this.viewState=instance}} dataSource={this.state.dataSource} />
+    }
+
+  }
+
+  //数据源名称
+  dataSourceNameChange = (e)=>{
+    this.setState({
+      dataSourceName: e.target.value
+    })
+  }
+  //数据类型触发事件
+  dataTypeChange = (value)=>{
+    this.getStandardListBydataType(value)
+    this.setState({
+      ruleList: [],
+      forGroup: []
+    })
+  }
+  //数据描述
+  dataDescriptionChange = (e)=>{
+    this.setState({
+      dataDescription:e.target.value
+    })
+  }
+  addRule = ()=>{
+    if(this.state.dataType === ''){
+      message.warning('请先选择数据类型')
+      return
+    }
+    //ruleList
+    let data = {}
+    const randomCount = Math.random();
+    const curTime = new Date().getTime();
+    const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+    data.id = asId.toString()
+    data.name = ''
+    data.opera = '='
+    data.value = ''
+    let curRuleList = _.cloneDeep(this.state.ruleList)
+    curRuleList.push(data)
+    this.setState({
+      ruleList: [...curRuleList]
+    })
+  }
+  removeRule = (id)=>{
+    let curRuleList = _.cloneDeep(this.state.ruleList)
+    let newRuleList = []
+    curRuleList.map(item=>{
+      if(item.id !== id){
+        newRuleList.push(item)
+      }
+      return item
+    })
+    this.setState({
+      ruleList: [...newRuleList]
+    })
+  }
+  setRuleList =(id,value)=>{
+    let curRuleList = _.cloneDeep(this.state.ruleList)
+    let newRuleList = []
+    newRuleList = curRuleList.map(item=>{
+      if(item.id === id){
+        item.name = value.name
+        item.opera = value.opera
+        item.value = value.value
+      }
+      return item
+    })
+    this.setState({
+      ruleList: [...newRuleList]
+    })
+  }
+  forGroupChange = (value)=>{
+    this.setState({
+      forGroup: [...value]
+    })
+  }
+  //根据dataType获取standardList
+  getStandardListBydataType = (id)=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Table/getFieldList',{tbId: id},(result)=>{
+      const responseData = _.cloneDeep(result.data.msg)
+      let curStandardList = []
+      responseData.map(item=>{
+        if(item.id !== "1"){
+          curStandardList.push(item)
+        }
+      })
+      this.setState({
+        standardList: [...curStandardList],
+        groupStandarList: [...responseData],
+        dataType: id,
+        isSpining: false
+      })
+    })
+  }
+  render(){
+    return(
+      <div>
+        <div>
+          <Button type="primary" onClick={this.showModal}>添加视图</Button>
+          {
+            this.state.oneTab && this.state.oneTab.length>0?
+            <Button type="primary" onClick={this.saveShowModal} style={{float: "right"}}>保存视图</Button>
+            :
+            ''
+          }
+          <Modal
+            title="保存视图"
+            visible={this.state.saveVisible}
+            onOk={this.saveHandleOk}
+            onCancel={this.saveHandleCancel}
+          >
+            <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+              <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+                视图名称：
+              </div>
+              <div style={{flex:"auto"}}>
+                <Input value={this.state.viewPageName} onChange={this.viewPageNameChange}/>
+              </div>
+            </div>
+          </Modal>
+
+          <Modal
+            title="添加视图"
+            visible={this.state.visible}
+            onOk={this.handleOk}
+            onCancel={this.handleCancel}
+            footer = {null}
+            width='60%'
+          >
+            <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+              <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+                模块名称：
+              </div>
+              <div style={{flex:"auto"}}>
+                 <Input value={this.state.moduleName} onChange={this.moduleNameChange}/>
+              </div>
+            </div>
+            <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+              <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+                数据源：
+              </div>
+              <div style={{flex:"auto"}}>
+                  <Select style={{width:"100%"}} value={this.state.dataSource} onChange={this.dataSourceChange}>
+                   <Option key="getnewsource" value="newsource"><Button type='primary' size='small'>创建新的数据源</Button></Option>
+                   <Option key="mykey" value="">请选择</Option>
+                   {
+                     this.state.dataSourceList && this.state.dataSourceList.length>0?
+                     this.state.dataSourceList.map(item=>{
+                       return(
+                         <Option key={item.id} value={item.id} title={item.name}>{item.name}</Option>
+                       )
+                     })
+                     :
+                     ''
+                   }
+                  </Select>
+              </div>
+            </div>
+            {
+              this.state.dataSource === 'newsource'?
+              <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+                <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+                </div>
+                <div style={{flex:"auto", border:"rgba(255,255,255,0.2) solid 1px",padding:"20px",borderRadius:"3px"}}>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}>数据名称：</div>
+                    <div style={{flex:"1 1 auto"}}>
+                      <Input type="primary" style={{width:"450px"}} onChange={this.dataSourceNameChange} value={this.state.dataSourceName}/>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}>数据类型：</div>
+                    <div style={{flex:"1 1 auto"}}>
+                      <Select value={this.state.dataType} onChange={this.dataTypeChange} style={{width: "450px"}}>
+                        <Option key='mykey' value=''>请选择</Option>
+                        {
+                          this.state.dataTypeList && this.state.dataTypeList.length>0?
+                          this.state.dataTypeList.map(item=>{
+                            return(
+                              <Option key={item.id} value={item.id} title={item.name}>
+                                {item.name}
+                              </Option>
+                            )
+                          })
+                          :
+                          ''
+                        }
+                      </Select>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}>数据描述：</div>
+                    <div style={{flex:"1 1 auto"}}>
+                      <TextArea value={this.state.dataDescription} onChange={this.dataDescriptionChange} placeholder="数据描述" autosize style={{width: "450px"}} />
+                    </div>
+                  </div>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}>过滤规则：</div>
+                    <div style={{flex:"1 1 auto"}}>
+                      <Select value={this.state.logic}  onChange={this.ruleLogicChange} style={{minWidth: "120px"}}>
+                        <Option key="or" value="or">满足一个</Option>
+                        <Option key="and" value="and">满足全部</Option>
+                      </Select>
+                      <Button type="dashed" onClick={this.addRule} style={{ width: '120px',marginLeft:"20px" }}>
+                        <i className="fa fa-plus" aria-hidden="true"></i> 添加条件
+                      </Button>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}></div>
+                    <div style={{flex:"1 1 auto"}}>
+                    <ul>
+                      {
+                        this.state.ruleList && this.state.ruleList.length>0?
+                        this.state.ruleList.map(item=>{
+                          return(
+                            <OneRule
+                              removeRule={(id)=>this.removeRule(id)}
+                              setRuleList={(id,value)=>this.setRuleList(id,value)}
+                              key={item.id}
+                              id={item.id}
+                              name={item.name}
+                              value={item.value}
+                              opera={item.opera}
+                              standardList={ _.cloneDeep(this.state.standardList) }
+                            />
+                          )
+                        })
+                        :
+                        ''
+                      }
+                    </ul>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}>分组依据：</div>
+                    <div style={{flex:"1 1 auto"}}>
+                      <Select onChange={this.forGroupChange} placeholder="请选择" mode="multiple" value={this.state.forGroup} style={{minWidth: "450px"}}>
+                        {
+                          this.state.groupStandarList && this.state.groupStandarList.length>0?
+                          this.state.groupStandarList.map(subItem=>{
+                            if(subItem.is_group === 1){
+                              return(
+                                <Option key={subItem.id} value={subItem.id} title={subItem.name}>
+                                  {subItem.name}
+                                </Option>
+                              )
+                            }
+                          })
+                          :
+                          ''
+                        }
+                      </Select>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",lineHeight:"40px"}}>
+                    <div style={{flex:"0 0 100px"}}></div>
+                    <div style={{flex:"1 1 auto"}}>
+                      <Button type="primary" onClick={this.saveDataSource}>
+                        确定
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              :
+              ''
+            }
+
+
+            <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+              <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+                视图类型：
+              </div>
+              <div style={{flex:"auto"}}>
+                 <Select style={{width:"120px"}} value={this.state.viewType} onChange={this.viewTypeChange}>
+                  <Option key="mykey" value="">请选择</Option>
+                  <Option key="line" value="line">曲线图</Option>
+                  <Option key="bar" value="bar">柱状图</Option>
+                  <Option key="wytable" value="wytable">表格</Option>
+                 </Select>
+              </div>
+            </div>
+            {
+              this.getChart(this.state.viewType)
+            }
+            <Divider />
+            <div style={{display: "flex",justifyContent:"flex-end"}}>
+              <Button onClick={this.handleCancel}>取消</Button>
+              <Button onClick={()=>{this.handleOk(false)}} style={{margin: "0 10px 0 10px"}} type="primary">添加并继续</Button>
+              <Button onClick={()=>{this.handleOk(true)}} type="primary">添加并退出</Button>
+            </div>
+          </Modal>
+        </div>
+        <Row gutter={16}>
+          {
+            this.state.oneTab && this.state.oneTab.length>0?
+            this.state.oneTab.map(item=>{
+              if(item.viewType === 'line' || item.viewType === 'bar'){
+                const curId = item.id
+                return(
+                  <Col key={item.id} span={item.viewWidth} style={{marginTop:"10px"}}>
+                    <TemplateForLineWhenNew viewId={item.id} key={item.id} curViewData={item} deleteModule={this.deleteModule}/>
+                  </Col>
+                )
+              }else if(item.viewType === 'wytable'){
+                const curId = item.id
+                return(
+                  <Col key={item.id} span={item.viewWidth} style={{marginTop:"10px"}}>
+                    <TemplateForTableWhenNew key={item.id} viewId={item.id} curViewData={item} deleteModule={this.deleteModule}/>
+                  </Col>
+                )
+              }else{
+                return ''
+              }
+            })
+            :
+            ''
+          }
+        </Row>
+      </div>
+    )
+  }
+}
+
+OneTab.propTypes = {
+  updatePanes: propTypes.func.isRequired
+}
+export default OneTab

@@ -1,0 +1,206 @@
+import React, { Component } from 'react'
+import {Tabs,Button, Row, Col, message, Modal} from 'antd'
+import axios from 'axios'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import TabOne from './TabOne'
+import { host } from '../components/Host'
+import DropList from '../components/DropList'
+
+import TemplateForPage from './TemplateForPage'
+const TabPane = Tabs.TabPane;
+class ProductPages extends Component{
+  constructor(props) {
+    super(props);
+    this.newTabIndex = 0;
+    this.state = {
+      activeKey: 'mykey',
+      panes:[
+        { title: '生成视图', content: '', key: 'mykey', closable: false }
+      ],
+      removeVisible: false,
+      removeId: '',//待删除页面ID
+    }
+  }
+  componentDidMount(){
+	 wyAxiosPost('View/getViews',{id:''},(result)=>{
+		let getData = result.data.msg
+		let converseData = []
+		if(getData && getData.length>0){
+			getData.map(item=>{
+			  let onearry = {}
+			  onearry.title = item.name
+			  onearry.content = item.content
+			  onearry.key = item.id
+			  converseData.push(onearry)
+			})
+		 }
+		const getPanes = this.state.panes
+		this.setState({
+			panes: getPanes.concat(converseData)
+		})
+  })
+
+  //const _this = this
+  window.onclick = ()=>{
+    if(this.state.isexist === true){
+      this.setState({
+         isexist:false
+      })
+    }
+   }
+  }
+
+  //更新视图
+  updatePanes = (value)=>{
+    if(value){
+      wyAxiosPost('View/getViews',{id:value},(result)=>{
+   		 let getData = result.data.msg
+   		  let converseData = {}
+   		  if(getData){
+     			converseData.title = getData.name
+     			converseData.content = getData.content
+     			converseData.key = getData.id
+   		  }
+   		  const getPanes = this.state.panes
+   		  getPanes.push(converseData)
+        if(value){
+          this.setState({
+       			panes: [...getPanes],
+       			activeKey:getData.id
+     		  })
+        }
+       })
+    }else{
+      wyAxiosPost('View/getViews',{id:''},(result)=>{
+   		let getData = result.data.msg
+   		let converseData = []
+   		if(getData && getData.length>0){
+   			getData.map(item=>{
+   			  let onearry = {}
+   			  onearry.title = item.name
+   			  onearry.content = item.content
+   			  onearry.key = item.id
+   			  converseData.push(onearry)
+   			})
+   		 }
+       const getPanes = [
+         {
+           closable:false,
+           content:"",
+           key:"mykey",
+           title:"生成视图"
+         }
+       ]
+   		this.setState({
+   			panes: getPanes.concat(converseData)
+   		})
+     })
+    }
+  }
+
+  //标签页切换事件
+
+  onChange = (activeKey) => {
+    this.setState({ activeKey });
+  }
+  //标签页编辑
+  onEdit = (targetKey, action) => {
+    this[action](targetKey);
+  }
+  //标签页删除
+  remove = (targetKey) => {
+    this.setState({
+      removeVisible: true,
+      removeId: targetKey
+    })
+  }
+  //删除确认
+  removeHandleOk = (e) => {
+    let activeKey = this.state.activeKey;
+    let lastIndex;
+    this.state.panes.forEach((pane, i) => {
+      if (pane.key === this.state.removeId) {
+        lastIndex = i - 1;
+      }
+    });
+    const panes = this.state.panes.filter(pane => pane.key !== this.state.removeId);
+    if (lastIndex >= 0 && activeKey === this.state.removeId) {
+      activeKey = panes[lastIndex].key;
+    }
+
+	const _this = this
+	wyAxiosPost('View/delView',{id:_this.state.removeId},function(result){
+		 _this.setState({
+          panes,
+          activeKey,
+          removeVisible: false
+        });
+        message.success(result.data.msg)
+    })
+
+  }
+  //删除取消
+  removeHandleCancel = (e) => {
+    this.setState({
+      removeVisible: false,
+      removeId: ''
+    });
+  }
+
+
+
+
+  render(){
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    console.log(this.state.panes)
+    return(
+      <div>
+        <Tabs
+          hideAdd
+          onChange={this.onChange}
+          activeKey={this.state.activeKey}
+          type="editable-card"
+          onEdit={this.onEdit}
+
+        >
+          {
+
+            this.state.panes.map(item => {
+              if(item.key === 'mykey'){
+                return (
+                  <TabPane tab={item.title} key={item.key} closable={item.closable}>
+                    <TabOne updatePanes={ this.updatePanes }/>
+                  </TabPane>
+                )
+              }else{
+                return (
+                  <TabPane tab={item.title} key={item.key} closable={item.closable}>
+                      <TemplateForPage
+                      updatePanes={ this.updatePanes }
+                      key={item.key}
+                      pageId={item.key}
+                      content={_.cloneDeep(item.content)}
+                    />
+                  </TabPane>
+                )
+              }
+            })
+          }
+        </Tabs>
+        <Modal
+          title=""
+          visible={this.state.removeVisible}
+          onOk={this.removeHandleOk}
+          onCancel={this.removeHandleCancel}
+        >
+          <p style={{marginTop:"30px"}}>您确认要删除该页面视图？</p>
+        </Modal>
+      </div>
+    )
+
+  }
+}
+
+export default ProductPages

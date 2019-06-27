@@ -1,0 +1,112 @@
+import React, { Component } from 'react'
+import { Tabs } from 'antd'
+import _ from 'lodash'
+
+import Line from '../components/Line'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import { netFilterPic } from '../components/StandarConstant'
+
+const TabPane = Tabs.TabPane
+class SeniorTemplatePic extends Component{
+  state={
+    xData:[],
+    yData:[],
+    aUnit:'',
+    isSpining:false,
+    field: 'bytes',
+    type: 'host'
+  }
+  getData = (info)=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('NetWork/getHighFilter',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        isSpining: false,
+      })
+    })
+  }
+  componentDidMount(){
+    if(JSON.stringify(this.props.searchRule).length>2){
+      let info = _.cloneDeep(this.props.searchRule)
+      info.field = this.state.field
+      info.type = this.state.type
+      this.getData(info)
+    }
+  }
+  tabsChange= (value)=>{
+    this.setState({
+      field: value
+    },()=>{
+      let info = _.cloneDeep(this.props.searchRule)
+      info.field = this.state.field
+      info.type = this.state.type
+      this.getData(info)
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.searchRule) !== JSON.stringify(nextProps.searchRule)){
+      let info = _.cloneDeep(nextProps.searchRule)
+      info.field = this.state.field
+      info.type = this.state.type
+      this.getData(info)
+    }
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.xData[parseInt(this.state.xData.length-1,0)]
+      }
+      this.props.setSubTime(flowPicTime)
+    }
+  }
+  chartClick = (record)=>{
+    const curTime = []
+    curTime.push(record.name)
+    curTime.push(record.name)
+    this.props.setSubTime(curTime)
+  }
+  render(){
+    return(
+      <Tabs activeKey={this.state.field} tabPosition="top" style={{height:"360px"}} onChange={this.tabsChange}>
+        {
+          netFilterPic && netFilterPic.length>0?
+          netFilterPic.map(item=>{
+            return(
+              <TabPane tab={item.name} key={item.value}>
+                <WySpin isSpining={this.state.isSpining}>
+                  <Line
+                    xData={this.state.xData?this.state.xData:[]}
+                    yData={this.state.yData?this.state.yData:[]}
+                    aUnit={this.state.aUnit}
+                    brush={true}
+                    onBrushSelected={this.brushSelect}
+                    onChartClick={this.chartClick}
+                   />
+                </WySpin>
+              </TabPane>
+            )
+          })
+          :
+          ''
+        }
+      </Tabs>
+    )
+  }
+}
+
+export default SeniorTemplatePic

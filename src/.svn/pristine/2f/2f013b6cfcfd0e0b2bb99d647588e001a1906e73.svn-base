@@ -1,0 +1,26 @@
+import React, { Component } from 'react'
+import { Tabs } from 'antd'
+
+
+import HostFilter from './HostFilter'
+import SeniorFilter from './SeniorFilter'
+
+const TabPane = Tabs.TabPane
+class NetFilter extends Component{
+  render(){
+    return(
+      <div>
+        <Tabs defaultActiveKey="1">
+          <TabPane tab="主机过滤" key="1">
+            <HostFilter />
+          </TabPane>
+          <TabPane tab="高级过滤" key="2">
+            <SeniorFilter />
+          </TabPane>
+        </Tabs>
+      </div>
+    )
+  }
+}
+
+export default NetFilter

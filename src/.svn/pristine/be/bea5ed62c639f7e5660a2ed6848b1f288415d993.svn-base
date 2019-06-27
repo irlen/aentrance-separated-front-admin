@@ -1,0 +1,300 @@
+import React, { Component } from 'react'
+import { Row, Col, Select } from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+import { withRouter } from 'react-router-dom'
+import _ from 'lodash'
+import $ from 'jquery'
+
+import WyDatePicker from '../components/WyDatePicker'
+import PageInfo from './PageInfo'
+import Line from '../components/Line'
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import { HttpStatStandard } from '../components/StandarConstant'
+import contextList from '../SubPage/ContextList'
+const Option = Select.Option
+class HttpAnalysis extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    field:'average_data_time',
+
+    tableXdata:[],
+    tableYdata:[],
+    initColumns:[],
+    activeRowKey:'',
+
+    lineXdata:[],
+    lineYdata:[],
+    unit: [],
+    allTime: [],
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   }
+  }
+  //获取已定义webApp数据
+  getWebApp = ()=>{
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.allTime.length > 0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    info.field = this.state.field
+    wyAxiosPost('Http/getHttpAppInfo',{info:info},(result)=>{
+      const responseData = result.data.msg
+      const activeRowKey = responseData.yyy[0].key
+      const initColumns = responseData.xxx
+      const newColumns = this.compileColumns(activeRowKey,initColumns)
+      if(this.state.allTime && this.state.allTime.length === 0){
+        const allTime = []
+        allTime.push(responseData.start_time)
+        allTime.push(responseData.last_time)
+        this.setState({
+          tableXdata: newColumns,
+          tableYdata: responseData.yyy,
+          activeRowKey,
+          initColumns,
+          allTime
+        },()=>{
+          this.getFieldPicData()
+          this.setSubData.getTableData({
+            id:this.state.activeRowKey,
+            start_time:this.state.allTime[0],
+            last_time:this.state.allTime[1]
+          })
+        })
+      }else{
+        this.setState({
+          tableXdata: newColumns,
+          tableYdata: responseData.yyy,
+          activeRowKey,
+          initColumns
+        },()=>{
+          this.getFieldPicData()
+          this.setSubData.getTableData({
+            id:this.state.activeRowKey,
+            start_time:this.state.allTime[0],
+            last_time:this.state.allTime[1]
+          })
+        })
+      }
+    })
+  }
+  //获取指标曲线图
+  getFieldPicData = ()=>{
+    let info = {}
+    info.field = this.state.field
+    info.start_time = this.state.allTime[0]
+    info.last_time = this.state.allTime[1]
+    info.id = this.state.activeRowKey
+    wyAxiosPost('Http/getHttpLine',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        lineXdata: responseData.xxx,
+        lineYdata: responseData.yyy,
+        unit: responseData.unit
+      })
+    })
+  }
+  componentDidMount(){
+    this.getWebApp()
+  }
+  onTableClick = (record)=>{
+    const activeRowKey = record.key
+    const initColumns = this.state.initColumns
+    const newColumns = this.compileColumns(activeRowKey,initColumns)
+    this.setState({
+      tableXdata: [...newColumns],
+      activeRowKey
+    },()=>{
+      this.getFieldPicData()
+      this.setSubData.getTableData({
+        id:this.state.activeRowKey,
+        start_time:this.state.allTime[0],
+        last_time: this.state.allTime[1]
+      })
+    })
+  }
+  fieldChange = (value)=>{
+    this.setState({
+      field: value
+    })
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    },()=>{
+      this.getWebApp()
+    })
+  }
+  fieldChange = (value)=>{
+    this.setState({
+      field: value
+    },()=>{
+      this.getWebApp()
+    })
+  }
+  chartClick = (param)=>{
+    this.setSubData.getTableData({
+      id:this.state.activeRowKey,
+      start_time:param.name,
+      last_time:param.name
+    })
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.lineXdata[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.lineXdata[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.lineXdata[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.lineXdata[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.lineXdata[parseInt(this.state.lineXdata.length-1,0)]
+      }
+      this.setSubData.getTableData({
+        id:this.state.activeRowKey,
+        start_time:flowPicTime[0],
+        last_time:flowPicTime[1]
+      })
+    }
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'apply',
+      start_time: this.state.allTime[0],
+      last_time: this.state.allTime[1],
+      obj: record.name,
+      objType: 'http',
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col span={24}>
+            <div className="amodule" style={{lineHeight:"60px",padding: "0 0 0 20px"}}>
+              <span>全局时间：</span>
+              <WyDatePicker
+                curTime={this.state.allTime}
+                size="default"
+                style={{maxWidth:"280px"}}
+                rangeTimeChange={this.allTimeChange}
+              />
+              <span style={{marginLeft: "20px"}}>指标：</span>
+              <Select value={this.state.field} onChange={this.fieldChange} style={{minWidth:"120px"}}>
+                {
+                  HttpStatStandard && HttpStatStandard.length>0?
+                  HttpStatStandard.map(item=>{
+                    return(
+                      <Option value={item.value} key={item.value}>{item.name}</Option>
+                    )
+                  })
+                  :
+                  ''
+                }
+              </Select>
+            </div>
+           </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col sm={{span: 24}} md={{span: 12}} lg={{span: 8}}>
+            <div className="amodule">
+              <div className="moduleHeader">
+                <span>已定义的web应用</span>
+              </div>
+              <div className="moduleBody">
+              <Scrollbars
+                autoHide
+                autoHideTimeout={100}
+                autoHideDuration={200}
+                universal={true}
+                style={{height: "300px"}}
+                >
+                  <WyTable
+                    xData={this.state.tableXdata}
+                    yData={this.state.tableYdata}
+                    activeRowKey={this.state.activeRowKey}
+                    onTableClick={this.onTableClick}
+                    onTableContextmenu={this.tableContextmenu}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </Scrollbars>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{span: 24}} md={{span: 12}} lg={{span: 16}}>
+            <div className="amodule">
+              <div className="moduleHeader">
+                <span>
+                {
+                  this.state.lineYdata && this.state.lineYdata.length>0?
+                  this.state.lineYdata[0].name
+                  :
+                  ''
+                }
+                </span>
+              </div>
+              <div className="moduleBody">
+              <Line
+                xData={this.state.lineXdata}
+                yData={this.state.lineYdata}
+                aUnit={this.state.unit}
+                onChartClick={this.chartClick}
+                brush={true}
+                onBrushSelected={this.brushSelect}
+               />
+               </div>
+             </div>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={24}>
+            <PageInfo
+              ref={instance=>this.setSubData = instance}
+              pathName={this.props.location.pathname}
+            />
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+
+export default withRouter(HttpAnalysis)

@@ -1,0 +1,149 @@
+import React, { Component } from 'react'
+import { Row, Col, Select } from 'antd'
+import _ from 'lodash'
+
+import WyDatePicker from '../components/WyDatePicker'
+import DashboardPic from './DashboardPic'
+import { wyAxiosPost } from '../components/WyAxios'
+
+const Option = Select.Option
+class DashboardBuiltIn extends Component{
+  state={
+    moduleData:[],
+    allTime:[]
+  }
+  componentDidMount(){
+    wyAxiosPost('Dashboard/getDashboard',{},(result)=>{
+      let allTime = []
+      allTime.push(result.data.msg[0].start_time)
+      allTime.push(result.data.msg[0].last_time)
+      if(result.data.msg.length>0){
+        this.setState({
+          moduleData: [...result.data.msg],
+          allTime
+        })
+      }
+    })
+  }
+  allTimeChange = (allTime)=>{
+    let moduleData = []
+    if(this.state.moduleData && this.state.moduleData.length>0){
+      moduleData = this.state.moduleData.map(item=>{
+        item.start_time = allTime[0]
+        item.last_time = allTime[1]
+        return item
+      })
+    }
+    this.setState({
+      allTime,
+      moduleData
+    })
+  }
+  subTimeChange = (data)=>{
+    let curData = []
+    if(this.state.moduleData && this.state.moduleData.length>0){
+      curData = this.state.moduleData.map(item=>{
+        if(item.id === data.id){
+          const start_time = data.timeArry[0]
+          const last_time = data.timeArry[1]
+          item.start_time = start_time
+          item.last_time = last_time
+        }
+        return item
+      })
+    }
+    this.setState({
+      moduleData: [...curData]
+    })
+  }
+  subSetFather = (data)=>{
+    let curData = []
+    if(this.state.moduleData && this.state.moduleData.length>0){
+      curData = this.state.moduleData.map(item=>{
+        if(item.id === data.id){
+          const { name, point, top, view, start_time, last_time } = data
+          item.name = name
+          item.point = point
+          item.top = top
+          item.view = view
+          item.start_time = start_time
+          item.last_time = last_time
+        }
+        return item
+      })
+    }
+    this.setState({
+      moduleData: [...curData]
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col span={24}>
+            <div className="amodule" style={{padding: "0 20px 0 20px", lineHeight: "60px"}}>
+              <span>全局时间：
+                <WyDatePicker rangeTimeChange={this.allTimeChange} curTime={this.state.allTime} size="default" style={{width:"280px"}}/>
+              </span>
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+            {
+              this.state.moduleData && this.state.moduleData.length>0?
+              _.cloneDeep(this.state.moduleData).map(item=>{
+                if(item.only === 'md_host' || item.only === 'md_src' || item.only === 'md_dst'){
+                  return (
+                    <Col key={item.id} sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                      <DashboardPic
+                        subSetFather={(data)=>this.subSetFather(data)}
+                        view={item.view}
+                        viewId={item.id}
+                        subModuleData={item}
+                        subTimeChange={(timeData)=>this.subTimeChange(timeData)}
+                        listType='host'
+                        objType='host'
+                      />
+                    </Col>
+                  )
+                }else if(item.only === 'md_port'){
+                  return (
+                    <Col key={item.id} sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                      <DashboardPic
+                        subSetFather={(data)=>this.subSetFather(data)}
+                        view={item.view}
+                        viewId={item.id}
+                        subModuleData={item}
+                        subTimeChange={(timeData)=>this.subTimeChange(timeData)}
+                        listType='netmouth'
+                        objType='port'
+                      />
+                    </Col>
+                  )
+                }else{
+                  return (
+                    <Col key={item.id} sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                      <DashboardPic
+                        subSetFather={(data)=>this.subSetFather(data)}
+                        view={item.view}
+                        viewId={item.id}
+                        subModuleData={item}
+                        subTimeChange={(timeData)=>this.subTimeChange(timeData)}
+                        listType='nothing'
+                        objType='nothing'
+                      />
+                    </Col>
+                  )
+                }
+              })
+              :
+              ''
+            }
+        </Row>
+      </div>
+    )
+  }
+}
+
+
+export default DashboardBuiltIn

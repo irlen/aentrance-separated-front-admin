@@ -1,0 +1,127 @@
+import React, { Component } from 'react'
+import { Tabs, Row, Col, Menu, Input} from 'antd'
+import _ from 'lodash'
+
+import WyDropDown from '../components/WyDropDown'
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import NetPic from './NetPic'
+import NetTable from './NetTable'
+import WySpin from '../components/WySpin'
+import { IfaceStandard } from '../components/StandarConstant'
+const TabPane = Tabs.TabPane
+class NetAllElement extends Component{
+  state={
+    recordTime:[],
+    type:'bytes',
+    allTime: [],
+    xData: [],
+    yData: [],
+    aUnit: '',
+    repostTime:[],
+    isSpining: false
+  }
+  ///*******供调用***********************//
+  getTableData = ()=>{
+    let info = {}
+    if(this.state.allTime.length>0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }else{
+      info.start_time = ''
+      info.last_time = ''
+    }
+    info.type = this.state.type
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('NetWork/getEachIface',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let curTime = []
+      curTime.push(responseData.start_time)
+      curTime.push(responseData.last_time)
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        allTime: curTime,
+        isSpining: false
+      })
+    })
+  }
+
+  ///*******供调用完***********************//
+  componentDidMount(){
+    this.getTableData()
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    },()=>{
+      this.getTableData()
+      this.tableComponent.subTimeChange(value)
+    })
+  }
+  tabChange = (value)=>{
+    this.setState({
+      type: value
+    },()=>{
+      this.getTableData()
+    })
+  }
+  setRepostTime = (value)=>{
+    this.tableComponent.subTimeChange(value)
+  }
+  render(){
+    return(
+      <div>
+        <div className="amodule" style={{padding:"0 20px 0 20px",lineHeight:"60px"}}>
+          <Row gutter={16}>
+            <Col>
+              <WyDatePicker size="default" curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} style={{maxWidth: "350px"}}/>
+            </Col>
+          </Row>
+        </div>
+        <Row gutter={16}>
+          <Col>
+            <div className="amodule">
+              <Tabs
+                activeKey={this.state.type}
+                onChange={this.tabChange}
+              >
+		            {
+                  IfaceStandard && IfaceStandard.length>0?
+                  IfaceStandard.map(item=>{
+                    return(
+            						<TabPane tab={item.name} key={item.value}>
+            						<WySpin isSpining={this.state.isSpining}>
+            						  <NetPic
+              							setRepostTime = {(value)=>this.setRepostTime(value)}
+              							xData={_.cloneDeep(this.state.xData)}
+              							yData={_.cloneDeep(this.state.yData)}
+              							aUnit={this.state.aUnit}
+            						  />
+            						</WySpin>
+            						</TabPane>
+                    )
+                  })
+                  :
+                  ''
+                }
+              </Tabs>
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={24}>
+            <NetTable
+              getInstance={instance=>this.tableComponent=instance}
+            />
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default NetAllElement

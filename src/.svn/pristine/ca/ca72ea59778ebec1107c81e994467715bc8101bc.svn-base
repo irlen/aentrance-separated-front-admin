@@ -1,0 +1,538 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, Drawer, Input, message, Popconfirm, Select, Upload, Icon, Switch } from 'antd'
+import _ from 'lodash'
+
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import sortColumns from '../components/TableSort'
+import { forName, singleIp } from '../components/RegExp'
+import { host } from '../components/Host'
+
+const uploadAction = host + 'DevObject/serviceImport'
+const TextArea = Input.TextArea
+const Option = Select.Option
+const Dragger = Upload.Dragger
+class HostSingle extends Component{
+  state={
+    visible: false,
+    isSpining: false,
+    pageSize:5,
+
+    name:'',
+    ip:'',
+    community:'',
+    type:'',
+    is_open: false,
+
+    ids:[],
+    describe:'',
+    searchName: '',
+    searchIpName: '',
+    id:'',
+    xData: [],
+    yData: [],
+    searchRule: {},
+    visibleForUpload: false
+  }
+  /*******************供调用***************************************************/
+  //获取服务器信息
+    getHostSingleData = ()=>{
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('DevObject/getServerInfo',{},(result)=>{
+        const responseData = result.data.msg
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '编辑',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        })
+        this.setState({
+          xData: sortColumns(curxData),
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    }
+
+    //保存主机组
+    saveHostGroup = ()=>{
+      const {
+        name,
+        describe,
+        ip,
+        community,
+        type,
+        is_open
+      } = this.state
+      let data = {
+        name,
+        describe,
+        ip,
+        community,
+        type,
+        is_open
+      }
+      if(this.state.id !== ''){
+        data.id = this.state.id
+      }
+      wyAxiosPost('DevObject/saveServerInfo',data,(result)=>{
+        this.getHostSingleData()
+        this.onClose()
+        message.success(result.data.msg)
+      })
+    }
+
+  /*******************供调用完**************************************************/
+  componentDidMount(){
+    this.getHostSingleData()
+  }
+  handleEdit = (id)=>{  //onChange={(value)=>this.nameChange(item,value)}
+    wyAxiosPost('DevObject/getServerInfo',{id:id},(result)=>{
+      const responseData = result.data.msg
+      const { name, ip, describe, community, type, is_open } = responseData
+      this.setState({
+        id: id,
+        name,
+        ip,
+        describe,
+        community,
+        type,
+        is_open: is_open === 'true'?true:false
+      })
+      this.showDrawer()
+    })
+  }
+
+  handleOk = ()=>{
+    //这里验证提交
+    const erroList = []
+    if(this.state.name === ''){
+      erroList.push('名称不能为空')
+    }
+    if(this.state.name !== '' && !(forName.test(this.state.name)) ){
+      erroList.push('名称格式有误')
+    }
+    if(this.state.community === ''){
+      erroList.push('团体名不能为空')
+    }
+    if(this.state.type === ''){
+      erroList.push('类型不能为空')
+    }
+    if(this.state.ip === ''){
+      erroList.push('ip不能为空')
+    }
+    if(this.state.ip !== '' && !singleIp.test(this.state.ip)){
+      erroList.push('ip格式有误')
+    }
+    if(erroList.length === 0){
+      this.saveHostGroup()
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  nameChange = (e)=>{
+    this.setState({
+      name: e.target.value
+    })
+  }
+
+  ipChange = (e)=>{
+    this.setState({
+      ip: e.target.value
+    })
+  }
+
+  describeChange = (e)=>{
+    this.setState({
+      describe:e.target.value
+    })
+  }
+  searchNameChange = (e)=>{
+    this.setState({
+      searchName: e.target.value
+    })
+  }
+  searchIpNameChange = (e)=>{
+    this.setState({
+      searchIpName: e.target.value
+    })
+  }
+  communityChange = (e)=>{
+    this.setState({
+      community: e.target.value
+    })
+  }
+  typeChange = (value)=>{
+    this.setState({
+      type: value
+    })
+  }
+  is_openChange = (value)=>{
+    this.setState({
+      is_open: value
+    })
+  }
+  doSearch = ()=>{
+    const erroList = []
+    if(this.state.searchIpName !== '' && !singleIp.test(this.state.searchIpName)){
+      erroList.push('ip格式有误')
+    }
+    if(erroList.length === 0){
+      let curRule = {}
+      curRule.name = this.state.searchName
+      curRule.ip = this.state.searchIpName
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('DevObject/getServerInfo',curRule,(result)=>{
+        const responseData = result.data.msg
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '编辑',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        })
+        this.setState({
+          xData: sortColumns(curxData),
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  resetSearch = ()=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DevObject/getServerInfo',{},(result)=>{
+      const responseData = result.data.msg
+      let curxData = _.cloneDeep(responseData.xxx)
+      curxData.push({
+        title: '编辑',
+        dataIndex: 'edit',
+        render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+      })
+      this.setState({
+        xData: sortColumns(curxData),
+        yData: responseData.yyy,
+        searchIpName:'',
+        searchName:'',
+        isSpining: false
+      })
+    })
+  }
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    });
+  };
+
+  onClose = () => {
+    this.setState({
+      name:'',
+      ip:[],
+      describe:'',
+      visible: false,
+      id: ''
+    });
+  };
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('DevObject/deleteServerInfo',{ids: this.state.ids},(result)=>{
+        message.success(result.data.msg)
+        this.getHostSingleData()
+        this.setState({
+          ids: []
+        })
+      })
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  showDrawerForUpload = () => {
+    this.setState({
+      visibleForUpload: true,
+    });
+  };
+  onCloseForUpload = () => {
+    this.setState({
+      visibleForUpload: false,
+    });
+  };
+  fileRomove = ()=>{
+    message.success('文件已被成功删除')
+  }
+  beforeUpload = (file)=>{
+    const filename = file.name
+    const index1 = filename.lastIndexOf(".");
+    const index2 = filename.length;
+    const postf = filename.substring(index1,index2);
+    // const isLt2M = file.size / 1024 / 1024 < 2;
+    if(file.type === 'text/plain' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.type === 'application/vnd.ms-excel' ||
+      postf === '.xls' ||
+      postf === '.xlsx' ||
+      postf === '.txt'
+    ){
+      return true
+    }else{
+      message.warning("很抱歉，此处只能上传.txt .xlsx .xls类型的文件")
+      return false
+    }
+  }
+  doDownload = ()=>{
+    wyAxiosPost('DevObject/serviceExport',{},(result)=>{
+        const a = document.createElement('a'); //创建一个<a></a>标签
+        a.href = result.data.msg; // response is a blob
+        a.download = "hostinfomation.xls";  //文件名称
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div className="moduleBody">
+        <Row gutter={16}>
+          <Col sm={{ span: 24}} md={{ span: 6}} lg={{span:6}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 90px"}}>服务器名称：</div>
+              <div style={{flex:"1 1 auto"}}><Input placeholder="不限" value={this.state.searchName} onChange={this.searchNameChange}/></div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 8}} lg={{span:6,offset: 1}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 20px"}}>IP：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <Input placeholder="不限" value={this.state.searchIpName} onChange={this.searchIpNameChange}/>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 10}} lg={{span:6}}>
+            <div style={{lineHeight: "40px"}}>
+              <Button type="primary" onClick={this.doSearch}>查询</Button>
+              {
+                (this.state.searchName === '' && this.state.searchIpName.length === 0) ?
+                ''
+                :
+                <Button style={{marginLeft: "10px"}} onClick={this.resetSearch}>重置</Button>
+              }
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Button type="primary" style={{marginLeft: "10px"}} onClick={this.showDrawerForUpload}>
+              <i className="fa fa-level-down" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>导入</span>
+            </Button>
+            <Button type="primary" onClick={this.doDownload} style={{marginLeft: "10px"}}>
+              <i className="fa fa-level-up" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}} >导出</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                rowSelection={rowSelection}
+                xData={this.state.xData}
+                yData={this.state.yData}
+              />
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title={this.state.id?"修改":"新建"}
+          width={620}
+          placement="right"
+          onClose={this.onClose}
+          maskClosable={true}
+          visible={this.state.visible}
+          destroyOnClose={true}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <div>
+            <ul>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>名称：</div>
+                <div style={{flex:"1 1  auto"}}><Input value={this.state.name} onChange={this.nameChange} /></div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>ip：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Input value={this.state.ip} onChange={this.ipChange} />
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>团体名：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Input value={this.state.community} onChange={this.communityChange} />
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>类型：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select value={this.state.type} onChange={this.typeChange} style={{width:"100%"}}>
+                    <Option key="host" value="host">服务器</Option>
+                    <Option key="router" value="router">路由器</Option>
+                    <Option key="switchboard" value="switchboard">交换机</Option>
+                    <Option key="firewall" value="firewall">防火墻</Option>
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>是否开启：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Switch checkedChildren="是" unCheckedChildren="否" checked={this.state.is_open} onChange={this.is_openChange} />
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>描述：</div>
+                <div style={{flex:"1 1  auto"}}><TextArea value={this.state.describe} onChange={this.describeChange} autosize={{ minRows: 1 }} /></div>
+              </li>
+            </ul>
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '100%',
+              borderTop: '1px solid #e8e8e8',
+              padding: '10px 20px',
+              textAlign: 'right',
+              left: 0,
+              background: '#fff',
+              borderRadius: '0 0 4px 4px',
+            }}
+          >
+            <Button
+              style={{
+                marginRight: 8,
+              }}
+              onClick={this.onClose}
+            >
+              取消
+            </Button>
+            <Button onClick={this.handleOk} type="primary">确定</Button>
+          </div>
+        </Drawer>
+        <Drawer
+          title="导入"
+          width={720}
+          placement="right"
+          onClose={this.onCloseForUpload}
+          destroyOnClose={true}
+          maskClosable={true}
+          visible={this.state.visibleForUpload}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <div>
+            <Dragger
+              name= 'upfile'
+              multiple= {true}
+              action = {uploadAction}
+              showUploadList={false}
+              onRemove={this.fileRomove}
+              beforeUpload={this.beforeUpload}
+              onChange = {
+                (info)=>{
+                  this.setState({
+                    isSpining: true
+                  })
+                  const status = info.file.status
+                  // if (status !== 'uploading') {
+                  //   console.log(info.file, info.fileList);
+                  // }
+                  if (status === 'done') {
+                    if(info.file.response && info.file.response.data.status === 1){
+                      this.onCloseForUpload()
+                      this.getHostSingleData()
+                      message.success(`${info.file.name} 文件上传成功.`);
+                      this.setState({
+                        isSpining: false
+                      })
+                    }else if(info.file.response && info.file.response.data.status === 0){
+                      this.onCloseForUpload()
+                      this.getHostSingleData()
+                      message.error(`${info.file.name} ${info.file.response.data.msg}`);
+                      this.setState({
+                        isSpining: false
+                      })
+                    }
+                  } else if (status === 'error') {
+                    this.onCloseForUpload()
+                    this.getHostSingleData()
+                    message.error(`${info.file.name} 文件上传失败.`);
+                    this.setState({
+                      isSpining: false
+                    })
+                  }
+                }
+              }
+            >
+              <p className="ant-upload-drag-icon">
+                <Icon type="inbox" />
+              </p>
+              <p className="ant-upload-text">点击或拖拽进行文件上传</p>
+              <p className="ant-upload-hint">支持多文件上传</p>
+            </Dragger>
+          </div>
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+export default HostSingle

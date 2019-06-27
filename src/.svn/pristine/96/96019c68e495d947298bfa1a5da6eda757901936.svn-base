@@ -1,0 +1,10 @@
+// var ip_addr = document.location.hostname;
+var ip_addr = '10.0.0.100'
+//const host  = 'http://'+ip_addr+':8080/cps/NetDipperV3-select/System'
+const host  = 'http://'+ip_addr+':8080/NetApi/public/?r='
+//const host2 = {
+//	getdata: 'http://'+ip_addr+':8080/NetApi/public/?r=Test/test'
+//}
+
+
+exports.host =  host

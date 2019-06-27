@@ -1,0 +1,90 @@
+import React, { Component } from 'react';
+import { Row, Col, Button, Drawer, Input, message, Popconfirm, Select } from 'antd'
+
+import WySpin from '../components/WySpin'
+import WyTable from '../components/WyTable'
+import StepWindow from './StepWindow'
+const Option = Select.Option
+class AlertManage extends Component {
+
+  state={
+    ids:[],
+    visible: false
+  }
+  //删除告警
+  handleDelete = ()=>{
+
+  }
+  //显示抽屉
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    })
+  }
+  //关闭抽屉
+  onClose = () => {
+    this.setState({
+      visible: false,
+    })
+  }
+  render() {
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return (
+      <div>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                rowSelection={rowSelection}
+                xData={this.state.xData}
+                yData={this.state.yData}
+              />
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title="新建告警策略"
+          width={"90%"}
+          placement="right"
+          destroyOnClose={true}
+          onClose={this.onClose.bind(this)}
+          maskClosable={true}
+          visible={this.state.visible}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+            <StepWindow/>
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+export default AlertManage

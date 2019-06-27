@@ -1,0 +1,533 @@
+import React, { Component } from 'react'
+import { message, Row, Col, Button, Popconfirm, Drawer, Select, TimePicker, Transfer, Input, Switch, Icon } from 'antd'
+import _ from 'lodash'
+import moment from 'moment'
+
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+import { forName } from '../components/RegExp'
+import { wyAxiosPost } from '../components/WyAxios'
+import  WyDatePicker from '../components/WyDatePicker'
+
+const Option = Select.Option
+const TextArea = Input.TextArea
+class ReportList extends Component{
+  state = {
+    ids:[],
+    editId:'',
+    visible: false,
+    report_name: '',
+    report_description:'',
+    report_type:'day',
+    start_time: moment().set({'hour':'00','minute':'00'}),
+    last_time: moment().set({'hour':'23','minute':'59'}),
+    day_time:['00:00','23:59'],
+    define_time:[],
+    sentEmail: false,
+    emails:[],
+    OPTIONS: [],
+
+    targetKeys:[],
+    mockData: [],
+
+    pageSize:5,
+    isSpining: false
+  }
+  //获取表格数据
+  getTableData = ()=>{
+    let id = ''
+    if(this.state.editId){
+      id = this.state.editId
+    }else{
+      this.setState({
+        isSpining: true
+      })
+    }
+    wyAxiosPost('Report/getReport',{id},(result)=>{
+      const responseData = result.data.msg
+      const {
+        report_name,
+        report_description,
+        report_type,
+        day_time,
+        define_time,
+        emails,
+        content
+      } = responseData
+      if(this.state.editId){
+        let start_time = null
+        let last_time = null
+        if(day_time && day_time.length>0){
+          const start_hour = day_time[0].split(':')[0]
+          const start_min = day_time[0].split(':')[1]
+          const last_hour = day_time[1].split(':')[0]
+          const last_min = day_time[1].split(':')[1]
+          start_time = moment().set({'hour':start_hour,'minute':start_min})
+          last_time = moment().set({'hour':last_hour,'minute':last_min})
+        }else{
+          start_time = moment().set({'hour':'00','minute':'00'})
+          last_time = moment().set({'hour':'23','minute':'59'})
+        }
+        this.setState({
+          report_name,
+          report_description,
+          report_type,
+          start_time,
+          last_time,
+          day_time:day_time?day_time:['00:00','23:59'],
+          define_time:define_time?define_time:[],
+          sentEmail: emails && emails.length>0? true: false,
+          emails,
+          targetKeys:content
+        })
+        this.showDrawer()
+      }else{
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '编辑',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        })
+        this.setState({
+          xData: curxData,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      }
+    })
+  }
+  handleEdit = (id)=>{
+    this.setState({
+      editId: id
+    },()=>{
+      this.getTableData()
+    })
+  }
+  componentDidMount(){
+    this.getTableData()
+    wyAxiosPost('Alert/getEmail',{},(result)=>{
+      const responseData = result.data.msg
+      if(responseData){
+        this.setState({
+          OPTIONS: responseData
+        })
+      }
+    })
+    wyAxiosPost('Report/getViewItem',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        mockData: responseData
+      })
+    })
+  }
+
+
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    })
+  }
+
+  onClose = () => {
+    this.setState({
+      visible: false,
+      editId:''
+    })
+  }
+  //新建模板
+  showModal = ()=>{
+    this.setState({
+      editId:'',
+      report_name: '',
+      report_description:'',
+      report_type:'day',
+      start_time: moment().set({'hour':'00','minute':'00'}),
+      last_time: moment().set({'hour':'23','minute':'59'}),
+      day_time:['00:00','23:59'],
+      define_time:[],
+      sentEmail: false,
+      emails:[],
+      targetKeys:[],
+    },()=>{
+      this.showDrawer()
+    })
+  }
+
+  report_typeChange = (value)=>{
+    this.setState({
+      report_type: value,
+      start_time: moment().set({'hour':'00','minute':'00'}),
+      last_time: moment().set({'hour':'23','minute':'59'}),
+      day_time:['00:00','23:59'],
+      define_time:[]
+    })
+  }
+  sentEmailChange = (value)=>{
+    this.setState({
+      sentEmail: value,
+      emails:[]
+    })
+  }
+  start_timeChange = (time)=>{
+    if(time){
+      const strTime = time.format('HH:mm')
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[0] = strTime
+      this.setState({
+        start_time: time,
+        day_time: curTime
+      })
+    }else{
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[0] = null
+      this.setState({
+        start_time: null,
+        day_time: curTime
+      })
+    }
+  }
+  last_timeChange = (time)=>{
+    if(time){
+      const strTime = time.format('HH:mm')
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[1] = strTime
+      this.setState({
+        last_time: time,
+        day_time: curTime
+      })
+    }else{
+      const curTime = _.cloneDeep(this.state.day_time )
+      curTime[1] = null
+      this.setState({
+        start_time: null,
+        day_time: curTime
+      })
+    }
+  }
+  report_nameChange =(e)=>{
+    this.setState({
+      report_name: e.target.value
+    })
+  }
+  report_description = (e)=>{
+    this.setState({
+      report_description: e.target.value
+    })
+  }
+  emailChange = (emails)=>{
+    this.setState({
+      emails
+    })
+  }
+  define_timeChange = (define_time)=>{
+    this.setState({
+      define_time
+    })
+  }
+  //获取穿梭框数据
+  getMock = () => {
+    const targetKeys = [];
+    const mockData = [];
+    const id = this.state.editId
+  }
+  transferChange = (targetKeys)=>{
+    this.setState({
+      targetKeys
+    })
+  }
+  report_descriptionChange = (e)=>{
+    this.setState({
+      report_description: e.target.value
+    })
+  }
+  doSubmit = ()=>{
+    const erroList = []
+    //名称验证
+    if(this.state.report_name === ''){
+      erroList.push('名称不能为空')
+    }
+    if(this.state.report_name !== '' && !(forName.test(this.state.report_name)) ){
+      erroList.push('名称格式有误')
+    }
+    if(this.state.report_type === 'day'){
+      //日内时间合法性
+      if(this.state.day_time.length < 2 || (this.state.day_time[0] && this.state.day_time[0] === null) || (this.state.day_time[1] && this.state.day_time[1] === null)){
+        erroList.push('日内时间未填写完整')
+      }
+      if(this.state.day_time.length === 2 && this.state.day_time[0] !== null && this.state.day_time[1] !== null){
+        const startArray = this.state.day_time[0].split(':')
+        const startNumber = parseInt(startArray[0],10)*3600+parseInt(startArray[1],10)*60
+        const lastArray = this.state.day_time[1].split(':')
+        const lastNumber = parseInt(lastArray[0],10)*3600+parseInt(lastArray[1],10)*60
+        if(lastNumber < startNumber){
+          erroList.push('日内起始时间小于截止时间，不符逻辑')
+        }
+      }
+    }
+    if(this.state.report_type === 'define' && this.state.define_time.length === 0){
+      erroList.push('请选择数据时间')
+    }
+    //判断内容是否为空
+    if(this.state.targetKeys.length === 0){
+      erroList.push('未选择报表内容')
+    }
+    //邮件
+    if(this.state.sentEmail && this.state.emails.length === 0){
+      erroList.push('请选择邮件发送对象')
+    }
+
+    if(erroList.length === 0){
+      const {
+        report_name,
+        report_type,
+        day_time,
+        targetKeys,
+        report_description,
+        emails,
+        define_time
+      } = this.state
+      let info = {
+        report_name,
+        report_type,
+        content: targetKeys,
+        report_description,
+        emails
+      }
+      if(report_type === 'day'){
+        info.day_time = day_time
+      }else if(report_type === 'define'){
+        info.define_time = define_time
+      }
+      if(this.state.editId){
+        info.id = this.state.editId
+      }
+      wyAxiosPost('Report/saveReport',{info},(result)=>{
+        const responseData = result.data.msg
+        if(responseData.status === 1){
+          message.success(responseData.msg)
+          this.onClose()
+          this.getTableData()
+          wyAxiosPost('Report/buildReport',{id: responseData.id},(result)=>{
+            return
+          })
+        }else{
+          message.warning(responseData.msg)
+        }
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  //删除模板
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('Report/delReport',{ids: this.state.ids},(result)=>{
+        message.success(result.data.msg)
+
+        this.setState({
+          ids: []
+        },()=>{
+          this.getTableData()
+        })
+      })
+    }
+  }
+  generateTime = ()=>{
+    let rangeTime = ''
+    if(this.state.report_type === 'day'){
+      rangeTime = <div style={{display: "flex", marginBottom:"20px"}}>
+        <div style={{flex:" 0 0 100px"}}>数据时间：</div>
+        <div style={{flex:" 1 1 auto"}}>
+          <TimePicker value={this.state.start_time} allowClear={false} placeHolder={'请选择时间'}  onChange={this.start_timeChange} format={'HH:mm'} /> ~ <TimePicker value={this.state.last_time} allowClear={false} placeHolder={'请选择时间'}  onChange={this.last_timeChange} format={'HH:mm'} />
+        </div>
+      </div>
+    }else if(this.state.report_type === 'define'){
+      rangeTime = <div style={{display: "flex", marginBottom:"20px"}}>
+        <div style={{flex:" 0 0 100px"}}>数据时间：</div>
+        <div style={{flex:" 1 1 auto"}}>
+          <WyDatePicker size='default' curTime={this.state.define_time} placeHolder={'请选择时间'}  rangeTimeChange={this.define_timeChange}  />
+        </div>
+      </div>
+    }else{
+      rangeTime = ''
+    }
+    return rangeTime
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    const compiledMockData = this.state.mockData.map(item=>{
+      item.key = item.api
+      item.title = item.name
+      item.description = ''
+      item.chosen = false
+      return item
+    })
+    return (
+      <div className='amodule'>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col style={{padding: "20px 0 0 30px"}}>
+            <Button type="primary" onClick={this.showModal}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?`确定要删除这${this.state.ids.length}选项？`:'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <div className="moduleBody">
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                  rowSelection={rowSelection}
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                />
+              </WySpin>
+              </div>
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title="新建模板"
+          placement="right"
+          onClose={this.onClose}
+          visible={this.state.visible}
+           width={900}
+        >
+          <div style={{padding: "20px"}}>
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>报表名称：</div>
+              <div style={{flex:" 1 1 auto"}}>
+                <Input value={this.state.report_name} onChange={this.report_nameChange}/>
+              </div>
+            </div>
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>报表类型：</div>
+              <div style={{flex:" 1 1 auto"}}>
+                <Select value={this.state.report_type} onChange={this.report_typeChange}>
+                  <Option key='day' value='day'> 日报 </Option>
+                  <Option key='week' value='week'> 周报 </Option>
+                  <Option key='define' value='define'> 自定义 </Option>
+                </Select>
+              </div>
+            </div>
+            {
+             this.generateTime()
+            }
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>备注：</div>
+              <div style={{flex:" 1 1 auto"}}>
+                <TextArea
+                  value={this.state.report_description}
+                  onChange={this.report_descriptionChange}
+                  rows={1}
+                />
+              </div>
+            </div>
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>内容：</div>
+                <div style={{flex:" 1 1 auto"}}>
+                  <Transfer
+                    dataSource={compiledMockData}
+                    listStyle={{
+                      width: 300,
+                      height: 400,
+                    }}
+                    showSearch
+                    filterOption={this.filterOption}
+                    targetKeys={this.state.targetKeys}
+                    onChange={this.transferChange}
+                    render={item => item.title}
+                  />
+              </div>
+            </div>
+            <div style={{display: "flex", marginBottom:"20px"}}>
+              <div style={{flex:" 0 0 100px"}}>邮件：</div>
+              <div style={{flex:" 1 1 auto"}}>
+                <div style={{display:"flex"}}>
+                  <div style={{flex:"0 0 80px"}}>
+                    <Switch
+                     checkedChildren="发送"
+                     unCheckedChildren="不发送"
+                     checked={this.state.sentEmail}
+                     onChange={this.sentEmailChange}
+                    />
+                  </div>
+                  {
+                    this.state.sentEmail?
+                    <div style={{flex:"1 1 auto"}}>
+                      <Select
+                        mode="multiple"
+                        placeholder=""
+                        value={this.state.emails}
+                        onChange={this.emailChange}
+                        style={{ width: '100%' }}
+                      >
+                        {
+                          this.state.OPTIONS && this.state.OPTIONS.length>0?
+                          this.state.OPTIONS.map(item=>{
+                            return (
+                              <Option key={item.id} value={item.id} title={item.username}>
+                                {item.username}
+                              </Option>
+                            )
+                          })
+                          :
+                          ''
+                        }
+                      </Select>
+                    </div>
+                    :
+                    ''
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          <p style={{textAlign: 'right'}}>
+            <Button
+                onClick={this.onClose}
+                style={{marginRight:"20px"}}
+              >
+                取消
+            </Button>
+            <Button onClick={this.doSubmit} type="primary" style={{marginRight: "20px"}}>
+              提交
+            </Button>
+          </p>
+
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+
+export default ReportList

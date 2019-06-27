@@ -1,0 +1,44 @@
+import React, { Component } from 'react'
+import { Row, Col} from 'antd'
+
+import AppStatusTable from './AppStatusTable'
+import AppStatusPic from './AppStatusPic'
+import ResponseTimepic from './ResponseTimepic'
+
+class DataBaseStatus extends Component{
+  state = {
+    appName:''
+  }
+  setFatherComponent = (appName)=>{
+    this.setState({
+      appName:appName
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col span={24}>
+            <AppStatusTable setFatherComponent={(appName)=>this.setFatherComponent(appName)}/>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+            <Col sm={{span:24}} md={{span: 24}} lg={{span: 12}}>
+              <AppStatusPic standard='capacity' appName={this.state.appName} moduleName="应用负载"/>
+            </Col>
+            <Col sm={{span:24}} md={{span: 24}} lg={{span: 12}}>
+              <ResponseTimepic standard='reponse' appName={this.state.appName} moduleName="响应时间构成图"/>
+            </Col>
+            <Col sm={{span:24}} md={{span: 24}} lg={{span: 12}}>
+              <AppStatusPic standard='request' appName={this.state.appName} moduleName="成功与失败请求数"/>
+            </Col>
+            <Col sm={{span:24}} md={{span: 24}} lg={{span: 12}}>
+              <AppStatusPic standard='quality' appName={this.state.appName} moduleName="网络质量"/>
+            </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default DataBaseStatus

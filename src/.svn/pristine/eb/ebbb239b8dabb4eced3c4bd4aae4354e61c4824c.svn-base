@@ -1,0 +1,185 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyTable from '../components/WyTable'
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import contextList from '../SubPage/ContextList'
+class TopSqltable extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+               return <span style={{display: "inline-block",width: "100%"}} title={text} className="noWrap" > {text} </span>
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    appValue:'',
+    pointType:'',
+    subTime: [],
+    xData:[],
+    yData:[],
+    isSpining: false
+  }
+  componentDidMount(){
+    this.setState({
+      pointType: this.props.pointType
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(JSON.stringify(this.props.allTime) === JSON.stringify(nextProps.allTime) && this.props.appValue === nextProps.appValue)){
+      if(JSON.stringify(this.props.allTime) !== JSON.stringify(nextProps.allTime)){
+        const data = {}
+        data.appValue = nextProps.appValue
+        data.pointType = this.state.pointType
+        data.start_time = nextProps.allTime[0]
+        data.last_time = nextProps.allTime[1]
+        //data.pointType = this.state.pointType
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('Http/getHttpDataByType',data,(result)=>{
+          const data = result.data.msg
+          this.setState({
+            xData: this.compileColumns(data.xxx),
+            yData: data.yyy,
+            subTime: [...nextProps.allTime],
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }else{
+        const data = {}
+        data.appValue = nextProps.appValue
+        data.pointType = this.state.pointType
+        data.start_time = this.state.subTime[0]
+        data.last_time = this.state.subTime[1]
+        //data.pointType = this.state.pointType
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('Http/getHttpDataByType',data,(result)=>{
+          const data = result.data.msg
+          this.setState({
+            xData: this.compileColumns(data.xxx),
+            yData: data.yyy,
+            //aUnit: data.unit,
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }
+    }
+  }
+
+  subTimeChange = (value)=>{
+    this.setState({
+      isSpining: true
+    })
+    let requstData = {}
+    requstData.appValue = this.state.appValue
+    requstData.pointType = this.state.pointType
+    requstData.start_time = value[0]
+    requstData.last_time = value[1]
+    requstData.pointType = this.state.pointType
+
+    wyAxiosPost('Http/getHttpDataByType',requstData,(result)=>{
+      const data = result.data.msg
+      this.setState({
+        xData: this.compileColumns(data.xxx),
+        yData: data.yyy,
+        //aUnit: data.unit,
+        subTime: [...value],
+        isSpining: false
+      })
+    })
+    this.setState({
+      subTime: [...value]
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'url',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: record.url_,
+      objType: 'url',
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  // pointTypeChange = (value)=>{
+  //   this.setState({
+  //     isSpining: true
+  //   })
+  //   let requstData = {}
+  //   requstData.appValue = this.state.appValue
+  //   requstData.pointType = value
+  //   requstData.start_time = this.state.subTime[0]
+  //   requstData.last_time = this.state.subTime[1]
+  //   requstData.standard = this.state.standard
+  //
+  //   wyAxiosPost('DB/getDbDataByType',requstData,(result)=>{
+  //     console.log(result.data)
+  //     const data = result.data.msg
+  //     this.setState({
+  //       xData: data.xxx,
+  //       yData: data.yyy,
+  //       aUnit: data.unit,
+  //       pointType: value,
+  //       isSpining: false
+  //     })
+  //   })
+  // }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>{this.props.moduleName}</span>
+          <span style={{float:"right"}}><WyDatePicker rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} style={{width: "280px"}}/></span>
+        </div>
+        <div className="moduleBody">
+        <Scrollbars
+          autoHide
+          autoHideTimeout={100}
+          autoHideDuration={200}
+          universal={true}
+          style={{height: "300px"}}
+          >
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData :[]}
+                onTableContextmenu={this.tableContextmenu}
+                dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+              />
+            </WySpin>
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(TopSqltable)

@@ -1,0 +1,53 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+import WyTable from '../components/WyTable'
+class TableView extends Component{
+  state={
+    xData: [],
+    yData: [],
+    len: ''
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.viewData) !== JSON.stringify(nextProps.viewData)){
+      const viewData = nextProps.viewData
+      this.setState({
+        xData: viewData.xxx,
+        yData: viewData.yyy,
+        len: viewData.len
+      })
+    }
+  }
+  upDateData = (data)=>{
+    this.setState({
+      xData: data.xxx,
+      yData: data.yyy,
+      len: data.len
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          {this.props.moduleName}(共：{this.state.len})
+        </div>
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            className='containerIn'
+            style={{height: "300px"}}
+            >
+              <WyTable
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+              />
+            </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default TableView

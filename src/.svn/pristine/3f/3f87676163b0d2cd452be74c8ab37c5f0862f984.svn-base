@@ -1,0 +1,79 @@
+import React, { Component } from 'react'
+import { Progress } from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+import { wyAxiosPost } from '../components/WyAxios'
+
+import WyDatePicker from '../components/WyDatePicker'
+class DiskRate extends Component{
+  state={
+    diskData: []
+  }
+  componentDidMount(){
+    wyAxiosPost('Dev/GetDiskInfo',{},(result)=>{
+      this.setState({
+        diskData: [...result.data.msg]
+      })
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>
+            硬盘使用率
+          </span>
+
+        </div>
+        <Scrollbars
+          autoHide
+          autoHideTimeout={100}
+          autoHideDuration={200}
+          universal={true}
+          className='containerIn'
+          style={{height: "320px",padding: "10px 20px 10px 20px"}}
+          >
+          <div className="moduleBody">
+            <ul style={{lineHeight:"30px"}}>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"1 1 auto"}}>分区</div>
+                <div style={{flex:"0 0 160px",paddingLeft:"40px"}}>已用/总容量</div>
+              </li>
+              {
+                this.state.diskData && this.state.diskData.length>0?
+                this.state.diskData.map(item=>{
+                  const percent = parseInt(item.percent,0)
+                  let strokeColor = '#3399cc'
+                  if(10 > percent > 0 ){
+                    strokeColor = '#ae0888'
+                  }else if(percent == 10 || (percent > 10 && percent < 30)){
+                    strokeColor="#F60"
+                  }else if(percent>30){
+                    strokeColor="#00CC33"
+                  }
+                  return(
+                    <li key={item.name} style={{display: "flex"}}>
+                      <div style={{flex:"1 1 auto"}}>
+                        <div>{item.name}</div>
+                        <div>
+                          <Progress strokeColor={strokeColor} percent={percent} status="active" />
+                        </div>
+                      </div>
+                      <div style={{flex:"0 0 160px",paddingLeft:"40px"}}>
+                        <div style={{height: "30px"}}></div>
+                        <div>{item.space}</div>
+                      </div>
+                    </li>
+                  )
+                })
+                :
+                ''
+              }
+            </ul>
+          </div>
+        </Scrollbars>
+      </div>
+    )
+  }
+}
+
+export default DiskRate

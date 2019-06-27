@@ -1,0 +1,10 @@
+import React, { Component } from 'react'
+
+class ReportList extends Component{
+  render(){
+    return '报标'
+  }
+}
+
+
+export default ReportList

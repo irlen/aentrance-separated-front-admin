@@ -1,0 +1,157 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyTable from '../components/WyTable'
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import contextList from '../SubPage/ContextList'
+
+class AppStatusTable extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    initColumns:[],
+    columns: [],
+    dataSource: [],
+    activeRowKey:'',
+    subTime: [],
+    isSpining: false,
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  componentDidMount(){
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DB/getDbStatusList',{},(result)=>{
+      const responseData = result.data.msg
+      let timeArray = []
+      timeArray.push(responseData.start_time)
+      timeArray.push(responseData.last_time)
+      const activeRowKey=responseData.yyy[0].key
+      const initColumns = responseData.xxx
+      const newColumns = this.compileColumns(activeRowKey,initColumns)
+      this.props.setFatherComponent(responseData.yyy[0].app_name)
+      this.setState({
+        columns: [...newColumns],
+        initColumns,
+        activeRowKey,
+        dataSource: responseData.yyy,
+        subTime: [...timeArray],
+        isSpining: false
+
+      })
+    })
+  }
+
+  subTimeChange = (value)=>{
+    this.setState({
+      isSpining: true
+    })
+    let data = {}
+    data.start_time = value[0]
+    data.last_time = value[1]
+    wyAxiosPost('DB/getDbStatusList',data,(result)=>{
+      const responseData = result.data.msg
+      const activeRowKey = this.state.activeRowKey
+      //render: (text, record, index) => <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className={record.key === activeRowKey?'activeRow': ''}>{text}</span>
+      const initColumns = responseData.xxx
+      const newColumns = this.compileColumns(activeRowKey,initColumns)
+      this.setState({
+        columns: [...newColumns],
+        initColumns,
+        dataSource: responseData.yyy,
+        subTime: [...value],
+        isSpining: false
+      })
+    })
+  }
+  onTableClick = (record)=>{
+    this.props.setFatherComponent(record.app_name)
+    const activeRowKey = record.key
+    const initColumns = this.state.initColumns
+    const newColumns = this.compileColumns(activeRowKey,initColumns)
+    this.setState({
+      activeRowKey,
+      columns: [...newColumns]
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'apply',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: record.app_name,
+      objType: 'db',
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    const activeRowKey = this.state.activeRowKey
+    return (
+      <div className="amodule">
+        <div className="moduleHeader" style={{display: "flex"}}>
+          <div style={{flex:"1 1 auto"}}>数据库</div>
+          <div style={{flex:"0 0 300px"}}>
+            <WyDatePicker curTime={this.state.subTime} rangeTimeChange={this.subTimeChange} size="small" style={{maxWidth:"280px"}}/>
+          </div>
+        </div>
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            style={{height: "300px"}}
+            >
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  onTableClick={this.onTableClick}
+                  xData={ this.state.columns?this.state.columns:[] }
+                  yData={ this.state.dataSource?this.state.dataSource:[]}
+                  onTableContextmenu={this.tableContextmenu}
+                  dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                />
+              </WySpin>
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(AppStatusTable)

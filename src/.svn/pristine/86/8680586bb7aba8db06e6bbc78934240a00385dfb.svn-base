@@ -1,0 +1,208 @@
+import React, { Component } from 'react'
+import { Select, Tabs } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router'
+
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import Line from '../components/Line'
+import contextList from '../SubPage/ContextList'
+
+const Option = Select.Option
+const TabPane = Tabs.TabPane
+class Toppic extends Component{
+  state = {
+    appValue:'',//应用
+    subTime:[],//模块时间
+    standard:'',//指标
+    pointType: 'sqlAction',//端类型
+    isSpining: false,
+    xData:[],
+    yData:[],
+    aUnit:'',
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  componentDidMount(){
+    this.setState({
+      standard: this.props.standard
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(JSON.stringify(this.props.allTime) === JSON.stringify(nextProps.allTime) && this.props.appValue === nextProps.appValue)){
+      if(JSON.stringify(this.props.allTime) !== JSON.stringify(nextProps.allTime)){
+        let data = {}
+        data.pointType = this.state.pointType
+        data.appValue = nextProps.appValue
+        data.standard = this.state.standard
+        data.start_time = nextProps.allTime[0]
+        data.last_time = nextProps.allTime[1]
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+          const responseData = result.data.msg
+          console.log("hello")
+          console.log(result.data)
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            aUnit: responseData.unit,
+            subTime: [...nextProps.allTime],
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }else{
+        let data = {}
+        data.pointType = this.state.pointType
+        data.appValue = nextProps.appValue
+        data.standard = this.state.standard
+        data.start_time = this.state.subTime[0]
+        data.last_time = this.state.subTime[1]
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+          const responseData = result.data.msg
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            aUnit: responseData.unit,
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }
+    }
+  }
+
+  subTimeChange = (value)=>{
+    let data = {}
+    data.pointType = this.state.pointType
+    data.appValue = this.state.appValue
+    data.standard = this.state.standard
+    data.start_time = value[0]
+    data.last_time = value[1]
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        subTime:[...value],
+        isSpining: false
+      })
+    })
+  }
+  pointTypeChange = (value)=>{
+    console.log(this.state.subTime)
+    let data = {}
+    data.pointType = value
+    data.appValue = this.state.appValue
+    data.standard = this.state.standard
+    data.start_time = this.state.subTime[0]
+    data.last_time = this.state.subTime[1]
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        pointType: value,
+        isSpining: false
+      })
+    })
+  }
+  chartContextmenu = (params,dom,position,viewId)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'statuscode',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: params.name,
+      objType: 'status',
+      previousPath:this.props.location.pathname,
+      appName: this.state.appValue
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  chartContextmenu1 = (params,dom,position,viewId)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'requestmethod',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: params.name,
+      objType: 'op',
+      previousPath:this.props.location.pathname,
+      appName: this.state.appValue
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+          <Tabs defaultActiveKey="1" onChange={this.pointTypeChange} tabBarExtraContent={
+            <span style={{float:"right",paddingRight: "20px"}}>
+              <WyDatePicker size="small" rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} style={{maxWidth: "280px"}}/>
+            </span>
+          }>
+            <TabPane tab="Top SQL操作方法" key="sqlAction">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining} >
+                  <Line
+                    xData={this.state.xData}
+                    yData={this.state.yData}
+                    aUnit={this.state.aUnit}
+                    onContextmenu={this.chartContextmenu1}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </WySpin>
+              </div>
+            </TabPane>
+            <TabPane tab="SQL返回码" key="sqlResponse">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining} >
+                  <Line
+                    xData={this.state.xData}
+                    yData={this.state.yData}
+                    aUnit={this.state.aUnit}
+                    onContextmenu={this.chartContextmenu}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </WySpin>
+              </div>
+            </TabPane>
+          </Tabs>
+      </div>
+    )
+  }
+}
+
+export default withRouter(Toppic)

@@ -1,0 +1,132 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import _ from 'lodash'
+
+import Line from '../components/Line'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+const Option = Select.Option
+class AppTimePic extends Component{
+  state={
+    xData: [],
+    yData: [],
+    searchRule:{},
+    picType: 'time',
+    isSpining: false
+  }
+  getPicData = ()=>{
+    let info = {}
+    info = _.cloneDeep(this.state.searchRule)
+    info.type = this.state.picType
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('App/getResInfo',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let newyyy = []
+
+      if(this.state.picType === 'time'){
+        if(responseData.yyy && responseData.yyy.length>0){
+          responseData.yyy.map(item=>{
+            item.areaStyle = {mormal:{}}
+            item.stack = '总量'
+            newyyy.push(item)
+          })
+        }
+        this.setState({
+          xData: responseData.xxx,
+          yData: newyyy,
+          aUnit: responseData.unit,
+          isSpining: false
+        })
+      }else{
+        this.setState({
+          xData: responseData.xxx,
+          yData: responseData.yyy,
+          aUnit: responseData.unit,
+          isSpining: false
+        })
+      }
+    })
+  }
+  componentDidMount(){
+    this.setState({
+      searchRule: this.props.searchRule
+    },()=>{
+      this.getPicData()
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.searchRule) !== JSON.stringify(nextProps.searchRule)){
+      this.setState({
+        searchRule: nextProps.searchRule
+      },()=>{
+        this.getPicData()
+      })
+    }
+  }
+  chartClick = (param)=>{
+    const flowPicTime = []
+    flowPicTime.push(param.name)
+    flowPicTime.push(param.name)
+    this.props.setSubTime(flowPicTime)
+    this.props.setSubTime(flowPicTime)
+  }
+  picTypeChange = (value)=>{
+    this.setState({
+      picType: value
+    },()=>{
+      this.getPicData()
+    })
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.xData[parseInt(this.state.xData.length-1,0)]
+      }
+      this.props.setSubTime(flowPicTime)
+    }
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span></span>
+          <span style={{float:"right"}}>
+            <Select value={this.state.picType} onChange={this.picTypeChange} placeholder="不限">
+              <Option key="time" value="time">时间类</Option>
+              <Option key="bytes" value="bytes">流量类</Option>
+              <Option key="packets" value="packets">数据包类</Option>
+              <Option key="request" value="request">请求类</Option>
+              <Option key="ret" value="ret">重传类</Option>
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <Line
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              aUnit={this.state.aUnit}
+              brush={true}
+              onBrushSelected={this.brushSelect}
+              onChartClick={this.chartClick}
+              nozoom={true}
+            />
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default AppTimePic

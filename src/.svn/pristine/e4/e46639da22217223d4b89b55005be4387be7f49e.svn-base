@@ -1,0 +1,15 @@
+import React, { Component } from 'react'
+import WyTable from '../components/WyTable'
+class ReportGenerate extends Component{
+
+  render(){
+    return (
+      <div>
+        <WyTable />
+      </div>
+    )
+  }
+}
+
+
+export default ReportGenerate

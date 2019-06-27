@@ -1,0 +1,242 @@
+import React, { Component } from 'react'
+import { message } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import propTypes from 'prop-types'
+import { withRouter } from 'react-router-dom'
+
+import  WySpin from '../components/WySpin'
+import WyDatePicker from '../components/WyDatePicker'
+import AttrWindow from './AttrWindow'
+import { wyAxiosPost } from '../components/WyAxios'
+import Pie from '../components/Pie'
+import Line from '../components/Line'
+import Column from '../components/Column'
+import contextList from '../SubPage/ContextList'
+
+class DashboardPic extends Component{
+  state={
+    subModuleData:{},
+    xxx: [],
+    yyy: [],
+    unit:'',
+    subTime:[],
+    isSpining: true,
+    //饼图特有
+    name:'',
+    title:'',
+    pieData:[],
+
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  componentDidMount(){
+    if(this.props.subModuleData.view === 'pie'){
+      const _this = this
+      wyAxiosPost('Dashboard/getDshChart',{id: this.props.subModuleData.id},(result)=>{
+        const {title,name,unit} = result.data.msg
+        const pieData = result.data.msg.data
+        const subModuleData = _.cloneDeep(this.props.subModuleData)
+        let subTime = []
+        subTime.push(this.props.subModuleData.start_time)
+        subTime.push(this.props.subModuleData.last_time)
+        _this.setState({
+          subModuleData,
+          title,
+          name,
+          pieData,
+          unit,
+          subTime,
+          isSpining: false
+        })
+      })
+    }else{
+      const _this = this
+      wyAxiosPost('Dashboard/getDshChart',{id: this.props.subModuleData.id},(result)=>{
+        const {xxx,yyy,unit} = result.data.msg
+        const subModuleData = _.cloneDeep(this.props.subModuleData)
+        let subTime = []
+        subTime.push(this.props.subModuleData.start_time)
+        subTime.push(this.props.subModuleData.last_time)
+        _this.setState({
+          subModuleData,
+          xxx,
+          yyy,
+          unit,
+          subTime,
+          isSpining: false
+        })
+      })
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(_.cloneDeep(this.props.subModuleData)) !== JSON.stringify(_.cloneDeep(nextProps.subModuleData))){
+      if(nextProps.view === 'pie'){
+        this.setState({
+          isSpining: true
+        })
+        const subTime = []
+        subTime.push(nextProps.subModuleData.start_time)
+        subTime.push(nextProps.subModuleData.last_time)
+        const _this = this
+        wyAxiosPost('Dashboard/getDshChart',{
+          id: this.props.subModuleData.id,
+          start_time:nextProps.subModuleData.start_time,
+          last_time:nextProps.subModuleData.last_time
+        },(result)=>{
+          const {title,name,unit} = result.data.msg
+          const pieData = result.data.msg.data
+          const subModuleData = _.cloneDeep(this.props.subModuleData)
+          _this.setState({
+            subModuleData,
+            pieData,
+            name,
+            title,
+            unit,
+            isSpining: false
+          })
+        })
+      }else{
+        this.setState({
+          isSpining: true
+        })
+        const subTime = []
+        subTime.push(nextProps.subModuleData.start_time)
+        subTime.push(nextProps.subModuleData.last_time)
+        const _this = this
+        wyAxiosPost('Dashboard/getDshChart',{
+          id: this.props.subModuleData.id,
+          start_time:nextProps.subModuleData.start_time,
+          last_time:nextProps.subModuleData.last_time
+        },(result)=>{
+          const {xxx,yyy,unit} = result.data.msg
+          const subModuleData = _.cloneDeep(this.props.subModuleData)
+          _this.setState({
+            subModuleData,
+            xxx,
+            yyy,
+            unit,
+            subTime,
+            isSpining: false
+          })
+        })
+      }
+    }
+  }
+  chartClick = (params,id)=>{
+    console.log(params.name,id)
+  }
+
+  subTimeChange = (timeArry)=>{
+    let data = {}
+    data.id = this.state.subModuleData.id
+    data.timeArry = timeArry
+    this.props.subTimeChange(data)
+  }
+  chartContextmenu = (params,dom,position,viewId)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: this.props.listType,
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: params.name,
+      objType: this.props.objType,
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: viewId === ('5'||'7')?false:true
+      }
+    })
+  }
+
+  getViewFromType = (view)=>{
+    if(view === 'line' || view === 'bar'){
+      return (
+        <WySpin isSpining={this.state.isSpining}>
+          <Line
+            viewId={this.props.viewId}
+            xData={this.state.xxx}
+            yData={this.state.yyy}
+            aUnit={this.state.unit}
+            onChartClick={this.chartClick}
+            onContextmenu={this.chartContextmenu}
+            dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+          />
+        </WySpin>
+      )
+    }else if(view === 'pie'){
+      return(
+        <WySpin isSpining={this.state.isSpining}>
+          <Pie
+            viewId={this.props.viewId}
+            pieData={this.state.pieData}
+            unit={this.state.unit}
+            name={this.state.name}
+            title={this.state.title}
+            onChartClick={this.chartClick}
+            onContextmenu={this.chartContextmenu}
+            dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+          />
+        </WySpin>
+      )
+    }else if(view === 'column'){
+      return(
+        <WySpin isSpining={this.state.isSpining}>
+          <Column
+            viewId={this.props.viewId}
+            xData={this.state.xxx}
+            yData={this.state.yyy}
+            aUnit={this.state.unit}
+            onChartClick={this.chartClick}
+            onContextmenu={this.chartContextmenu}
+            dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+          />
+        </WySpin>
+      )
+    }
+  }
+
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>
+            {this.state.subModuleData.name}
+          </span>
+          <span style={{float: "right",cursor:"pointer"}}>
+            <AttrWindow subSetFather={this.props.subSetFather} attrData={ _.cloneDeep( this.state.subModuleData )}/>
+          </span>
+          <span style={{float: "right",marginRight:"10px"}}>
+            <WyDatePicker rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} size="small" style={{maxWidth:"280px"}}/>
+          </span>
+        </div>
+        <div className="moduleBody">
+          {
+            this.getViewFromType(this.props.view)
+          }
+        </div>
+      </div>
+    )
+  }
+}
+
+DashboardPic.propTypes = {
+  subModuleData: propTypes.object
+}
+
+DashboardPic.propTypes = {
+  subSetFather: propTypes.func,
+  view: propTypes.string,
+  viewId: propTypes.string,
+  subModuleData: propTypes.object,
+  subTimeChange: propTypes.func
+}
+
+export default withRouter(DashboardPic)

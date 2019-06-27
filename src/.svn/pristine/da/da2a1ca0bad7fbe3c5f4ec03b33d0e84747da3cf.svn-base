@@ -1,0 +1,74 @@
+import React, { Component }  from 'react'
+import { Tabs, Row, Col, Input, Button, Radio, Icon, Switch, Select, notification } from 'antd'
+
+import { wyAxiosPost } from '../components/WyAxios'
+const TabPane = Tabs.TabPane
+const { TextArea } = Input
+const Option = Select.Option
+
+class HostForm extends Component{
+  state = {
+    hostName:'',
+    hostIp:'',
+    netmask:'',
+    gateway:'',
+    dnsHost:''
+  }
+  componentDidMount(){
+    wyAxiosPost('Dev/getHostInfo',{},(result)=>{
+      console.log(result)
+      const { hostName, hostIp, netmask, dnsHost, gateway } = result.data.msg
+      this.setState({
+        hostName,
+        hostIp,
+        netmask,
+        dnsHost,
+        gateway
+      })
+    })
+  }
+  render(){
+    return(
+      <div style={{lineHeight:"40px"}}>
+        <div style={{marginTop: "20px"}}className="amodule">
+          <div className="moduleBody">
+            <Row gutter={16}>
+              <Col>
+                <div style={{height:"40px",display:"flex"}}>
+                  <div style={{flex:"0 0 100px"}}>主机名：</div>
+                  <div style={{flex:"1 1 auto"}}><span>{ this.state.hostName }</span></div>
+                </div>
+              </Col>
+              <Col>
+                <div style={{height:"40px",display:"flex"}}>
+                  <div style={{flex:"0 0 100px"}}>主机ip：</div>
+                  <div style={{flex:"1 1 auto"}}><span>{ this.state.hostIp }</span></div>
+                </div>
+              </Col>
+              <Col>
+                <div style={{height:"40px",display:"flex"}}>
+                  <div style={{flex:"0 0 100px"}}>子网掩码：</div>
+                  <div style={{flex:"1 1 auto"}}><span>{ this.state.netmask }</span></div>
+                </div>
+              </Col>
+              <Col>
+                <div style={{height:"40px",display:"flex"}}>
+                  <div style={{flex:"0 0 100px"}}>网关：</div>
+                  <div style={{flex:"1 1 auto"}}><span>{ this.state.gateway }</span></div>
+                </div>
+              </Col>
+              <Col>
+                <div style={{height:"40px",display:"flex"}}>
+                  <div style={{flex:"0 0 100px"}}>DNS服务器：</div>
+                  <div style={{flex:"1 1 auto"}}><span>{ this.state.dnsHost }</span></div>
+                </div>
+              </Col>
+            </Row>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default HostForm

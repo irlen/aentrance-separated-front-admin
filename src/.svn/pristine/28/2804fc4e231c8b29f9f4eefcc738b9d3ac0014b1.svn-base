@@ -1,0 +1,47 @@
+import React from 'react'
+//import PropTypes from 'prop-types'
+import { connect } from 'react-redux'
+import $ from 'jquery'
+
+import Header from './header'
+import { userLogout } from '../actions'
+import Container from './container'
+class Layout extends React.Component {
+  componentDidMount(){
+    const leftContainer = document.querySelector(".leftContainer")
+    const rightContainer = document.querySelector(".rightContainer")
+    const navContaineer = document.querySelector(".navContainer")
+    const containerIn = document.querySelector(".containerIn")
+    const windowH = parseInt(document.body.clientHeight,0)-40
+    leftContainer.style.height = windowH +'px'
+    rightContainer.style.height = windowH +'px'
+    navContaineer.style.height = windowH +'px'
+    containerIn.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)-40
+      leftContainer.style.height = rwindowH +'px'
+      rightContainer.style.height = rwindowH +'px'
+      navContaineer.style.height = rwindowH +'px'
+      containerIn.style.height = rwindowH +'px'
+    }
+    //屏蔽右键，设置右键弹框状态
+    window.document.oncontextmenu = (event)=>{
+      let e = event || window.event
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    $(document).click(()=>{
+        $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    })
+  }
+  render(){
+    return(
+      <div className="appContainer">
+        <Header />
+        <Container />
+      </div>
+    )
+  }
+}
+
+export default Layout

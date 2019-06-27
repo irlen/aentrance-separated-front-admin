@@ -1,0 +1,69 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+
+class TemplateForCalc extends Component{
+  state = {
+    showViewData: {},
+    autoHeight: 100,
+    updateTime: 0,
+    secondData: {}
+  }
+  componentDidMount(){
+    this.setState({
+      showViewData: this.props.showViewData,
+      autoHeight: this.props.autoHeight,
+      updateTime: this.props.updateTime
+    },()=>{
+      this.getCurViewData()
+      if(this.state.updateTime && this.props.env !== 'set'){
+        this.updateData()
+      }
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      ! (_.isEqual(this.props.showViewData,nextProps.showViewData)) ||
+      this.props.autoHeight !== nextProps.autoHeight ||
+      this.props.updateTime !== nextProps.upDateTime
+    ){
+      this.setState({
+        showViewData: nextProps.showViewData,
+        autoHeight: nextProps.autoHeight,
+        updateTime: nextProps.updateTime
+      },()=>{
+        this.getCurViewData()
+        if(this.state.updateTime && this.props.env !== 'set'){
+          this.updateData()
+        }
+      })
+    }
+  }
+  getCurViewData = ()=>{
+
+  }
+  updateData = ()=>{
+
+  }
+  render(){
+    const height = this.state.autoHeight + 20
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+      {
+        this.props.env === 'set'?
+        ''
+        :
+        <div className="moduleHeader" style={{display:"flex"}}>
+          <div className="moduleHeaderIn"style={{flex:"1 1 auto"}}>
+            {this.state.showViewData.data && Object.keys(this.state.showViewData.data).length>0?this.state.showViewData.data.moduleName:''}
+          </div>
+        </div>
+      }
+        <div className="moduleBody" style={{height,textAlign:"center",fontSize:"30px",lineHeight:height-10+"px",color:"rgba(0,255,102,0.8)"}}>
+          统计结果
+        </div>
+      </div>
+    )
+  }
+}
+
+export default TemplateForCalc

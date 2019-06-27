@@ -1,0 +1,339 @@
+import React, { Component } from 'react'
+import { Button, Transfer, Modal, Row, Col, Drawer, Input, TreeSelect, message, Popconfirm, Tabs } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+
+import DragArea from './DragArea'
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import PageList from './PageList'
+const SHOW_PARENT = TreeSelect.SHOW_ALL
+const TabPane = Tabs.TabPane;
+class DashboardComponent extends Component{
+  state = {
+    id:'',
+    //visible: false,
+    drawerVisible: false,
+
+    xData:[],
+    yData:[],
+    pageSize: 10,
+    ids:[],
+    treeData: [],
+    treeValue: [],
+
+    showViewData:[], //要显示的视图的数据
+    slide: false,
+
+    activeTab: 'viewPage',
+    //自定义仪表板列表
+    pageData: {}
+  }
+
+  //取当前ID对应的模块数据
+  getModulesData = (value)=>{
+    const id = value || this.state.id
+    wyAxiosPost('Dashboard/getPageModuleInfo',{id},(result)=>{
+      const responseData = result.data.msg
+      if(value){
+        this.setState({
+          showViewData: _.cloneDeep(responseData),
+          id: value
+        })
+      }else{
+        this.setState({
+          showViewData: _.cloneDeep(responseData)
+        })
+      }
+    })
+  }
+  //取页面表格数据
+  getPageTableData = ()=>{
+    wyAxiosPost('Dashboard/getDbdPage',{},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.yyy && responseData.yyy.length>0){
+        if(this.state.id){
+          this.setState({
+            pageData: _.cloneDeep(responseData)
+          },()=>{
+            this.getModulesData()
+          })
+        }else{
+          this.setState({
+            pageData: _.cloneDeep(responseData),
+            id: responseData.yyy[0].id
+          },()=>{
+            //加载模块数据
+            this.getModulesData()
+          })
+        }
+      }
+    })
+  }
+  componentDidMount() {
+    this.setState({
+      slide: this.props.slide
+    },()=>{
+      this.getPageTableData()
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(this.props.slide !== nextProps.slide){
+      this.setState({
+        slide: nextProps.slide
+      })
+    }
+  }
+
+  //子页面设置id
+  setId = (value)=>{
+    // this.setState({
+    //   id: value
+    // },()=>{
+      this.getModulesData(value)
+    //})
+  }
+  //视图源下拉列表数据处理
+  getProductPageData = ()=>{
+    //获取视图源下拉列表数据
+    wyAxiosPost('Dashboard/getDefList',{},(res)=>{
+      let mids=[]
+      const resData = res.data.msg
+      if(resData && resData.length>0){
+        resData.map(item=>{
+          mids.push(item.mid)
+        })
+      }
+      //获取被选择的视图
+      wyAxiosPost('Dashboard/getDefinedView',{},(result)=>{
+        const responseData = result.data.msg
+        let treeData = []
+        if(responseData && responseData.length>0){
+          responseData.map(item=>{
+            let fatherNode = {}
+            fatherNode.title = item.name
+            fatherNode.value = item.id
+            fatherNode.key = item.id
+            if(item.content.length>0){
+              let subArry = []
+              item.content.map(subItem=>{
+                let subNode = {}
+                subNode.title = subItem.moduleName?subItem.moduleName:"未命名"
+                subNode.value = item.id+'_'+subItem.id
+                subNode.key = subItem.id
+                //此处要判断是否存在于自定义表板数据表中
+                if(mids.indexOf(subItem.id) !== -1){
+                  subNode.disabled = true
+                }
+                subArry.push(subNode)
+              })
+              fatherNode.children = subArry
+            }
+            treeData.push(fatherNode)
+          })
+        }
+        this.setState({
+          treeData
+        })
+      })
+    })
+  }
+  //insert数据到自定义仪表板数据表中
+  saveToDashboardDefinePage = ()=>{
+    let sentId = []
+    if(this.state.treeValue && this.state.treeValue.length>0){
+      this.state.treeValue.map(item=>{
+        if(item.indexOf('_') !== -1){
+          sentId.push(item)
+        }
+      })
+      wyAxiosPost('Dashboard/saveDefDash',{saveIds:sentId},(result)=>{
+        const responseData = result.data
+        message.success(responseData.msg)
+        this.setState({
+          treeValue:[]
+        },()=>{
+          this.getDataFrom()
+        })
+      })
+    }
+  }
+  //获取自定义仪表板表格数据
+  getDataFrom = ()=>{
+    const xData = [
+      {
+        title: '模块名称',
+        dataIndex:'name',
+        key:'name'
+      },{
+        title:'默认视图类型',
+        dataIndex:'viewType',
+        key:'viewType'
+      }
+    ]
+    let yData = []
+    //获取已经选择的视图列表
+    wyAxiosPost('Dashboard/getDefList',{},(result)=>{
+      const responseData = result.data.msg
+      if(responseData && responseData.length>0){
+        responseData.map(item=>{
+          let itemObj = {}
+          itemObj.key = item.id
+          const content = JSON.parse(item.content)
+          itemObj.name = content.moduleName
+          if(content.viewType === 'line'){
+            itemObj.viewType = '曲线图'
+          }else if(content.viewType === 'bar'){
+            itemObj.viewType = '柱状图'
+          }else if(content.viewType === 'wytable'){
+            itemObj.viewType = '表格'
+          }
+          yData.push(itemObj)
+        })
+      }
+      this.setState({
+        xData,
+        yData
+      },()=>{
+        this.getProductPageData()
+      })
+    })
+  }
+  //删除自定义仪表板源数据
+  removeDataFromDashboardForm = ()=>{
+    wyAxiosPost('Dashboard/delDefById',{ids: this.state.ids},(result)=>{
+      const responseData = result.data
+      message.success(responseData.msg)
+      this.setState({
+        ids:[]
+      },()=>{
+        this.getDataFrom()
+        this.getProductPageData()
+      })
+    })
+  }
+
+  handleChange = (targetKeys) => {
+    this.setState({ targetKeys });
+  }
+
+  //抽屉组件事件
+  showDrawer = () => {
+    this.setState({
+      drawerVisible: true,
+    },()=>{
+      this.getProductPageData()
+      this.getDataFrom()
+    });
+  }
+  onClose = () => {
+    this.setState({
+      drawerVisible: false,
+    });
+  };
+  //TreeSelect
+  treeValueChange = (value)=>{
+    this.setState({
+      treeValue: value
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  tabsChange = (value)=>{
+    this.setState({
+      activeTab: value
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div>
+        <div style={{height:"30px",lineHeight:"30px"}}>
+          <span style={{float: "right",marginRight:"20px"}}>
+            <span title="设置" onClick={this.showDrawer} style={{cursor: "pointer"}}><i className="fa fa-cog" aria-hidden="true"></i></span>
+          </span>
+        </div>
+        <div>
+          <DragArea
+            id={this.state.id}
+            getShowData={this.getPageTableData}
+            showViewData={_.cloneDeep(this.state.showViewData)}
+            pageData={_.cloneDeep(this.state.pageData)}
+          />
+        </div>
+        <Drawer
+          title="视图设置"
+          placement="right"
+          closable={true}
+          onClose={this.onClose}
+          visible={this.state.drawerVisible}
+          width="60%"
+        >
+          <div>
+            <Tabs activeKey={ this.state.activeTab } onChange={ this.tabsChange } >
+              <TabPane tab="自定义仪表板" key="viewPage">
+                <PageList
+                  setId={(value)=>{this.setId(value)}}
+                  pageData={this.state.pageData}
+                  getShowData={this.getPageTableData}
+                />
+              </TabPane>
+              <TabPane tab="视图源" key="viewSource">
+                <div>
+                  <div>
+                    视图源：
+                    <TreeSelect
+                      treeData={this.state.treeData}
+                      value={this.state.treeValue}
+                      onChange={this.treeValueChange}
+                      treeCheckable={true}
+                      showCheckedStrategy={SHOW_PARENT}
+                      searchPlaceholder='视图源来自自定义页面'
+                      style={{
+                        width: "70%",
+                      }}
+                    />
+                    <Button type="primary" onClick={this.saveToDashboardDefinePage} >导入所选</Button>
+                  </div>
+                  <div className="amodule" style={{marginTop:"20px"}}>
+                    <div className="moduleHeader">
+                      <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.removeDataFromDashboardForm:()=>{}} okText="确定" cancelText="取消">
+                        <Button>
+                          <i className="fa fa-minus-square" aria-hidden="true"></i>
+                          <span style={{marginLeft:"5px"}}>删除</span>
+                        </Button>
+                      </Popconfirm>
+                    </div>
+                    <div className="moduleBody">
+                      <WyTable
+                        xData={this.state.xData?this.state.xData:[]}
+                        yData={this.state.yData?this.state.yData:[]}
+                        pageSize={this.state.pageSize}
+                        onShowSizeChange={this.pageSizeChange}
+                        rowSelection={rowSelection}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabPane>
+            </Tabs>
+          </div>
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+
+export default DashboardComponent

@@ -1,0 +1,472 @@
+import React, { Component } from 'react'
+import { Button, Transfer, Modal, Row, Col, Drawer, Input, TreeSelect, message, Popconfirm, Select } from 'antd'
+import _ from 'lodash'
+
+import DragArea from './DragArea'
+
+import Stepset from './StepSet.js'
+import { wyAxiosPost } from '../components/WyAxios'
+import WyTable from '../components/WyTable'
+import * as regions from './regions'
+const SHOW_PARENT = TreeSelect.SHOW_ALL
+const Option = Select.Option
+class DashboardMap extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    visible: false,
+    drawerVisible: false,
+    newVisible: false,
+    current: 0,
+    editId:'', //编辑时候的id
+    ids:[], //删除时候选择的id
+    addModuleId:'',
+    pageSize: 10,
+    windowName:'新建区域图',
+
+    //右边列表
+    xData:[],
+    yData:[],
+    initColumns:[],
+    activeRowKey:'',
+
+    forceUpdateFlag: '',
+    //穿梭框
+    mockData:[],
+    targetKeys:[],
+
+    updateTime:'0'
+  }
+  filterOption = (inputValue, option) => option.description.indexOf(inputValue) > -1
+  //数据更新
+  updateData = ()=>{
+    if(window.timer1){
+      clearInterval(window.timer1)
+    }
+    const run = ()=>{
+      if(this.state.updateTime !== '0'){
+        if(window.timer2){
+          clearInterval(window.timer2)
+        }
+        const time = parseInt(this.state.updateTime)
+        window.timer2 = setInterval(()=>{
+          this.getMapTable()
+        },time*1000)
+        if(window.timer1){
+          clearInterval(window.timer1)
+        }
+      }else{
+        if(window.timer2){
+          clearInterval(window.timer2)
+        }
+      }
+    }
+    window.timer1 = setInterval(run,5000)
+  }
+  //获取地图列表
+  getMapTable = ()=>{
+    wyAxiosPost('Map/getMapTable',{},(result)=>{
+      const responseData = result.data.msg
+      let newActiveRowKey = ''
+      if(this.state.activeRowKey  === ''){
+        newActiveRowKey = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+      }else{
+        if(responseData.yyy && responseData.yyy.length>0){
+          const noExist = responseData.yyy.every((item)=>{
+            return item.key !== this.state.activeRowKey
+          })
+          if(!noExist){
+            newActiveRowKey = this.state.activeRowKey
+          }else{
+            newActiveRowKey = responseData.yyy[0].key
+          }
+        }
+      }
+      const initColumns = responseData.xxx
+      const newxxx = this.compileColumns(newActiveRowKey,initColumns)
+      newxxx.push({
+        title: '操作',
+        dataIndex: 'edit',
+        render: (text, record, index)=> (
+          <div>
+            <span style={{cursor:"pointer",color: "#00CC66",cursor:"pointer"}} title="更多视图" onClick={(e)=>this.showModal(e,record.id)} ><i className="fa fa-plus" aria-hidden="true"></i></span>
+            <span style={{cursor:"pointer",color: "#00CC66",marginLeft:"10px"}} title="编辑" onClick={(e)=>{this.showNewModal(e,record.id)}}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+            <span style={{cursor:"pointer",color: "#00CC66",marginLeft:"10px"}} title="复制" onClick={(e)=>{this.doCopy(e,record.id)}}><i className="fa fa-clone" aria-hidden="true"></i></span>
+          </div>
+        )
+      })
+      const randomCount = Math.random();
+      const curTime = new Date().getTime();
+      const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+      const id = asId.toString()
+      this.setState({
+        xData: newxxx,
+        yData: responseData.yyy,
+        initColumns,
+        activeRowKey: newActiveRowKey,
+        forceUpdateFlag: id,
+        updateTime: responseData.yyy[0].uptime
+      })
+    })
+  }
+  //取出模块
+  getModules = ()=>{
+    const id =  this.state.addModuleId
+    wyAxiosPost('Map/getMap',{id},(result)=>{
+      const responseData = result.data.msg.modules
+      const mockData = []
+      const targetKeys = []
+      if(responseData && responseData.length>0){
+        responseData.map(item=>{
+          const obj = {
+            key: item.id,
+            title:item.moduleName,
+            chosen: item.show
+          }
+          if(JSON.parse(obj.chosen)){
+            targetKeys.push(obj.key)
+          }
+          mockData.push(obj)
+        })
+      }
+      this.setState({
+        mockData,targetKeys,
+        visible: true
+      })
+    })
+  }
+  componentDidMount(){
+    this.getMapTable()
+    this.updateData()
+  }
+  componentWillUnmount(){
+    if(window.timer1){
+      clearInterval(window.timer1)
+    }
+    if(window.timer2){
+      clearInterval(window.timer2)
+    }
+  }
+  showModal = (e,id) => {
+    e.stopPropagation()
+    this.setState({
+      addModuleId: id,
+      updateTime: '0'
+    },()=>{
+      this.getModules()
+      this.updateData()
+    })
+  }
+  showNewModal = (e,editId) => {
+    e.stopPropagation()
+    if(editId !== ''){
+      this.setState({
+        newVisible: true,
+        editId,
+        windowName: '修改区域图',
+        updateTime: '0'
+      },()=>{
+        this.updateData()
+      });
+    }else{
+      this.setState({
+        newVisible: true,
+        editId:'',
+        windowName:'新建区域图',
+        updateTime: '0'
+      },()=>{
+        this.updateData()
+      });
+    }
+  }
+  //复制操作
+  doCopy = (e,id)=>{
+    e.stopPropagation()
+    wyAxiosPost('Map/copyMap',{id},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+        this.getMapTable()
+      }else(
+        message.warning(responseData.msg)
+      )
+    })
+  }
+
+  //抽屉组件事件
+  showDrawer = () => {
+    this.setState({
+      drawerVisible: true,
+    });
+  }
+
+  onClose = () => {
+    this.setState({
+      drawerVisible: false,
+    });
+  };
+  handleOk = (e) => {
+    //保存模块状态
+    const id = this.state.addModuleId
+    const modules = this.state.targetKeys
+    const info = {id,modules}
+    wyAxiosPost('Map/saveModules',{info},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+        this.handleCancel()
+      }else{
+        message.warning(responseData.msg)
+      }
+    })
+  }
+  handleCancel = (e) => {
+    this.setState({
+      visible: false,
+    },()=>{
+      this.getMapTable()
+      this.updateData()
+    });
+  }
+  handleNewCancel = (e) => {
+    this.setState({
+      newVisible: false,
+    },()=>{
+      this.getMapTable()
+      this.updateData()
+    });
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  //数据更新时间
+  updateTimeChange = (value)=>{
+    this.setState({
+      updateTime: value
+    },()=>{
+      wyAxiosPost('Map/updateTime',{updateTime:this.state.updateTime},(result)=>{
+        const responseData = result.data
+        if(responseData.status === 1){
+          this.updateData()
+        }else{
+          message.warning(responseData.msg)
+        }
+      })
+    })
+  }
+  //保存地图设置
+  setMapSetData = (value)=>{
+    const info = _.cloneDeep(value)
+
+    info.id = this.state.editId
+    if(!info.id){
+      info.modules = [
+      	{
+      		id: 'map',
+      		moduleName: value.bus_name,
+      		position:{h:13,w:12,x:0,y:13},
+      		component: 'MapModule',
+      		method:'getMapData',
+      		show: true
+      	},
+      	{
+      		id: 'cityList',
+      		moduleName: '区域性能',
+      		position:{h:13,w:12,x:0,y:13},
+      		component: 'RegionModule',
+      		method:'getCityListData',
+      		show: true
+      	}
+      ]
+      info.uptime = this.state.updateTime
+    }
+    wyAxiosPost('Map/saveMap',{info},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+        this.handleNewCancel()
+      }else{
+        message.warning(responseData.msg)
+      }
+    })
+  }
+  //删除地图
+  delMap = ()=>{
+    const ids = this.state.ids
+    wyAxiosPost('Map/delMap',{ids},(result)=>{
+      if(result.data.status === 1){
+        message.success(result.data.msg)
+      }else{
+        message.warning(result.data.msg)
+      }
+      this.setState({
+        ids:[]
+      },()=>{
+        this.getMapTable()
+      })
+    })
+  }
+  tableClick = (record)=>{
+    const activeRowKey = record.key
+    let newxxx = []
+    newxxx = this.compileColumns(activeRowKey,this.state.initColumns)
+    newxxx.push({
+      title: '操作',
+      dataIndex: 'edit',
+      render: (text, record, index)=> (
+        <div>
+          <span style={{cursor:"pointer",color: "#00CC66",cursor:"pointer"}} title="更多视图" onClick={(e)=>this.showModal(e,record.id)} ><i className="fa fa-plus" aria-hidden="true"></i></span>
+          <span style={{cursor:"pointer",color: "#00CC66",marginLeft:"10px"}} title="编辑" onClick={(e)=>{this.showNewModal(e,record.id)}}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+          <span style={{cursor:"pointer",color: "#00CC66",marginLeft:"10px"}} title="复制" onClick={(e)=>{this.doCopy(e,record.id)}}><i className="fa fa-clone" aria-hidden="true"></i></span>
+
+        </div>
+      )
+    })
+    this.setState({
+      xData: newxxx,
+      activeRowKey
+    },()=>{
+      this.getMapTable()
+    })
+  }
+  //穿梭框
+  transferChange = (targetKeys)=>{
+    this.setState({
+      targetKeys
+    })
+  }
+
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div>
+        <div style={{height:"30px",lineHeight:"30px"}}>
+          <span style={{float: "right",marginRight:"20px"}}>
+            <span title="页面设置" onClick={this.showDrawer} style={{cursor: "pointer"}}><i className="fa fa-cog" aria-hidden="true"></i></span>
+          </span>
+        </div>
+        <div>
+          <DragArea
+            forceUpdateFlag={this.state.forceUpdateFlag}
+            id={this.state.activeRowKey}
+            getMapTable={this.getMapTable}
+          />
+        </div>
+        <Drawer
+          title="设置"
+          placement="right"
+          closable={true}
+          onClose={this.onClose}
+          visible={this.state.drawerVisible}
+          width="400"
+        >
+          <div>
+            <div style={{height:"40px"}}>
+              <Button type="primary" size="small" onClick={(e)=>{this.showNewModal(e,'')}} >
+                <i className="fa fa-plus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>新建</span>
+              </Button>
+              <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.delMap:()=>{}} okText="确定" cancelText="取消">
+                <Button type="primary" size="small" style={{marginLeft: "10px"}}>
+                  <i className="fa fa-minus-square" aria-hidden="true"></i>
+                  <span style={{marginLeft:"5px"}}>删除</span>
+                </Button>
+              </Popconfirm>
+            </div>
+            <div style={{height:"40px"}}>
+              <span>数据更新：</span>
+              <span>
+                <Select
+                  style={{minWidth:"120px"}}
+                  value={this.state.updateTime}
+                  onChange={this.updateTimeChange}
+                >
+                  <Option value="0" key="mykey">不自动更新</Option>
+                  <Option value="60" key="60s">60s</Option>
+                  <Option value="300" key="300s">300s</Option>
+                </Select>
+              </span>
+            </div>
+            <div className="amodule">
+              <div className="moduleHeader">
+                区域业务列表
+              </div>
+              <div className="moduleBody">
+                <WyTable
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                  rowSelection={rowSelection}
+                  activeRowKey={this.state.activeRowKey}
+                  onTableClick={this.tableClick}
+                />
+              </div>
+            </div>
+          </div>
+        </Drawer>
+        <Modal
+          title="视图选择"
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+          width={700}
+        >
+          <Transfer
+            dataSource={this.state.mockData}
+            listStyle={{
+              width: 300,
+              height: 400,
+            }}
+            showSearch
+            filterOption={this.filterOption}
+            targetKeys={this.state.targetKeys}
+            onChange={this.transferChange}
+            render={item => item.title}
+          />
+        </Modal>
+        <Modal
+          title={this.state.windowName}
+          visible={this.state.newVisible}
+          onOk={this.handleNewOk}
+          onCancel={this.handleNewCancel}
+          width={800}
+          footer={null}
+        >
+          <Stepset editId={this.state.editId} setMapSetData={this.setMapSetData} />
+        </Modal>
+
+      </div>
+    )
+  }
+}
+
+export default DashboardMap

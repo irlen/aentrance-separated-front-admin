@@ -1,0 +1,74 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, message } from 'antd'
+import _ from 'lodash'
+import { connect } from 'react-redux'
+
+import { getCompiledAuth, setAuth } from '../actions'
+import PageAuth from './PageAuth'
+import DataAuth from './DataAuth'
+import { wyAxiosPost } from '../components/WyAxios'
+class UserAuthority extends Component{
+  getControlData = ()=>{
+    const curPageAuth = _.cloneDeep(this.pageAuth.state.pageList)
+    const pageAuth = []
+    if(curPageAuth && curPageAuth.length>0){
+      curPageAuth.map(item=>{
+        if(item.checkedList && item.checkedList.length>0){
+          item.checkedList.map(subItem=>{
+            pageAuth.push(subItem)
+          })
+        }
+      })
+    }
+    const curDataAuth = _.cloneDeep(this.dataAuth.state.pageList)
+    const dataAuth = []
+    if(curDataAuth && curDataAuth.length>0){
+      curDataAuth.map(item=>{
+        if(item.checkedList && item.checkedList.length>0){
+          item.checkedList.map(subItem=>{
+            dataAuth.push(subItem)
+          })
+        }
+      })
+    }
+    const info = {}
+    info.pageAuth = pageAuth
+    info.dataAuth = dataAuth
+    wyAxiosPost('Auth/saveAuth',{info:info},(result)=>{
+      const responseData = result.data
+      if(responseData.status === 1){
+        //权限变更之后，需要重新触发redux状态更新
+        const id = JSON.parse(localStorage.getItem('userInfo')).role_id
+        getCompiledAuth(id).then((value)=>{
+          this.props.dispatch(setAuth(value))
+          localStorage.setItem('userAuth', JSON.stringify(value))
+        })
+        message.success('保存成功！')
+      }
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div style={{lineHeight:"60px",paddingLeft: "20px"}}>
+          <Button type="primary" onClick={this.getControlData}>保存</Button>
+        </div>
+        <div style={{lineHeight:"60px",paddingLeft: "20px"}}>
+          注：被选择项则会被纳入权限管理范畴，可对用户设置操作权；未被选择项则默认所有用户有权限，不在权限管理范畴。
+        </div>
+        <div style={{display:"flex"}}>
+          <div style={{flex:"1 1 50%", margin:0, paddingLeft: "40px"}} className="amodule">
+            <div style={{lineHeight:"60px",fontSize:"24px"}}>页面访问权限</div>
+            <PageAuth ref={instance=>this.pageAuth=instance}/>
+          </div>
+          <div style={{flex:"1 1 50%",margin:0, paddingLeft: "20px"}} className="amodule">
+            <div style={{lineHeight:"60px",fontSize:"24px"}}>功能操作权限</div>
+            <DataAuth ref={instance=>this.dataAuth=instance} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default connect()(UserAuthority)

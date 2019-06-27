@@ -1,0 +1,10 @@
+const navResize = (state={slide: false},action)=>{
+   switch(action.type){
+    case 'SET_SLIDE':
+      return {slide: !state.slide}
+    default:
+      return state
+  }
+}
+
+export default navResize

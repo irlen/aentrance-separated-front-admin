@@ -1,0 +1,17 @@
+import React from 'react'
+
+import { AppRoute } from './Routes'
+import './styles/style.less'
+
+
+class App extends React.Component {
+  render() {
+    return (
+      <div>
+        <AppRoute />
+      </div>
+    );
+  }
+}
+
+export default App;

@@ -1,0 +1,93 @@
+import React, { Component } from 'react'
+
+import Line from '../components/Line'
+import { wyAxiosPost } from '../components/WyAxios'
+
+class HostPic extends Component{
+  state = {
+    xData: [],
+    yData: [],
+    aUnit:[]
+  }
+  /*******供调用*********/
+  getChartData = (type,field,filterobj,start_time,last_time)=>{
+    let info = {}
+    info.type = type
+    info.field = field
+    info.filterobj = filterobj
+    info.start_time = start_time
+    info.last_time = last_time
+    wyAxiosPost('NetWork/getHostFilter',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit
+      })
+    })
+
+  }
+  /********供调用完********/
+  componentDidMount(){
+    const {field,filterobj,type} = this.props
+    const start_time = this.props.subTime[0]
+    const last_time = this.props.subTime[1]
+    this.getChartData(type,field,filterobj,start_time,last_time)
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(
+      this.props.filterobj === nextProps.filterobj &&
+      this.props.subTime === nextProps.subTime &&
+      this.props.field === nextProps.field
+    )){
+      const {field,filterobj,type} = nextProps
+      const start_time = nextProps.subTime[0]
+      const last_time = nextProps.subTime[1]
+      this.getChartData(type,field,filterobj,start_time,last_time)
+    }
+  }
+  chartClick = (record)=>{
+    const curTime = []
+    curTime.push(record.name)
+    curTime.push(record.name)
+    this.props.setRepostTime(curTime)
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.xData[parseInt(this.state.xData.length-1,0)]
+      }
+      this.props.setRepostTime(flowPicTime)
+    }
+  }
+  render(){
+    return(
+        this.props.type === 'host'?
+        <Line
+          xData={this.state.xData?this.state.xData:[]}
+          yData={this.state.yData?this.state.yData:[]}
+          aUnit={this.state.aUnit}
+          brush={true}
+          onBrushSelected={this.brushSelect}
+          onChartClick={this.chartClick}
+        />
+        :
+        <Line
+          xData={this.state.xData?this.state.xData:[]}
+          yData={this.state.yData?this.state.yData:[]}
+          aUnit={this.state.aUnit}
+        />
+    )
+  }
+}
+
+export default HostPic

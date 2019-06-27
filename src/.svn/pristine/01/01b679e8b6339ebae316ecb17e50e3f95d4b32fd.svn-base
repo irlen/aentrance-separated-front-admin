@@ -1,0 +1,218 @@
+import React, { Component }  from 'react'
+import { Tabs, Row, Col, Form, Input, Button, Radio, Icon, Switch, Select, notification, Modal, message} from 'antd'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import { singlePort, forEmail} from '../components/RegExp'
+import WyTable from '../components/WyTable'
+
+const TabPane = Tabs.TabPane
+const FormItem = Form.Item
+const { TextArea } = Input
+const Option = Select.Option
+
+
+class NtpForm extends Component{
+  state={
+    id:'',
+    ip: '',
+    backupIp:'',
+    time:'',
+    timeArea:[],
+    xData:[],
+    yData:[],
+
+
+    editIp:'',
+    editbackupIp:'',
+
+    isEdit: false,
+    editShow: "none",
+    isSpining: false,
+    visible: false,
+    isSpining: false
+  }
+  getEmailData = ()=>{
+    wyAxiosPost('Dev/getNtp',{},(result)=>{
+      const responseData = result.data.msg
+      console.log(responseData)
+      this.props.form.setFieldsValue({
+        ip: responseData.ip1,
+        backupIp: responseData.ip2
+      })
+      this.setState({
+        ip: responseData.ip1,
+        backupIp: responseData.ip2,
+        time: responseData.time,
+        timeArea: responseData.timezone
+      },()=>{
+        //获取ntp信息
+        this.setState({
+          isSpining: true
+        })
+        setTimeout(()=>{
+          wyAxiosPost('Dev/showNtp',{},(result)=>{
+            const responseData = result.data.msg
+            this.setState({
+              xData: responseData.xxx,
+              yData: responseData.yyy,
+              isSpining: false
+            })
+          })
+        },3000)
+      })
+    })
+  }
+  componentDidMount(){
+    this.getEmailData()
+  }
+  openNotification = () => {
+    notification.open({
+      message: '事件提醒',
+      description: '填写信息有误，请确保所有信息正确',
+      icon: <i className="fa fa-exclamation-circle" style={{color: "#FF9900"}}aria-hidden="true"></i>,
+      duration:2
+    });
+  };
+  //保存修改
+  emailHandleSubmit = (e)=>{
+    e.preventDefault();
+    this.props.form.validateFields((err, fieldsValue) => {
+      if (err) {
+        this.openNotification()
+        return;
+      }else{
+        const data = {
+          ip1: fieldsValue['ip'],
+          ip2: fieldsValue['backupIp']
+        }
+        data.id = this.state.id
+        wyAxiosPost('Dev/saveNtp',data,(result)=>{
+          const responseData = result.data
+          if(responseData.status === 1){
+            this.setState({
+              isEdit: false,
+              editShow: "none"
+            },()=>{
+              this.getEmailData()
+            })
+            message.success(responseData.msg)
+          }else{
+            message.warning(responseData.msg)
+          }
+        })
+      }
+    })
+  }
+  //取消修改
+  EditCancel = ()=>{
+    this.setState({
+      isEdit: false,
+      editShow: "none"
+    })
+  }
+  //显示测试框，并初始化测试框内容
+
+  isEditChange= ()=>{
+    this.setState({
+      isEdit: true,
+      editShow: "block"
+    })
+  }
+  render(){
+    const { getFieldDecorator } = this.props.form
+    const editShow = this.state.editShow
+    return(
+      <div style={{lineHeight:"40px"}}>
+        <div style={{marginTop: "20px"}}className="amodule">
+          <div className="moduleBody">
+            {
+              this.state.isEdit?
+              ''
+              :
+              <div style={{lineHeight:"40px"}}>
+                  <Row gutter={16} style={{marginBottom:"30px"}}>
+                    <Col>
+                      <Button type="primary" onClick={this.isEditChange}>编辑</Button>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"80px"}}>主ip：</span><span>{this.state.ip}</span></div>
+                    </Col>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"80px"}}>备ip：</span><span>{this.state.backupIp}</span></div>
+                    </Col>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"80px"}}>时间：</span><span>{this.state.time}</span></div>
+                    </Col>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"80px"}}>时区：</span><span>{this.state.timeArea}</span></div>
+                    </Col>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"80px"}}>NTP信息：</span><span>
+                        <WySpin isSpining={this.state.isSpining}>
+                          <WyTable
+                            xData={this.state.xData?this.state.xData:[]}
+                            yData={this.state.yData?this.state.yData:[]}
+                          />
+                        </WySpin>
+                      </span></div>
+                    </Col>
+                  </Row>
+              </div>
+            }
+            <Form style={{display: editShow}} layout={'horizontal'} onSubmit={this.emailHandleSubmit} >
+                <Row gutter={16}>
+                  <Col>
+                    <Button type="primary" onClick={this.EditCancel} style={{marginLeft:"20px"}}>取消</Button>
+                    <Button type="primary" htmlType="submit" style={{marginLeft:"20px"}}>保存</Button>
+                  </Col>
+                </Row>
+                <Row gutter={16}>
+                  <Col>
+                    <FormItem
+                        label="主ip"
+                        colon={false}
+                        hasFeedback
+                      >
+                        {
+                          getFieldDecorator('ip', {
+                          rules: [{
+                            required: true,
+                            message: '主ip必填项',
+                          }],
+                        })(
+                          <Input style={{width: "50%"}} placeholder="请输入ip" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                  <Col>
+                    <FormItem
+                        label="备ip"
+                        colon={false}
+                        hasFeedback
+                      >
+                        {
+                          getFieldDecorator('backupIp', {
+                          rules: [{
+                            required: true,
+                            message: '备ip必填项',
+                          }],
+                        })(
+                          <Input style={{width: "50%"}} placeholder="请输入端口" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                </Row>
+            </Form>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default Form.create()(NtpForm)

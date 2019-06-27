@@ -1,0 +1,369 @@
+import React, { Component }  from 'react'
+import { Tabs, Row, Col, Form, Input, Button, Radio, Icon, Switch, Select, notification, Modal, message} from 'antd'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import { singlePort, forEmail} from '../components/RegExp'
+
+const TabPane = Tabs.TabPane
+const FormItem = Form.Item
+const { TextArea } = Input
+const Option = Select.Option
+
+
+class EmailForm extends Component{
+  state={
+    id:'',
+    server: '',
+    port: '',
+    user: '',
+    password: '',
+    isConnect:true,
+
+    visible: false,
+
+    emailTitle:'',
+    emailContent:'',
+    emailDestination:'',
+    isEdit: false,
+    editShow: "none",
+    isSpining: false
+  }
+  getEmailData = ()=>{
+    wyAxiosPost('DevSetting/getEmail',{},(result)=>{
+      const {id,server,port,user,password,isConnect} = result.data.msg
+      this.props.form.setFieldsValue({
+        server,
+        port,
+        user,
+        password,
+        isConnect,
+      // repeatpassword: password
+      })
+      this.setState({
+        id,
+        server,
+        port,
+        user,
+        password,
+        isConnect
+      })
+    })
+  }
+  componentDidMount(){
+    this.getEmailData()
+  }
+  openNotification = () => {
+    notification.open({
+      message: '事件提醒',
+      description: '填写信息有误，请确保所有信息正确',
+      icon: <i className="fa fa-exclamation-circle" style={{color: "#FF9900"}}aria-hidden="true"></i>,
+      duration:2
+    });
+  };
+  //保存修改
+  emailHandleSubmit = (e)=>{
+    e.preventDefault();
+    this.props.form.validateFields((err, fieldsValue) => {
+      if (err) {
+        this.openNotification()
+        return;
+      }else{
+        const data = {
+          server: fieldsValue['server'],
+          port: fieldsValue['port'],
+          user: fieldsValue['user'],
+          password: fieldsValue['password'],
+          isConnect: fieldsValue['isConnect'] === 'undefine'?true:fieldsValue['isConnect']
+        }
+        data.id = this.state.id
+        wyAxiosPost('DevSetting/saveEmail',data,(result)=>{
+          const responseData = result.data
+          if(responseData.status === 1){
+            this.setState({
+              isEdit: false,
+              editShow: "none"
+            },()=>{
+              this.getEmailData()
+            })
+            message.success(responseData.msg)
+          }else{
+            message.warning(responseData.msg)
+          }
+        })
+      }
+    })
+  }
+  //取消修改
+  EditCancel = ()=>{
+    this.setState({
+      isEdit: false,
+      editShow: "none"
+    })
+  }
+  //显示测试框，并初始化测试框内容
+  showModal = () => {
+    this.setState({
+      visible: true,
+      emailTitle:'',
+      emailContent:'',
+      emailDestination:''
+    });
+  }
+  //测试
+  handleOk = (e) => {
+    let data={}
+    data.emailTitle = this.state.emailTitle
+    data.emailDestination = this.state.emailDestination
+    data.emailContent = this.state.emailContent
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DevSetting/sendEmail',data,(result)=>{
+      const responseData = result.data.msg
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+      }else if(responseData.status === 0){
+        message.warning(responseData.msg)
+      }
+      this.setState({
+        visible: false,
+        isSpining: false
+      });
+    })
+  }
+
+  handleCancel = (e) => {
+    this.setState({
+      visible: false,
+    });
+  }
+
+  emailTitleChange = (e)=>{
+    this.setState({
+      emailTitle: e.target.value
+    })
+  }
+  emailDestinationChange = (e)=>{
+    this.setState({
+      emailDestination: e.target.value
+    })
+  }
+  emailContentChange = (e)=>{
+    this.setState({
+      emailContent: e.target.value
+    })
+  }
+  isEditChange= ()=>{
+    this.setState({
+      isEdit: true,
+      editShow: "block"
+    })
+  }
+  render(){
+    const { getFieldDecorator } = this.props.form
+    const editShow = this.state.editShow
+    return(
+      <div style={{lineHeight:"40px"}}>
+        <div style={{marginTop: "20px"}}className="amodule">
+          <div className="moduleBody">
+            {
+              this.state.isEdit?
+              ''
+              :
+              <div style={{lineHeight:"40px"}}>
+                  <Row gutter={16} style={{marginBottom:"30px"}}>
+                    <Col>
+                      <Button type="primary" onClick={this.isEditChange}>编辑</Button>
+                      <Button type="primary" onClick={this.showModal} style={{marginLeft:"20px"}}>测试</Button>
+                    </Col>
+                  </Row>
+                  <Row gutter={16}>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"140px"}}>邮箱服务器地址：</span><span>{this.state.server}</span></div>
+                    </Col>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"140px"}}>邮箱服务器端口：</span><span>{this.state.port}</span></div>
+                    </Col>
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"140px"}}>发送方邮箱账号：</span><span>{this.state.user}</span></div>
+                    </Col>
+                    {
+                      // <Col>
+                      //   <div><span style={{display: "inline-block",width:"140px"}}>发送方邮箱密码：</span><span>{this.state.password}</span></div>
+                      // </Col>
+                    }
+
+                    <Col>
+                      <div><span style={{display: "inline-block",width:"140px"}}>是否可以连接：</span><span>{this.state.isConnect?"是":"否"}</span></div>
+                    </Col>
+                  </Row>
+              </div>
+            }
+            <Form style={{display: editShow}} layout={'horizontal'} onSubmit={this.emailHandleSubmit} >
+                <Row gutter={16}>
+                  <Col>
+                    <Button type="primary" onClick={this.EditCancel} style={{marginLeft:"20px"}}>取消</Button>
+                    <Button type="primary" htmlType="submit" style={{marginLeft:"20px"}}>保存</Button>
+                  </Col>
+                </Row>
+                <Row gutter={16}>
+                  <Col>
+                    <FormItem
+                        label="邮箱服务器地址"
+                        colon={false}
+                        hasFeedback
+                      >
+                        {
+                          getFieldDecorator('server', {
+                          rules: [{
+                            required: true,
+                            message: '地址为必填项',
+                          }],
+                        })(
+                          <Input style={{width: "50%"}} placeholder="请输入地址" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                  <Col>
+                    <FormItem
+                        label="邮箱服务器端口"
+                        colon={false}
+                        hasFeedback
+                      >
+                        {
+                          getFieldDecorator('port', {
+                          rules: [{
+                            required: true,
+                            message: '端口必填项',
+                          },{
+                            pattern: singlePort,
+                            message: '格式有误',
+                          }],
+                        })(
+                          <Input style={{width: "50%"}} placeholder="请输入端口" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                  <Col>
+                    <FormItem
+                        label="发送方邮箱账号"
+                        colon={false}
+                        hasFeedback
+                      >
+                        {
+                          getFieldDecorator('user', {
+                          rules: [{
+                            required: true,
+                            message: '发送方邮箱账号必填项',
+                          },{
+                            pattern: forEmail,
+                            message: '格式有误',
+                          }],
+                        })(
+                          <Input style={{width: "50%"}} placeholder="请输入发送方邮箱账号" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                  <Col>
+                    <FormItem
+                        label="发送方邮箱密码"
+                        colon={false}
+                        hasFeedback
+                      >
+                        {
+                          getFieldDecorator('password', {
+                          rules: [{
+                            required: true,
+                            message: '发送方邮箱密码必填项',
+                          }],
+                        })(
+                          <Input style={{width: "50%"}} type="password" placeholder="" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                  {
+                    // <Col>
+                    //   <FormItem
+                    //       label="重复密码"
+                    //       colon={false}
+                    //       hasFeedback
+                    //     >
+                    //       {
+                    //         getFieldDecorator('repeatpassword', {
+                    //         rules: [{
+                    //           required: true,
+                    //           message: '重复密码必填项',
+                    //         }],
+                    //       })(
+                    //         <Input style={{width: "50%"}} type="password" placeholder="" />
+                    //       )
+                    //     }
+                    //   </FormItem>
+                    // </Col>
+                  }
+
+                  <Col>
+                    <FormItem
+                        label="是否可以连接"
+                        colon={false}
+                      >
+                        {
+                          getFieldDecorator('isConnect', {
+                          rules: [{
+                            required: true
+                          }],
+                        })(
+                          <Switch checkedChildren="是" unCheckedChildren="否" />
+                        )
+                      }
+                    </FormItem>
+                  </Col>
+                </Row>
+            </Form>
+
+          </div>
+
+
+          <div>
+              <Modal
+                title="发送测试邮件"
+                visible={this.state.visible}
+                onOk={this.handleOk}
+                onCancel={this.handleCancel}
+              >
+                <WySpin isSpining={this.state.isSpining}>
+                  <ul>
+                    <li style={{display: "flex",justifyContent:"flex-start",lineHeight:"40px"}}>
+                      <div style={{flex: "0 0 90px"}}>邮件标题：</div>
+                      <div style={{flex: "1 1 auto"}}>
+                        <Input value={this.state.emailTitle} onChange={this.emailTitleChange}/>
+                      </div>
+                    </li>
+                    <li style={{display: "flex",justifyContent:"flex-start",lineHeight:"40px"}}>
+                      <div style={{flex: "0 0 90px"}}>接收方地址：</div>
+                      <div style={{flex: "1 1 auto"}}>
+                        <Input value={this.state.emailDestination} onChange={this.emailDestinationChange}/>
+                      </div>
+                    </li>
+                    <li style={{display: "flex",justifyContent:"flex-start",lineHeight:"40px"}}>
+                      <div style={{flex: "0 0 90px"}}>邮件正文：</div>
+                      <div style={{flex: "1 1 auto"}}>
+                        <TextArea value={this.state.emailContent} onChange={this.emailContentChange} autosize={{ minRows: 1 }}/>
+                      </div>
+                    </li>
+                  </ul>
+                </WySpin>
+              </Modal>
+
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default Form.create()(EmailForm)

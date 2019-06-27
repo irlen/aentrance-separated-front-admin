@@ -1,0 +1,14 @@
+import { connect } from 'react-redux'
+import { userLogout } from '../actions'
+
+const mapStateToProps = (state)=>({
+  userName: state.user.userName
+})
+
+const mapDispatchToProps = (dispatch)=>({
+  doUserLogout: ()=>dispatch({
+    type: 'USER_LOGOUT',
+    userName:'',
+    isVerificated:false
+  })
+})

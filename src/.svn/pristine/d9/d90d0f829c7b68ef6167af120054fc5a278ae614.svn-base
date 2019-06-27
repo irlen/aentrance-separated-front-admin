@@ -1,0 +1,135 @@
+import React, { Component } from 'react'
+import { Row,Col, message} from 'antd'
+import axios from 'axios'
+import propTypes from 'prop-types'
+import { Scrollbars } from 'react-custom-scrollbars'
+import WySpin from '../components/WySpin'
+
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyTable from '../components/WyTable'
+import  { host }  from '../components/Host'
+import WyDatePicker from '../components/WyDatePicker'
+class TemplateForTableWhenNew extends Component{
+  state = {
+    curViewData:{},
+    curTime:[],
+    xxx:[],
+    yyy:[],
+    isSpining: false,
+    pageSize:5
+  }
+  getViewData = ()=>{
+    let curViewData = {}
+    if(this.state.curTime.length === 0){
+      curViewData = this.state.curViewData
+    }else{
+      curViewData = Object.assign({},this.state.curViewData,{time_unit: this.state.curTime})
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Source/selectData',{info:curViewData},(result)=>{
+      const responseData = result.data
+      if(this.state.curTime.length === 0){
+        let curTime = []
+        curTime.push(responseData.start_time)
+        curTime.push(responseData.last_time)
+        this.setState({
+          xxx: responseData.xxx,
+          yyy: responseData.yyy,
+          isSpining: false,
+          curTime
+        })
+      }else{
+        this.setState({
+          xxx: responseData.xxx,
+          yyy: responseData.yyy,
+          isSpining: false
+        })
+      }
+    })
+  }
+
+  curTimeChange = (value)=>{
+    this.setState({
+      curTime: value
+    },()=>{
+      this.getViewData()
+    })
+  }
+  deleteModule = ()=>{
+    this.props.deleteModule(this.props.viewId)
+  }
+  componentDidMount(){
+    this.setState({
+      curViewData: this.props.curViewData
+    },()=>{
+      this.getViewData()
+    })
+  }
+  onTableClick = (record)=>{
+    console.log(record)
+  }
+
+  onTableContextmenu = (record,position)=>{
+    console.log(record)
+    this.props.setDropListInfo(
+       [
+        {name: '表格',url:'www.baidu.com',key:'a'},
+        {name: '睡觉',url:'www.baidu.com',key:'b'},
+        {name: '哈哈',url:'www.baidu.com',key:'c'},
+        {name: '逛街',url:'www.baidu.com',key:'d'}
+      ],
+      {x:position.x+"px",y:position.y+"px"},
+      true
+    )
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+         <div className="moduleHeader">
+          <span>{this.state.curViewData.moduleName}</span>
+          <span style={{float: "right",cursor:"pointer"}} onClick={this.deleteModule}>
+            <i className="fa fa-times" aria-hidden="true"></i>
+          </span>
+          <span style={{float: "right",marginRight:"10px"}}>
+            <WyDatePicker
+              curTime={this.state.curTime}
+              rangeTimeChange={this.curTimeChange}
+            />
+          </span>
+         </div>
+         <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+           <Scrollbars
+             autoHide
+             autoHideTimeout={100}
+             autoHideDuration={200}
+             universal={true}
+             style={{height:"300px"}}
+             >
+              <WyTable
+                xData={this.state.xxx}
+                yData={this.state.yyy}
+                onTableClick={this.onTableClick}
+                
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+              />
+            </Scrollbars>
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+TemplateForTableWhenNew.propTypes = {
+  curViewData: propTypes.object.isRequired
+}
+export default TemplateForTableWhenNew

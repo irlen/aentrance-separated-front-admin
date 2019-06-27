@@ -1,0 +1,129 @@
+import React, { Component } from 'react'
+import { Card, Icon, Menu, Dropdown, Input, Button, message} from 'antd'
+import _ from 'lodash'
+import propTypes from 'prop-types'
+
+import { wyAxiosPost } from '../components/WyAxios'
+class Interface extends Component{
+
+  state={
+    id:'',
+    alias:'',
+    duplex:'',
+    ifname:'',
+    linkStatus:'',
+    speed:'',
+    curAlias:'',
+    bytes_in:'',
+    bytes_out:''
+  }
+  componentDidMount(){
+    const { id, alias, duplex, ifname, linkStatus, speed, bytes_in, bytes_out} = this.props.interfaceData
+    this.setState({
+      id,
+      alias,
+      duplex,
+      ifname,
+      linkStatus,
+      speed,
+      curAlias: alias,
+      bytes_in,
+      bytes_out
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(_.cloneDeep(this.props.interfaceData)) !== JSON.stringify(_.cloneDeep(nextProps.interfaceData))){
+      const { id, alias, duplex, ifname, linkStatus, speed, bytes_in, bytes_out } = this.props.interfaceData
+      this.setState({
+        id,
+        alias,
+        duplex,
+        ifname,
+        linkStatus,
+        speed,
+        curAlias: alias,
+        bytes_in,
+        bytes_out
+      })
+    }
+  }
+  aliasChange = (e)=>{
+    this.setState({
+      curAlias: e.target.value
+    })
+  }
+
+  submitAlias = ()=>{
+    const data = {
+      alias: this.state.curAlias,
+      id: this.state.id
+    }
+    wyAxiosPost('Dev/editIfInfo',data,(result)=>{
+      this.setState({
+        alias: this.state.curAlias
+      })
+      message.success(result.data.msg)
+    })
+
+  }
+  render(){
+    const dropdowDom = ()=>(
+      <Dropdown placement="bottomRight" trigger={['click']} overlay={
+        <Menu>
+          <Menu.Item disabled={true} key="1"><span>备注名：</span><Input  onChange={this.aliasChange} value={this.state.curAlias} style={{width: "120px"}} /></Menu.Item>
+          <Menu.Item key="3" style={{textAlign: "right"}}>
+            <Button size="small" style={{marginRight: "10px"}}>取消</Button>
+            <Button type="primary" size="small" onClick={ this.submitAlias }>确认</Button>
+          </Menu.Item>
+        </Menu>
+      }>
+        <a className="ant-dropdown-link" href="#">
+          <i className="fa fa-pencil-square-o" aria-hidden="true"></i>
+        </a>
+      </Dropdown>
+    )
+    return(
+        <div>
+          <Card title={ this.state.ifname } bordered={false} extra={dropdowDom()}>
+            <ul style={{lineHeight: "30px"}}>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"0 0 86px"}}>接口别名：</div>
+                <div style={{flex: "1 1 auto"}}>{ this.state.alias }</div>
+              </li>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"0 0 44px"}}>速率：</div>
+                <div style={{flex: "1 1 auto"}}>{this.state.speed}</div>
+              </li>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"0 0 44px"}}>接收：</div>
+                <div style={{flex: "1 1 auto"}}>{this.state.bytes_in}</div>
+              </li>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"0 0 44px"}}>发送：</div>
+                <div style={{flex: "1 1 auto"}}>{this.state.bytes_out}</div>
+              </li>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"0 0 44px"}}>模式：</div>
+                <div style={{flex: "1 1 auto"}}>{this.state.duplex}</div>
+              </li>
+              <li style={{display: "flex"}}>
+                <div style={{flex:"0 0 44px"}}>状态：</div>
+                <div style={{flex: "1 1 auto"}}>
+                  {this.state.linkStatus === 'up'?
+                    <span style={{color:"#00CC33"}}><i className="fa fa-circle-o-notch fa-spin"></i></span>
+                     :
+                    <span><i className="fa fa-circle-o-notch"></i></span>
+                  }
+                </div>
+              </li>
+            </ul>
+          </Card>
+      </div>
+    )
+  }
+}
+
+Interface.propTypes = {
+  interfaceData: propTypes.object
+}
+export default Interface

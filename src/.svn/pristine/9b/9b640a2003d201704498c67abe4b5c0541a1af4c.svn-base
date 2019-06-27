@@ -1,0 +1,522 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, Drawer, Input, Select, Upload, Icon, message, Popconfirm} from 'antd'
+import _ from 'lodash'
+import axios from 'axios'
+
+import WySpin from '../components/WySpin'
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import { host } from '../components/Host'
+import { forName, singlePort, rangePort } from '../components/RegExp'
+
+const uploadAction = host + 'DevObject/portImport'
+const TextArea = Input.TextArea
+const Option = Select.Option
+const Dragger = Upload.Dragger
+class HostGroup extends Component{
+  state={
+    visible: false,
+    visibleForUpload: false,
+    isSpining: false,
+    pageSize: 5,
+    ids: [],
+    curId:'',
+    name:'',
+    port:[],
+    is_tcp:'tcp',
+    describe:'',
+
+    searchPortName: '',
+    searchPortNumber: [],
+    searchPortAgreement:'',
+
+    xData: [],
+    yData: []
+  }
+  /************供调用**************************************/
+  getPortStuffData = (id, name, port, is_tcp)=>{
+    let info = {}
+    if(id){
+      info.id = id
+    }
+    if(name){
+      info.name = name
+    }
+    if(port){
+      info.port = port
+    }
+    if(is_tcp){
+      info.is_tcp = is_tcp
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DevObject/GetPortInfo',info,(result)=>{
+      const responseData = result.data.msg
+      let curxData = _.cloneDeep(responseData.xxx)
+      curxData.push({
+        title: '编辑',
+        dataIndex: 'edit',
+        render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+      })
+      this.setState({
+        xData: curxData,
+        yData: responseData.yyy,
+        isSpining: false
+      })
+    })
+  }
+  savePortStuffData= (id, name, port, is_tcp, describe)=>{
+    let data = {}
+    if(id){
+      data.id = id
+    }
+    data.name = name
+    data.port = port
+    data.is_tcp = is_tcp
+    data.describe = describe
+    wyAxiosPost('DevObject/savePortInfo',data,(result)=>{
+      this.getPortStuffData()
+      message.success(result.data.msg)
+    })
+  }
+  /************供调用完**************************************/
+  componentDidMount(){
+    this.getPortStuffData('','','')
+  }
+
+  handleEdit = (id)=>{
+    wyAxiosPost('DevObject/GetPortInfo',{id:id},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        curId: id,
+        name: responseData.name,
+        describe: responseData.describe,
+        is_tcp: responseData.is_tcp,
+        port: responseData.port.split(',')
+      })
+      this.showDrawer()
+    })
+  }
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('DevObject/deletePortInfo',{ids: this.state.ids},(result)=>{
+        message.success(result.data.msg)
+        this.getPortStuffData()
+        this.setState({
+          ids: []
+        })
+      })
+    }
+  }
+  searchPortNameChange = (e)=>{
+    this.setState({
+      searchPortName: e.target.value
+    })
+  }
+  searchPortNumberChange = (value)=>{
+    this.setState({
+      searchPortNumber: value
+    })
+  }
+  searchPortAgreementChange = (value)=>{
+    this.setState({
+      searchPortAgreement: value
+    })
+  }
+  nameChange = (e)=>{
+    this.setState({
+      name: e.target.value
+    })
+  }
+  portChange = (value)=>{
+    this.setState({
+      port: value
+    })
+  }
+  is_tcpChange = (value)=>{
+    this.setState({
+      is_tcp: value
+    })
+  }
+  describeChange = (e)=>{
+    this.setState({
+      describe: e.target.value
+    })
+  }
+  resetSerch = ()=>{
+    this.setState({
+      searchPortName: '',
+      searchPortNumber: [],
+      searchPortAgreement:''
+    })
+    this.getPortStuffData()
+  }
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    });
+  };
+  showDrawerForUpload = () => {
+    this.setState({
+      visibleForUpload: true,
+    });
+  };
+  onClose = () => {
+    this.setState({
+      visible: false,
+      curId:'',
+      name:'',
+      port:[],
+      is_tcp:'tcp',
+      describe:''
+    })
+  }
+  onOk = ()=>{
+    const erroList = []
+    if(this.state.name === ''){
+      erroList.push('名称不能为空')
+    }
+    if(this.state.name !== '' && !forName.test(this.state.name)){
+      erroList.push('名称格式有误')
+    }
+    if(this.state.port.length === 0){
+      erroList.push('端口号不能为空')
+    }
+    if(this.state.port.length>0){
+      this.state.port.map(item=>{
+        if(!(rangePort(item) || singlePort.test(item))){
+          erroList.push('端口号格式有误')
+          return
+        }
+      })
+    }
+    if(erroList.length === 0){
+      const { name,port,is_tcp,describe } = this.state
+      this.savePortStuffData(
+        this.state.curId,
+        this.state.name,
+        this.state.port,
+        this.state.is_tcp,
+        this.state.describe
+      )
+      this.onClose()
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  doSearch = ()=>{
+    const erroList = []
+    if(this.state.searchPortNumber.length > 0){
+      this.state.searchPortNumber.map(item=>{
+        if(!(rangePort(item) || singlePort.test(item))){
+          erroList.push('端口号格式有误')
+          return
+        }
+      })
+    }
+    if(erroList.length === 0){
+      let curRule = {}
+      curRule.name = this.state.searchPortName
+      curRule.port = this.state.searchPortNumber
+      curRule.is_tcp = this.state.searchPortAgreement
+      this.setState({
+        isSpining: true
+      })
+      this.getPortStuffData('',curRule.name,curRule.port,curRule.is_tcp)
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  onCloseForUpload = () => {
+    this.setState({
+      visibleForUpload: false,
+    });
+  };
+  fileRomove = ()=>{
+    message.success('文件已被成功删除')
+  }
+  beforeUpload = (file)=>{
+    const filename = file.name
+    const index1 = filename.lastIndexOf(".");
+    const index2 = filename.length;
+    const postf = filename.substring(index1,index2);
+    // const isLt2M = file.size / 1024 / 1024 < 2;
+    if(file.type === 'text/plain' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.type === 'application/vnd.ms-excel' ||
+      postf === '.xls' ||
+      postf === '.xlsx' ||
+      postf === '.txt'
+    ){
+      return true
+    }else{
+      message.warning("很抱歉，此处只能上传.txt .xlsx .xls类型的文件")
+      return false
+    }
+  }
+  doDownload = ()=>{
+    wyAxiosPost('DevObject/portExport',{},(result)=>{
+        const a = document.createElement('a'); //创建一个<a></a>标签
+        a.href = result.data.msg; // response is a blob
+        a.download = "portinfomation.xls";  //文件名称
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div className="moduleBody">
+        <Row gutter={16}>
+          <Col sm={{ span: 24}} md={{ span: 12}} lg={{span:6}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 66px"}}>端口名：</div>
+              <div style={{flex:"1 1 auto"}}><Input value={this.state.searchPortName} onChange={this.searchPortNameChange} placeholder="不限" /></div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 12}} lg={{span:6}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 66px"}}>端口号：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <Select
+                  mode="tags"
+                  style={{ width: '100%' }}
+                  placeholder="不限"
+                  value={this.state.searchPortNumber}
+                  onChange={this.searchPortNumberChange}
+                >
+
+                </Select>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 12}} lg={{span:6}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 66px"}}>协议：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <Select value={this.state.searchPortAgreement} onChange={this.searchPortAgreementChange} style={{ width: "100%" }}>
+                  <Option key="mykey" value="">不限</Option>
+                  <Option key="tcp" value="tcp">TCP</Option>
+                  <Option key="udp" value="udp">UDP</Option>
+                </Select>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 10,offset: 2}} lg={{span:6,offset:0}}>
+            <div style={{lineHeight: "40px"}}>
+              <Button type="primary" onClick={this.doSearch}>查询</Button>
+              {
+                (this.state.searchPortName === '' && this.state.searchPortNumber.length === 0 && this.state.searchPortAgreement === '') ?
+                ''
+                :
+                <Button style={{marginLeft: "10px"}} onClick={this.resetSerch}>重置</Button>
+              }
+
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Button type="primary" style={{marginLeft: "10px"}} onClick={this.showDrawerForUpload}>
+              <i className="fa fa-level-down" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>导入</span>
+            </Button>
+            <Button type="primary" onClick={this.doDownload} style={{marginLeft: "10px"}}>
+              <i className="fa fa-level-up" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}} >导出</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                rowSelection={rowSelection}
+                xData={this.state.xData}
+                yData={this.state.yData}
+              />
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title={this.state.curId?"修改":"新建"}
+          width={720}
+          placement="right"
+          onClose={this.onClose}
+          maskClosable={true}
+          visible={this.state.visible}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <div>
+            <ul>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>名称：</div>
+                <div style={{flex:"1 1  auto"}}><Input value={this.state.name} onChange={this.nameChange} /></div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>端口号：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="请输入"
+                    value={this.state.port}
+                    onChange={this.portChange}
+                  >
+
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>协议：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select value={this.state.is_tcp} onChange={this.is_tcpChange} style={{ width: 120 }}>
+                    <Option key="tcp" value="tcp">TCP</Option>
+                    <Option key="udp" value="udp">UDP</Option>
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>描述：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <TextArea value={this.state.describe} onChange={this.describeChange} autosize={{ minRows: 1 }} />
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '100%',
+              borderTop: '1px solid #e8e8e8',
+              padding: '10px 20px',
+              textAlign: 'right',
+              left: 0,
+              background: '#fff',
+              borderRadius: '0 0 4px 4px',
+            }}
+          >
+            <Button
+              style={{
+                marginRight: 8,
+              }}
+              onClick={this.onClose}
+            >
+              取消
+            </Button>
+            <Button onClick={this.onOk} type="primary">确定</Button>
+          </div>
+        </Drawer>
+
+        <Drawer
+          title="导入"
+          width={720}
+          placement="right"
+          onClose={this.onCloseForUpload}
+          destroyOnClose={true}
+          maskClosable={true}
+          visible={this.state.visibleForUpload}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <div>
+            <Dragger
+              name= 'upfile'
+              multiple= {true}
+              action = {uploadAction}
+              showUploadList={false}
+              onRemove={this.fileRomove}
+              beforeUpload={this.beforeUpload}
+              data={{userInfo:localStorage.userInfo}}
+              onChange = {
+                (info)=>{
+                  this.setState({
+                    isSpining: true
+                  })
+                  const status = info.file.status
+                  // if (status !== 'uploading') {
+                  //   console.log(info.file, info.fileList);
+                  // }
+                  if (status === 'done') {
+                    if(info.file.response && info.file.response.data.status === 1){
+                      this.getPortStuffData()
+                      message.success(`${info.file.name} 文件上传成功.`);
+                      this.setState({
+                        isSpining: false
+                      })
+                    }else if(info.file.response && info.file.response.data.status === 0){
+                      message.error(`${info.file.name} ${info.file.response.data.msg}`);
+                      this.setState({
+                        isSpining: false
+                      })
+                    }
+                  } else if (status === 'error') {
+                    message.error(`${info.file.name} 文件上传失败.`);
+                    this.setState({
+                      isSpining: false
+                    })
+                  }
+                }
+
+              }
+            >
+              <p className="ant-upload-drag-icon">
+                <Icon type="inbox" />
+              </p>
+              <p className="ant-upload-text">点击或拖拽进行文件上传</p>
+              <p className="ant-upload-hint">支持多文件上传</p>
+            </Dragger>
+          </div>
+
+        </Drawer>
+      </div>
+    )
+  }
+}
+export default HostGroup

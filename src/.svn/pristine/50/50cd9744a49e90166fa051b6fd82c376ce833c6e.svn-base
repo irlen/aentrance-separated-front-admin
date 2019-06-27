@@ -1,0 +1,271 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import contextList from '../ContextList'
+import WyTable from '../../components/WyTable'
+import { wyAxiosPost } from '../../components/WyAxios'
+import WySpin from '../../components/WySpin'
+import TableDetail from './TableDetail'
+const Option = Select.Option
+class TableView extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns && initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return (
+                <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+              )
+             }else{
+              return (
+                <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+              )
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    subTime: [],
+    xData: [],
+    yData: [],
+
+    initColumns: [],//原始title行
+    standarList: ['ip','mac','hostname','bytes','packets','rtt_in_avg','rtt_out_avg'],//被选中要显示的指标
+    curLen: 7,//被选中指标的长度
+    isSpining: false,
+    subTime:[],
+    pageSize:5,
+    dropListInfo: {
+    dropData: [],
+    dropPosition: {x:"0px",y:"0px"},
+    isexist: false,
+    activeRowKey:'',
+    activeIp:'',
+    activeMac:'',
+   }
+  }
+
+  componentWillReceiveProps(nextProps){
+    if(!(
+      JSON.stringify(this.props.subTime) === JSON.stringify(nextProps.subTime)
+    )){
+      let info = Object.assign({},nextProps.param,{dataType:'host'},{field: nextProps.field},{start_time:nextProps.subTime[0]},{last_time:nextProps.subTime[1]})
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('TwoView/getTwoTable',{info: info},(result)=>{
+        let activeRowKey = 'mykey'
+        let activeIp = ''
+        let activeMac = ''
+        const responseData = result.data.msg
+        if(responseData.yyy.length>0){
+          activeRowKey = responseData.yyy[0].key
+          activeIp = responseData.yyy[0].ip
+          activeMac = responseData.yyy[0].mac
+        }
+        const initColumns = responseData.xxx
+        const newColumns = this.compileColumns(activeRowKey,initColumns)
+
+
+        const newxxx = []
+        if(newColumns && newColumns.length>0){
+          newColumns.map(item=>{
+            if(this.state.standarList.indexOf(item.key) !== -1){
+              newxxx.push(item)
+            }
+          })
+        }
+        const subTime = []
+        subTime.push(info.start_time)
+        subTime.push(info.last_time)
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          isSpining: false,
+          subTime,
+          activeIp,
+          activeRowKey,
+          activeMac
+        })
+      })
+    }
+  }
+  standarChange = (value)=>{
+    this.setState({
+      standarList: value,
+      curLen: value.length
+    },()=>{
+      const newxxx = []
+      if(this.state.initColumns && this.state.initColumns.length>0){
+        this.state.initColumns.map(item=>{
+          if(this.state.standarList.indexOf(item.key) !== -1){
+            newxxx.push(item)
+          }
+        })
+        this.setState({
+          xData: newxxx
+        })
+      }
+    })
+  }
+  setSubTime = (tableTime)=>{
+    this.setState({
+      subTime: tableTime
+    },()=>{
+      let info = Object.assign({},this.props.param,{dataType:'host'},{field: this.props.field},{start_time:this.state.subTime[0]},{last_time:this.state.subTime[1]})
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('TwoView/getTwoTable',{info: info},(result)=>{
+        const responseData = result.data.msg
+        const newxxx = []
+        if(responseData.xxx && responseData.xxx.length>0){
+          responseData.xxx.map(item=>{
+            if(this.state.standarList.indexOf(item.key) !== -1){
+              newxxx.push(item)
+            }
+          })
+        }
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType:'host',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: record.ip,
+      objType: 'host',
+      previousPath:this.props.param.previousPath
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  onTableClick = (record)=>{
+    const activeRowKey = record.key
+    const activeIp = record.ip
+    const activeMac = record.mac
+    const initColumns = this.state.initColumns
+    const newColumns = this.compileColumns(activeRowKey,initColumns)
+    const newxxx = []
+    if(newColumns && newColumns.length>0){
+      newColumns.map(item=>{
+        if(this.state.standarList.indexOf(item.key) !== -1){
+          newxxx.push(item)
+        }
+      })
+    }
+    this.setState({
+      activeRowKey,
+      xData: [...newxxx],
+      activeIp,
+      activeMac
+    })
+  }
+  render(){
+    return(
+      <div>
+        <div className="amodule">
+          <div className="moduleHeader">
+            <span>主机</span>
+            <span style={{float:"right"}}>
+              <span>指标显示：</span>
+              <Select
+                style={{minWidth: "180px"}}
+                mode="tags"
+                size="small"
+                onChange={this.standarChange}
+                maxTagCount={0}
+                maxTagPlaceholder={()=>('已选'+this.state.curLen+'项')}
+                value={this.state.standarList}
+              >
+                {
+                  this.state.initColumns && this.state.initColumns.length>0?
+                  this.state.initColumns.map(item=>{
+                    return(
+                      <Option key={item.key}>{item.title}</Option>
+                    )
+                  })
+                  :
+                  ''
+                }
+              </Select>
+            </span>
+          </div>
+          <div className="moduleBody">
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                onTableContextmenu={this.tableContextmenu}
+                dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                onTableClick={this.onTableClick}
+              />
+            </WySpin>
+          </div>
+        </div>
+        <TableDetail
+          activeIp={this.state.activeIp}
+          subTime = {this.state.subTime}
+          activeMac={this.state.activeMac}
+          standarList={['ip','mac','hostname','SYN_num','SYN_ACK_num','ACK_num','FIN_num','RST_num']}//被选中要显示的指标
+          curLen={8}
+          moduleName="标志位"
+          apiName="TwoView/getFlagsByIp"
+        />
+        <TableDetail
+          activeIp={this.state.activeIp}
+          subTime = {this.state.subTime}
+          activeMac={this.state.activeMac}
+          standarList={["ip", "pkt64_num", "pkt128_num", "pkt512_num", "pkt1517_num","pkt1518_num"]}//被选中要显示的指标
+          curLen={6}
+          moduleName="数据包"
+          apiName="TwoView/getPktByIp"
+        />
+        <TableDetail
+          activeIp={this.state.activeIp}
+          subTime = {this.state.subTime}
+          activeMac={this.state.activeMac}
+          standarList={["ip", "protocol_name", "bytes", "bytes_in", "bytes_out", "packets", "packets_in", "packets_out"]}//被选中要显示的指标
+          curLen={8}
+          moduleName="协议"
+          apiName="TwoView/getProtoByIp"
+        />
+      </div>
+    )
+  }
+}
+
+export default TableView

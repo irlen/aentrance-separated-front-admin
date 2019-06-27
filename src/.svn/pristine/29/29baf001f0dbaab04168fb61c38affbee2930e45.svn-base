@@ -1,0 +1,150 @@
+import React, { Component } from 'react'
+import { Row, Col, Input } from 'antd'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import Header from '../Layout/header'
+import { routeOne } from '../Routes/routeConfig'
+import { wyAxiosPost } from '../components/WyAxios'
+import { singleHost } from '../components/Host'
+const Search = Input.Search
+class NavRemember extends Component{
+  state={
+    invariableModule: [],
+    rememberModule: []
+  }
+  componentWillMount(){
+    const invariableModule = []
+    if(routeOne && routeOne.length>0){
+      routeOne.map(item=>{
+        if(item.remember){
+          const data = {}
+          data.url = item.path
+          data.name = item.name
+          data.icon = item.icon
+          invariableModule.push(data)
+        }else{
+          if(item.routes && item.routes.length>0){
+            item.routes.map(subItem=>{
+              if(subItem.remember){
+                const data = {}
+                data.url = subItem.path
+                data.name = subItem.name
+                data.icon = item.icon
+                invariableModule.push(data)
+              }
+            })
+          }
+        }
+      })
+    }
+    this.setState({
+      invariableModule
+    })
+    wyAxiosPost('NavUrl/getNavUrl',{},(result)=>{
+      this.setState({
+        rememberModule: result.data.msg
+      })
+    })
+  }
+  componentDidMount(){
+    //容器高度自适应
+    const loginContainer = document.querySelector(".loginContainer")
+    const windowH = parseInt(document.body.clientHeight,0);
+    loginContainer.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)
+      loginContainer.style.height = rwindowH +'px'
+    }
+    $('.ant-input').css({
+      backgroundColor:"rgba(0,0,0,0.2)",
+      border:"solid 1px rgba(0,0,0,0.3)",
+      borderRadius:"40px",
+      color:"rgba(255,255,255,0.8)"
+    })
+    $('.ant-input-search-icon').css('color',"rgba(255,255,255,0.8)")
+  }
+  toPath = (curUrl)=>{
+    this.props.history.push(curUrl)
+  }
+  deviceMonitor = ()=>{
+    window.open('http://'+singleHost+':8878/pureportal/seconddevurl/seconddevurl.jsp?username=admin')
+  }
+  render(){
+    return(
+      <div className="loginContainer">
+        <Header />
+        <div className="fullScreen" style={{
+            width: "600px",
+            marginLeft:"-300px",
+            height: "480px",
+            position: "absolute",
+            left:"50%",
+            top:"50%",
+            marginTop:"-160px",
+            color:"rgba(255,255,255,0.8)"
+          }}
+        >
+          <Row style={{margin:"20px 0 40px 0"}}>
+            <Col style={{textAlign:"center"}}>
+            <Search
+              placeholder="input search text"
+              onSearch={value => console.log(value)}
+              onPressEnter={value=>{}}
+              style={{ width: 512 ,borderRadius:"16px"}}
+            />
+            </Col>
+          </Row>
+          <Row>
+            {
+              this.state.invariableModule && this.state.invariableModule.length>0?
+              this.state.invariableModule.map(item=>{
+                return (
+                  <Col span={6} key={item.url} style={{padding: "15px 0 15px 0"}}>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{width: "64px",height:"64px",borderRadius:"40px",background:"rgba(0,0,0,0.3)",margin:"0 auto",fontSize:"30px",textAlign:"center",lineHeight:"62px",cursor:"pointer"}}>
+                      <span><i className={ item.icon } aria-hidden="true"></i></span>
+                    </div>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{textAlign:"center", cursor:"pointer"}}>
+                      {item.name}
+                    </div>
+                  </Col>
+                )
+              })
+              :
+              ''
+            }
+            {
+              <Col span={6} key={'mykey'} style={{padding: "15px 0 15px 0"}}>
+                <div onClick={this.deviceMonitor} style={{width: "64px",height:"64px",borderRadius:"40px",background:"rgba(0,0,0,0.3)",margin:"0 auto",fontSize:"30px",textAlign:"center",lineHeight:"62px",cursor:"pointer"}}>
+                  <span><i className="fa fa-server" aria-hidden="true"></i></span>
+                </div>
+                <div onClick={this.deviceMonitor} style={{textAlign:"center", cursor:"pointer"}}>
+                  {'硬件监控'}
+                </div>
+              </Col>
+            }
+            {
+              this.state.rememberModule && this.state.rememberModule.length>0?
+              this.state.rememberModule.map(item=>{
+                return (
+                  <Col span={6} key={item.id} style={{padding: "15px 0 15px 0"}}>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{width: "64px",height:"64px",borderRadius:"40px",background:"rgba(0,0,0,0.3)",margin:"0 auto",fontSize:"30px",textAlign:"center",lineHeight:"62px",cursor:"pointer"}}>
+                      <span><i className={ item.icon } aria-hidden="true"></i></span>
+                    </div>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{textAlign:"center",cursor:"pointer"}}>
+                      {item.name}
+                    </div>
+                  </Col>
+                )
+              })
+              :
+              ''
+            }
+          </Row>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(NavRemember)

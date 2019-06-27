@@ -1,0 +1,16 @@
+.filterList>li>span:first-child{
+  display: inline-block;
+  width:120px;
+  height: 40px;
+  line-height: 40px;
+  padding-left: 20px;
+}
+.spanlist{
+  display: inline;
+}
+.filterLi>span:not(:first-child){
+  left: 120px;
+}
+.filterLi>span:nth-of-type(2){
+  left: 0px;
+}

@@ -1,0 +1,86 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+import $ from 'jquery'
+
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import contextList from '../SubPage/ContextList'
+class PageInfo extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+               return <span style={{display: "inline-block",width: "100%"}} title={text} className="noWrap" > {text} </span>
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    xData: [],
+    yData: [],
+    subTime:[],
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   }
+  }
+
+  getTableData = (info)=>{
+    const subTime = []
+    subTime.push(info.start_time)
+    subTime.push(info.last_time)
+    wyAxiosPost('Http/getPageList',{info:info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: this.compileColumns(responseData.xxx),
+        yData: responseData.yyy,
+        subTime
+      })
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'url',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: record.key,
+      objType: 'url',
+      previousPath:this.props.pathName
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader"></div>
+        <div className="moduleBody">
+          <WyTable
+            xData={this.state.xData?this.state.xData:[]}
+            yData={this.state.yData?this.state.yData:[]}
+            onTableContextmenu={this.tableContextmenu}
+            dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+          />
+        </div>
+      </div>
+    )
+  }
+}
+
+export default PageInfo

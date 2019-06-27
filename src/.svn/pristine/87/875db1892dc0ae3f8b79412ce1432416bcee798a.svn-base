@@ -1,0 +1,219 @@
+import React ,{ Component } from 'react'
+import echarts from 'echarts'
+import ReactEcharts from 'echarts-for-react'
+import _ from 'lodash'
+import { themeOne } from '../echartTheme'
+import DropList from '../DropList'
+class Pie extends Component{
+  constructor(){
+    super()
+    const option = {
+      tooltip : {
+          trigger: 'item',
+          formatter: "{a} <br/>{b} : {c} ({d}%)"
+      },
+      legend: {
+          orient: 'vertical',
+          left: 'left',
+          textStyle:{ //图例样式
+            color: '#ffffff',
+            fontSize:'12px'
+          }
+      }
+    };
+
+    this.state={
+      option,
+      onChartClick: function(){},
+      viewId: '',
+      onBrushSelected: function(){},
+      onContextmenu: function(){return false},
+
+      dropPosition:{x:"0px",y:"0px"},
+      dropData: [],
+      isexist: false
+    }
+  }
+  componentDidMount(){
+    const { pieData, name, title, unit} = this.props
+    let onChartClick
+    let onContextmenu
+    let toolbox = {}
+    let viewId = ''
+    if(this.props.viewId){
+      viewId = this.props.viewId
+    }
+    //点击事件判断
+    if(!this.props.onChartClick){
+       onChartClick = function(){}
+    }else{
+       onChartClick = this.props.onChartClick
+    }
+    //点击事件判断
+    if(!this.props.onContextmenu){
+       onContextmenu = function(){return false}
+    }else{
+       onContextmenu = this.props.onContextmenu
+    }
+    //判断工具盒是否添加
+    if(this.props.toolbox){
+      toolbox = {
+        toolbox: {
+          feature: {
+            dataZoom: {
+              yAxisIndex: 'none'
+            },
+            restore: {},
+            saveAsImage: {}
+          }
+        }
+      }
+    }else{
+      toolbox = {}
+    }
+
+    this.setState({
+      option: Object.assign({},{...this.state.option},{
+        series : [
+          {
+              name: name,
+              type: 'pie',
+              radius : '80%',
+              center: ['50%', '60%'],
+              data: pieData,
+              itemStyle: {
+                  emphasis: {
+                      shadowBlur: 10,
+                      shadowOffsetX: 0,
+                      shadowColor: 'rgba(0, 0, 0, 0.5)'
+                  }
+              }
+          }
+        ],
+        title : {
+          text: title,
+          subtext: '',
+          x:'center'
+        },
+        tooltip : {
+            trigger: 'item',
+            formatter: "{a} <br/>{b} : {c}"+unit+" ({d}%)"
+        }
+    },
+        toolbox
+      ),
+      onChartClick,
+      viewId,
+      onContextmenu
+    })
+  }
+  shouldComponentUpdate(nextProps, nextState){
+    if(
+      !(
+        JSON.stringify(this.props.pieData) === JSON.stringify(nextProps.pieData) &&
+        this.props.title === nextProps.title &&
+        this.props.name === nextProps.name &&
+        this.props.unit === nextProps.unit &&
+        JSON.stringify(this.props.dropListInfo) === JSON.stringify(nextProps.dropListInfo)
+      )
+    ){
+      return true
+    }else{
+      return false
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      !(
+        JSON.stringify(this.props.pieData) === JSON.stringify(nextProps.pieData) &&
+        this.props.title === nextProps.title &&
+        this.props.name === nextProps.name &&
+        this.props.unit === nextProps.unit &&
+        JSON.stringify(this.props.dropListInfo) === JSON.stringify(nextProps.dropListInfo)
+      )
+    ){
+      const { pieData, name, title, unit} = nextProps
+      this.setState({
+        option: Object.assign({},{...this.state.option},{
+          series : [
+            {
+                name: name,
+                type: 'pie',
+                radius : '70%',
+                center: ['64%', '60%'],
+                data: pieData,
+                itemStyle: {
+                    emphasis: {
+                        shadowBlur: 10,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                }
+            }
+          ]},{
+          title : {
+            text: title,
+            subtext: '',
+            x:'center'
+          }
+        },{
+          tooltip : {
+              trigger: 'item',
+              formatter: "{a} <br/>{b} : {c}"+unit+" ({d}%)"
+          }
+        }),
+        dropPosition: nextProps.dropListInfo?nextProps.dropListInfo.dropPosition:{x:"0px",y:"0px"},
+        dropData: nextProps.dropListInfo?nextProps.dropListInfo.dropData:[],
+        isexist: nextProps.dropListInfo?nextProps.dropListInfo.isexist:false
+      })
+    }
+  }
+  render(){
+    echarts.registerTheme('my_theme',themeOne)
+    //const viewId = this.state.viewId
+    return(
+      <div>
+        <ReactEcharts
+          option={this.state.option}
+          theme="my_theme"
+          onEvents={
+            {
+              'click': (params,viewId)=>{this.state.onChartClick(params,this.state.viewId)},
+              'contextmenu':(params,viewId)=>{
+                const xPosition = params.event.event.clientX
+                const yPosition = params.event.event.clientY
+                const position= {
+                  x: xPosition,
+                  y: yPosition
+                }
+                const dom = params.event.event.target
+                const curViewId = this.state.viewId
+                this.state.onContextmenu(params,dom,position,curViewId)
+              },
+            }
+          }
+          opts={{renderer: 'canvas'}}
+        />
+        <DropList
+          dropPosition={_.cloneDeep(this.state.dropPosition)}
+          dropData={_.cloneDeep(this.state.dropData)}
+          isexist={_.cloneDeep(this.state.isexist)}/>
+      </div>
+    )
+  }
+}
+
+export default Pie
+
+//viewId 视图ID，通常指这个视图的这条数据ID
+//name   string 指标名称
+//title  string 饼图标题
+//unit string 单位
+//pieData  数组：[{
+//                  name:'',value:
+//                },{
+//                  name:'',value:
+//                }]
+
+//toolbox  值为布尔值，是否开启工具盒 默认为false
+//onChartClick  值为一个函数，默认为空

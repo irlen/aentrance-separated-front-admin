@@ -1,0 +1,8 @@
+import React from 'react'
+import Container from './Container'
+const DashboardDefine = ({laystate,path})=>{
+  return (
+    <Container />
+  )
+}
+export default DashboardDefine

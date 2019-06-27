@@ -1,0 +1,173 @@
+import React, { Component } from 'react'
+import { Row, Col } from 'antd'
+import { withRouter } from 'react-router'
+import _ from 'lodash'
+
+
+import '../styles/style.less'
+import { wyAxiosPost } from '../components/WyAxios'
+import * as regions from '../DashboardMap/regions'
+import MapModule from '../DashboardMap/mapModule/MapModule'
+import RegionModule from '../DashboardMap/mapModule/RegionModule'
+import Pie from '../components/Pie'
+import Line from '../components/Line'
+import WyTable from '../components/WyTable'
+import Column from '../components/Column'
+class ForCut extends Component{
+  state = {
+    mapData: {},
+    viewType:'',
+    pieData: {},
+    barData: {},
+    tableData:{},
+    columnData:{}
+  }
+  getMapData = (responseData)=>{
+    const id = this.state.id
+      let checkCityList = {}
+      const cityList = regions[responseData.region]
+      if(cityList && cityList.length>0){
+        cityList.map(item=>{
+          checkCityList[item.name] = item.coordinate
+        })
+      }
+      const compiledLineData = ()=>{
+        const lineData = _.cloneDeep(responseData.lineData)
+        if(lineData && lineData.length>0){
+          lineData.map(item=>{
+              const coords = []
+              coords.push(checkCityList[item.fromCity])
+              coords.push(checkCityList[item.toCity])
+              item.coords = coords
+              if(item.value === '0'){
+                //流量为零的时候，控制发光效果和线条颜色
+                item.lightColor= 'rgba(255,255,255,0)' //无流量时发光效果的颜色
+                item.lineColor = 'rgba(0,248,255,1)' //无流量时线条颜色
+              }else{
+                item.lightColor= 'rgba(255,255,255,0.64)' //有流量时发光效果颜色
+                item.lineColor = 'rgba(255,255,0,1)' //有流量时线条颜色
+              }
+          })
+        }
+        return lineData
+      }
+      const compiledPointData = ()=>{
+        const pointData = _.cloneDeep(responseData.pointData)
+        if(pointData && pointData.length>0){
+          pointData.map(item=>{
+            let newValue = []
+            newValue = checkCityList[item.city]
+            newValue.push(item.value)
+            item.value = newValue
+            if(item.warning === 'normal'){
+              item.color="rgba(0,255,0,1)" //无告警时候节点颜色
+            }else if(item.warning === 'slight'){
+              item.color="rgba(255,241,0,1)" //轻微告警节点颜色
+            }else if(item.warning === 'serious'){
+              item.color="rgba(255,123,69,1)" //严重告警节点颜色
+            }
+          })
+        }
+        return pointData
+      }
+      const mapData = {}
+      mapData.lineData = compiledLineData()
+      mapData.pointData = compiledPointData()
+      mapData.region = responseData.region
+      mapData.unit = responseData.unit
+      mapData.mapName = responseData.map_name
+      this.setState({
+        mapData,
+        viewType: responseData.viewType
+      })
+  }
+  componentDidMount(){
+    //容器高度自适应
+    const loginContainer = document.querySelector(".loginContainer")
+    const windowH = parseInt(document.body.clientHeight,0);
+    loginContainer.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)
+      loginContainer.style.height = rwindowH +'px'
+    }
+    const id = this.props.match.params.id
+    wyAxiosPost('Report/getModuleJson',{id},(result)=>{
+      const responseData = result.data.msg
+      const viewType = responseData.viewType
+      if(viewType === 'map'){
+        this.getMapData(responseData)
+      }else if(viewType === 'pie'){
+        this.setState({
+          pieData: responseData,
+          viewType: responseData.viewType
+        })
+      }else if(viewType === 'bar' || viewType === 'line'){
+        this.setState({
+          barData: responseData,
+          viewType: responseData.viewType
+        })
+      }else if(viewType === 'table'){
+        this.setState({
+          tableData: responseData,
+          viewType: responseData.viewType
+        })
+      }else if(viewType === 'column'){
+        this.setState({
+          columnData: responseData,
+          viewType: responseData.viewType
+        })
+      }
+    })
+  }
+  generateView = ()=>{
+    let dom = ''
+    const viewType = this.state.viewType
+    if(viewType === 'map'){
+      dom = <MapModule height={400} mapData={ this.state.mapData} />
+    }else if(viewType === 'pie'){
+      const pieData = this.state.pieData
+      dom = <Pie
+        pieData={pieData.data}
+        unit={pieData.unit}
+        name={pieData.name}
+        title={pieData.title}
+      />
+    }else if(viewType === 'bar' || viewType === 'line'){
+      const barData = this.state.barData
+      dom = <Line
+        xData={barData.xxx}
+        yData={barData.yyy}
+        aUnit={barData.unit}
+      />
+    }else if(viewType === 'table'){
+      const tableData = this.state.tableData
+      dom = <WyTable
+        xData={tableData.xxx}
+        yData={tableData.yyy}
+      />
+    }else if(viewType === 'column'){
+      const columnData = this.state.columnData
+      dom = <Column
+        xData={columnData.xxx}
+        yData={columnData.yyy}
+        aUnit={columnData.unit}
+      />
+    }
+    return dom
+  }
+  render(){
+    return (
+        <div className="loginContainer evntContainer" style={{padding: '20px'}}>
+          <Row id="cutContent" style={{width:"800px",height:"320px"}}>
+            <Col>
+              {
+                this.generateView()
+              }
+            </Col>
+          </Row>
+        </div>
+    )
+  }
+}
+
+export default ForCut

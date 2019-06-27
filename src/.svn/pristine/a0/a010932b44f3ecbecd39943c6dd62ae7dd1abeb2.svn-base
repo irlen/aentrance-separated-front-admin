@@ -1,0 +1,106 @@
+import React, { Component } from 'react'
+import { Row, Col, Select } from 'antd'
+import _ from 'lodash'
+
+import Toppic from './Toppic'
+import TopDbpic from './TopDbpic'
+import TopSqlpic from './TopSqlpic'
+import TopSqltable from './TopSqltable'
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+
+const Option = Select.Option
+class DataBaseTop extends Component{
+  state = {
+    appArray:[],
+    allTime: [],
+    appValue:'0'
+  }
+  componentWillMount(){
+    wyAxiosPost('Http/getHttpList',{},(result)=>{
+      let allTime = []
+      allTime.push(result.data.start_time)
+      allTime.push(result.data.last_time)
+      this.setState({
+        appArray: [...result.data.msg],
+        appValue: '0',
+        allTime
+      })
+    })
+  }
+  appValueChange = (value)=>{
+    this.setState({
+      appValue: value
+    })
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: [...value]
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col span={24}>
+            <div className="amodule" style={{lineHeight:"60px",padding: "0 0 0 20px"}}>
+              <span>全局时间：</span>
+              <WyDatePicker rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth:"280px"}} curTime={this.state.allTime}/>
+              <span style={{marginLeft: "20px"}}>应用：</span>
+              <Select style={{minWidth:"120px"}} onChange={this.appValueChange} value={this.state.appValue}>
+                <Option key="0" value="0">所有</Option>
+               {
+                this.state.appArray && this.state.appArray.length>0?
+                this.state.appArray.map(item=>{
+                  return  <Option key={item.id} value={item.id}>{item.name}</Option>
+                })
+                :
+                ''
+              }
+              </Select>
+            </div>
+           </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <Toppic
+              standard='request'
+              allTime={_.cloneDeep(this.state.allTime)}
+              appValue={this.state.appValue}
+            />
+          </Col>
+
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <Toppic
+              standard='sqlTime'
+              allTime={_.cloneDeep(this.state.allTime)}
+              appValue={this.state.appValue}
+            />
+          </Col>
+
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <TopDbpic standard='requestCount' allTime={_.cloneDeep(this.state.allTime)} appValue={this.state.appValue}/>
+          </Col>
+
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <TopSqlpic standard='allStandard' allTime={_.cloneDeep(this.state.allTime)} appValue={this.state.appValue}/>
+          </Col>
+
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <TopSqltable pointType='slowrequest' moduleName='Top10慢请求URL语句' allTime={_.cloneDeep(this.state.allTime)} appValue={this.state.appValue}/>
+          </Col>
+
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <TopSqltable pointType='requestnum' moduleName='Top10 URL请求数量' allTime={_.cloneDeep(this.state.allTime)} appValue={this.state.appValue}/>
+          </Col>
+
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 24}}>
+            <TopSqltable pointType='errRequest' moduleName='错误请求Top10' allTime={_.cloneDeep(this.state.allTime)} appValue={this.state.appValue}/>
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default DataBaseTop

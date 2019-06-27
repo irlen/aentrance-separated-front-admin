@@ -1,0 +1,225 @@
+
+
+const routeOne = [
+  {
+    key:'/app',
+    path:'/app',
+    component:'../Home',
+    name:'总览',
+    icon: 'fa fa-pie-chart',
+    remember: true,
+    routes:[
+      { key:'/app', path: '/app', component:'../Home', name:'总览'},
+    ]
+  },{
+      key:'/app/dashboard',
+      path: '/app/dashboard',
+      component: '',
+      name: '仪表板',
+      icon: 'fa fa-tachometer',
+      routes:[
+        { key:'/app/dashboard/dashboardbuiltin', path: '/app/dashboard/dashboardbuiltin', component:'../DashboardBuiltin', name:'内置仪表板'},
+        { key:'/app/dashboard/dashboarddefine', path: '/app/dashboard/dashboarddefine', component:'../DashboardDefine', name:'自定义仪表板',remember: true},
+        { key:'/app/dashboard/dashboardmap', path: '/app/dashboard/dashboardmap', component:'../DashboardMap', name:'全局区域'}
+      ]
+    },{
+      key: '/app/source',
+      path: '/app/source',
+      component: '',
+      name: '数据源',
+      icon: 'fa fa-cloud',
+      routes:[
+        { key: '/app/source/datasource', path: '/app/source/datasource', component:'../DataSource', name:'数据源管理'},
+        { key: '/app/source/appanalysis', path: '/app/source/appanalysis', component:'../AppAnalysis', name:'实时数据', remember: true},
+        { key: '/app/source/productpages', path: '/app/source/productpages', component:'../ProductPages', name:'自定义视图'}
+      ]
+    },{
+      key:'/app/net',
+      path: '/app/net',
+      component: '',
+      name: '网络',
+      icon: 'fa fa-globe',
+      routes:[
+        { key: '/app/net/netallelement', path: '/app/net/netallelement', component:'../NetAllElement', name:'网络流量'},
+        { key: '/app/net/netfilter', path: '/app/net/netfilter', component:'../NetFilter', name:'网络过滤'},
+        { key: '/app/net/netinteractive', path: '/app/net/netinteractive', component:'../NetInteractive', name:'交互分析'}
+      ]
+    },{
+      key:'/app/apply',
+      path: '/app/apply',
+      component: '',
+      name: '应用分析',
+      icon: 'fa fa-area-chart',
+      routes:[
+        { key: '/app/apply/applist', path: '/app/apply/applist', component:'../Applist', name:'所有应用'},
+        { key: '/app/apply/appinteractive', path: '/app/apply/appinteractive', component:'../AppInteractive', name:'应用交互'},
+        { key: '/app/apply/apptimeresponse', path: '/app/apply/apptimeresponse', component:'../AppTimeResponse', name:'应用过滤'},
+      ]
+    },{
+      key: '/app/http',
+      path: '/app/http',
+      component: '',
+      name: 'HTTP应用',
+      icon: 'fa fa-th-large',
+      routes:[
+        { key: '/app/http/httptop', path: '/app/http/httptop', component:'../HttpTop', name:'Top Http'},
+        { key: '/app/http/httpappstatus', path: '/app/http/httpappstatus', component:'../HttpAppStatus', name:'http应用'},
+        { key: '/app/http/httpanalysis', path: '/app/http/httpanalysis', component:'../HttpAnalysis', name:'http页面'}
+      ]
+    },{
+      key:'/app/database',
+      path: '/app/database',
+      component: '',
+      name: '数据库',
+      icon: 'fa fa-database',
+      routes:[
+        { key: '/app/database/databasetop', path: '/app/database/databasetop', component:'../DataBaseTop', name:'Top数据库'},
+        { key: '/app/database/databasestatus', path: '/app/database/databasestatus', component:'../DataBaseStatus', name:'数据库状态'},
+        { key: '/app/database/databasesql', path: '/app/database/databasesql', component:'../DataBaseSql', name:'SQL语句'}
+      ]
+    },{
+     key: '/app/alert',
+     path: '/app/alert',
+     component: '',
+     name: '告警',
+     icon: 'fa fa-bell',
+     routes:[
+       { key: '/app/alert/alertlist',  path: '/app/alert/alertlist', component:'../AlertList', name:'告警管理'},
+       { key: '/app/alert/alertdetail',  path: '/app/alert/alertdetail', component:'../AlertDetail', name:'告警详情'}
+     ]
+   },{
+    key: '/app/report',
+    path: '/app/report',
+    component: '',
+    name: '报表',
+    icon: 'fa fa-line-chart',
+    routes:[
+      { key: '/app/report/reportlist',  path: '/app/report/reportlist', component:'../ReportList', name:'报表模板'},
+      { key: '/app/report/reportgenerate',  path: '/app/report/reportgenerate', component:'../ReportGenerate', name:'生成报表'},
+    ]
+  },{
+      key: '/app/system',
+      path: '/app/system',
+      component: '',
+      name: '系统设置',
+      icon: 'fa fa-cog',
+      routes:[
+        { key: '/app/system/systembase',  path: '/app/system/systembase', component:'../SystemBase', name:'基本设置'},
+        { key: '/app/system/systemobject', path: '/app/system/systemobject', component:'../SystemObject', name:'对象定义'},
+        { key: '/app/system/systemequipment', path: '/app/system/systemequipment', component:'../SystemEquipment', name:'设备相关'},
+        { key: '/app/system/systemtool', path: '/app/system/systemtool', component:'../SystemTool', name:'工具'}
+      ]
+    },{
+      key: '/app/user',
+      path: '/app/user',
+      component: '',
+      name: '用户',
+      icon: 'fa fa-user',
+      routes:[
+        { key: '/app/user/usermanage',  path: '/app/user/usermanage', component:'../UserManage', name:'用户管理'},
+        { key: '/app/user/userrole',  path: '/app/user/userrole', component:'../UserRole', name:'角色管理'},
+        { key: '/app/user/userauthority',  path: '/app/user/userauthority', component:'../UserAuthority', name:'权限管理'}
+      ]
+     }
+]
+const subPageRouteOne = [
+  {
+    key:'/subpage/hostview/:info',
+    path:'/subpage/hostview/:info',
+    subPath:'/hostview',
+    component:'',
+    name:'主机视图'
+  },{
+    key:'/subpage/portview/:info',
+    path:'/subpage/portview/:info',
+    subPath:'/portview',
+    component:'',
+    name:'端口视图'
+  },{
+    key:'/subpage/hostgroupview/:info',
+    path:'/subpage/hostgroupview/:info',
+    subPath:'/hostgroupview',
+    component:'',
+    name:'主机组视图'
+  },{
+    key:'/subpage/ptpview/:info',
+    path:'/subpage/ptpview/:info',
+    subPath:'/ptpview',
+    component:'',
+    name:'主机端对端'
+  },{
+    key:'/subpage/netmouthview/:info',
+    path:'/subpage/netmouthview/:info',
+    subPath:'/netmouthview',
+    component:'',
+    name:'网口视图'
+  },{
+    key:'/subpage/ptgview/:info',
+    path:'/subpage/ptgview/:info',
+    subPath:'/ptgview',
+    component:'',
+    name:'主机组端对端'
+  },{
+    key:'/subpage/applyview/:info',
+    path:'/subpage/applyview/:info',
+    subPath:'/applyview',
+    component:'',
+    name:'应用分析'
+  },{
+    key:'/subpage/conversationview/:info',
+    path:'/subpage/conversationview/:info',
+    subPath:'/conversationview',
+    component:'',
+    name:'会话分析'
+  },{
+    key:'/subpage/timeresponseview/:info',
+    path:'/subpage/timeresponseview/:info',
+    subPath:'/timeresponseview',
+    component:'',
+    name:'时间响应'
+  },{
+    key:'/subpage/dropview/:info',
+    path:'/subpage/dropview/:info',
+    subPath:'/dropview',
+    component:'',
+    name:'网络错误'
+  },{
+    key:'/subpage/dropnessview/:info',
+    path:'/subpage/dropnessview/:info',
+    subPath:'/dropnessview',
+    component:'',
+    name:'业务错误'
+  },{
+    key:'/subpage/clientview/:info',
+    path:'/subpage/clientview/:info',
+    subPath:'/clientview',
+    component:'',
+    name:'客户端'
+  },{
+    key:'/subpage/serverview/:info',
+    path:'/subpage/serverview/:info',
+    subPath:'/serverview',
+    component:'',
+    name:'服务端'
+  },{
+    key:'/subpage/statuscodeview/:info',
+    path:'/subpage/statuscodeview/:info',
+    subPath:'/statuscodeview',
+    component:'',
+    name:'响应状态'
+  },{
+    key:'/subpage/requestmethodview/:info',
+    path:'/subpage/requestmethodview/:info',
+    subPath:'/requestmethodview',
+    component:'',
+    name:'请求方法'
+  },{
+    key:'/subpage/dangerdetailview/:info',
+    path:'/subpage/dangerdetailview/:info',
+    subPath:'/dangerdetailview',
+    component:'',
+    name:'隐患分析'
+  }
+]
+
+export { routeOne, subPageRouteOne }

@@ -1,0 +1,106 @@
+import React, { Component } from 'react'
+import { Row, Col } from 'antd'
+import { withRouter } from 'react-router'
+import _ from 'lodash'
+
+
+import '../styles/style.less'
+import { wyAxiosPost } from '../components/WyAxios'
+import * as regions from '../DashboardMap/regions'
+import MapModule from '../DashboardMap/mapModule/MapModule'
+import RegionModule from '../DashboardMap/mapModule/RegionModule'
+class ForCut extends Component{
+  state = {
+    mapData: {}
+  }
+  getMapData = (responseData)=>{
+    const id = this.state.id
+      let checkCityList = {}
+      const cityList = regions[responseData.region]
+      if(cityList && cityList.length>0){
+        cityList.map(item=>{
+          checkCityList[item.name] = item.coordinate
+        })
+      }
+      const compiledLineData = ()=>{
+        const lineData = _.cloneDeep(responseData.lineData)
+        if(lineData && lineData.length>0){
+          lineData.map(item=>{
+              const coords = []
+              coords.push(checkCityList[item.fromCity])
+              coords.push(checkCityList[item.toCity])
+              item.coords = coords
+              if(item.value === '0'){
+                //流量为零的时候，控制发光效果和线条颜色
+                item.lightColor= 'rgba(255,255,255,0)' //无流量时发光效果的颜色
+                item.lineColor = 'rgba(0,248,255,1)' //无流量时线条颜色
+              }else{
+                item.lightColor= 'rgba(255,255,255,0.64)' //有流量时发光效果颜色
+                item.lineColor = 'rgba(255,255,0,1)' //有流量时线条颜色
+              }
+          })
+        }
+        return lineData
+      }
+      const compiledPointData = ()=>{
+        const pointData = _.cloneDeep(responseData.pointData)
+        if(pointData && pointData.length>0){
+          pointData.map(item=>{
+            let newValue = []
+            newValue = checkCityList[item.city]
+            newValue.push(item.value)
+            item.value = newValue
+            if(item.warning === 'normal'){
+              item.color="rgba(0,255,0,1)" //无告警时候节点颜色
+            }else if(item.warning === 'slight'){
+              item.color="rgba(255,241,0,1)" //轻微告警节点颜色
+            }else if(item.warning === 'serious'){
+              item.color="rgba(255,123,69,1)" //严重告警节点颜色
+            }
+          })
+        }
+        return pointData
+      }
+      const mapData = {}
+      mapData.lineData = compiledLineData()
+      mapData.pointData = compiledPointData()
+      mapData.region = responseData.region
+      mapData.unit = responseData.unit
+      mapData.mapName = responseData.map_name
+      this.setState({
+        mapData
+      })
+  }
+  componentDidMount(){
+    //容器高度自适应
+    const loginContainer = document.querySelector(".loginContainer")
+    const windowH = parseInt(document.body.clientHeight,0);
+    loginContainer.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)
+      loginContainer.style.height = rwindowH +'px'
+    }
+    const id = this.props.match.params.id
+    wyAxiosPost('Report/getModuleJson',{id},(result)=>{
+      const responseData = result.data.msg
+      const viewType = responseData.viewType
+      console.log(responseData)
+      if(viewType === 'map'){
+        this.getMapData(responseData)
+      }
+    })
+  }
+  render(){
+    return (
+        <div className="loginContainer evntContainer" style={{padding: '20px'}}>
+          <Row className="cutContent">
+            <Col>
+              <MapModule height={400} mapData={ this.state.mapData} />
+            </Col>
+          </Row>
+        </div>
+    )
+  }
+}
+
+export default ForCut

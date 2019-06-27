@@ -1,0 +1,201 @@
+import React, { Component } from 'react'
+import {Row, Col, Input, Button, Select, Tabs, message} from 'antd'
+import _ from 'lodash'
+
+import WyDatePicker from '../components/WyDatePicker'
+import TemplateTable from './TemplateTable'
+import ComprehensiveStandar from './ComprehensiveStandar'
+import HostPic from './HostPic'
+import { singleIp, groupIp } from '../components/RegExp'
+import { netFilterPic } from '../components/StandarConstant'
+const Option = Select.Option
+const TabPane = Tabs.TabPane
+class HostFilter extends Component{
+  state={
+    filterobj:'',
+    allTime: [],
+    submitRecord: {},
+    field: 'bytes',
+    fieldTow: 'rtt',
+    isSearch: false
+  }
+  //控制多选为单选
+  // selChange = (value)=>{
+  //   console.log(value)
+  //   if(value.length>0){
+  //     const lastOne = value.pop()
+  //     let arr =[]
+  //     arr.push(lastOne)
+  //     this.setState({
+  //       objectValue: [...arr]
+  //     })
+  //   }else if(value.length === 0){
+  //     this.setState({
+  //       objectValue: []
+  //     })
+  //   }
+  // }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    })
+  }
+  doSearch = ()=>{
+    const erroList = []
+    if(this.state.filterobj === ''){
+      erroList.push("ip/ip段不能为空")
+    }
+    if(this.state.filterobj !== '' && !(singleIp.test(this.state.filterobj) || groupIp.test(this.state.filterobj))){
+      erroList.push("ip/ip段格式有误")
+    }
+    if(this.state.allTime.length === 0){
+      erroList.push("时间不能为空")
+    }
+    if(erroList.length === 0){
+      this.setState({
+        isSearch: false
+      },()=>{
+        let curSubmitRecord = {}
+        curSubmitRecord.filterobj = this.state.filterobj
+        curSubmitRecord.allTime = _.cloneDeep(this.state.allTime)
+        this.setState({
+          isSearch: true,
+          submitRecord:curSubmitRecord
+        })
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  filterobjChange = (e)=>{
+    this.setState({
+      filterobj: e.target.value
+    })
+  }
+  tabOneChange = (value)=>{
+    this.setState({
+      field: value
+    })
+  }
+  tabOneChangeTow = (value)=>{
+    this.setState({
+      fieldTow: value
+    })
+  }
+  setRepostTime = (value)=>{
+    this.table1Component.subTimeChange(value)
+    this.table2Component.subTimeChange(value)
+    this.table3Component.subTimeChange(value)
+    this.table4Component.subTimeChange(value)
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16} style={{lineHeight:"40px"}}>
+          <Col sm={{span:24}} md={{span:17}} lg={{span: 6}} xl={{span:8}}>
+            <div style={{display: "flex"}}>
+              <span style={{flex:"0 0 100px"}}>ip/ip段：</span>
+              <span style={{flex:"1 1 auto"}}>
+                <Input onChange={this.filterobjChange}/>
+              </span>
+            </div>
+          </Col>
+          <Col sm={{span:24}} md={{span:17}} lg={{span: 13}} xl={{span:10}}>
+            <div style={{display: "flex"}}>
+              <span style={{flex:"0 0 100px"}}>全局时间：</span>
+              <span style={{flex:"1 1 auto"}}>
+                <WyDatePicker size={"default"} rangeTimeChange={this.allTimeChange}/>
+              </span>
+            </div>
+          </Col>
+          <Col sm={{span:24}} md={{span:7}} lg={{span: 5}} xl={{span:6}}>
+            <Button onClick={this.doSearch} type="primary">过滤</Button>
+          </Col>
+        </Row>
+        <div style={{height: "16px"}}>
+        </div>
+
+        {
+          this.state.isSearch?
+            <div>
+              <Row gutter={16}>
+                <Col span={24}>
+                  <div className="amodule">
+                    <div className="moduleBody">
+                      <div className="moduleHeader">
+                        {this.state.submitRecord.filterobj}
+                      </div>
+                      <Tabs tabPosition="left" style={{height:"300px"}} onChange={this.tabOneChange}>
+                      {
+                        netFilterPic && netFilterPic.length>0?
+                        netFilterPic.map(item=>{
+                          return(
+                            <TabPane tab={item.name} key={item.value}>
+                              <HostPic setRepostTime = {(value)=>this.setRepostTime(value)} type='host' field ={item.value} subTime={this.state.submitRecord.allTime} filterobj={this.state.submitRecord.filterobj}/>
+                            </TabPane>
+                          )
+                        })
+                        :
+                        ''
+                      }
+                      </Tabs>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                  <TemplateTable getInstance={instance=>this.table1Component=instance} obj="port" objType="port" filterobj={this.state.submitRecord.filterobj} subTime={this.state.submitRecord.allTime} type='port' key='port' name="端口对象解析"/>
+                </Col>
+                <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                  <TemplateTable getInstance={instance=>this.table2Component=instance} obj="ptp" objType="ptp" filterobj={this.state.submitRecord.filterobj} subTime={this.state.submitRecord.allTime} type='crossip' key='crossip' name="交互的ip"/>
+                </Col>
+                <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                  <TemplateTable getInstance={instance=>this.table3Component=instance} obj="ip" objType="host" filterobj={this.state.submitRecord.filterobj} subTime={this.state.submitRecord.allTime} type='topip' key='topip' name="top ip"/>
+                </Col>
+                <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+                  <TemplateTable getInstance={instance=>this.table4Component=instance} obj="protocol_name" objType="protocol" filterobj={this.state.submitRecord.filterobj} subTime={this.state.submitRecord.allTime} type='protocol' key='protocol' name="协议"/>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={24}>
+                  <div className="amodule">
+                    <div className="moduleBody">
+                      <div className="moduleHeader">
+                        {this.state.submitRecord.filterobj}
+                      </div>
+                      <Tabs tabPosition="left" style={{height:"300px"}} onChange={this.tabOneChangeTow}>
+                        <TabPane tab="网络RTT" key="rtt">
+                          <HostPic type='compre' field ='rtt' subTime={this.state.submitRecord.allTime} filterobj={this.state.submitRecord.filterobj}/>
+                        </TabPane>
+                        <TabPane tab="网络连接数" key="conn_num">
+                          <HostPic type='compre' field ='conn_num' subTime={this.state.submitRecord.allTime} filterobj={this.state.submitRecord.filterobj}/>
+                        </TabPane>
+                        <TabPane tab="数据包量" key="packets">
+                          <HostPic type='compre' field ='packets' subTime={this.state.submitRecord.allTime} filterobj={this.state.submitRecord.filterobj}/>
+                        </TabPane>
+                        <TabPane tab="丢包量" key="drops">
+                          <HostPic type='compre' field ='drops' subTime={this.state.submitRecord.allTime} filterobj={this.state.submitRecord.filterobj}/>
+                        </TabPane>
+                        <TabPane tab="包大小分布" key="pkt">
+                          <HostPic type='compre' field ='pkt' subTime={this.state.submitRecord.allTime} filterobj={this.state.submitRecord.filterobj}/>
+                        </TabPane>
+                      </Tabs>
+                    </div>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+          :
+          ''
+        }
+      </div>
+    )
+  }
+}
+
+export default HostFilter

@@ -1,0 +1,248 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import contextList from '../SubPage/ContextList'
+
+const Option = Select.Option
+class StandarListTable extends Component{
+  constructor(props){
+    super(props)
+    const { getInstance } = props
+    if(typeof getInstance === 'function'){
+      getInstance(this)
+    }
+  }
+  state={
+    isSpining: false,
+    start_time:'',
+    last_time:'',
+    custom:'',
+    ifaceName:'',
+    appName:'',
+
+    standarLength:'',
+    selStandardList:[],
+    xData: [],
+    yData: [],
+    initxxx:[],
+    pageSize: 5,
+    standardList: [],
+
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+  }
+  componentDidMount(){
+    if(this.props.type === 'app'){
+      this.setState({
+        selStandardList: ['name','bytes','packets','conn_time','server_time'],
+        standarLength: '5'
+      })
+    }else if(this.props.type === 'ip'){
+      this.setState({
+        selStandardList: ['ip','bytes','packets','conn_time','server_time'],
+        standarLength: '5'
+      })
+    }else if(this.props.type === 'msg'){
+      this.setState({
+        selStandardList: ['sip','sport','dip','dport','ifname','bytes','packets','app_bytes','ret','zero_window','conn_time'],
+        standarLength: '11'
+      })
+    }
+    this.setState({
+      start_time: this.props.searchRule.start_time,
+      last_time: this.props.searchRule.last_time,
+      custom: this.props.searchRule.custom,
+      ifaceName: this.props.searchRule.ifaceName,
+      appName: this.props.searchRule.appName
+    },()=>{
+      this.getTableData()
+    })
+  }
+  getTableData = ()=>{
+    let info = {}
+    info.start_time = this.state.start_time
+    info.last_time = this.state.last_time
+    info.custom = this.state.custom
+    info.ifaceName = this.state.ifaceName
+    info.appName = this.state.appName
+    info.type = this.props.type
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('App/getResInfo',{info:info},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.xxx && responseData.xxx.length>0){
+        const initxxx = responseData.xxx
+        let newxxx = []
+        initxxx.map(item=>{
+          if(this.state.selStandardList.indexOf(item.dataIndex) !== -1){
+            newxxx.push(item)
+          }
+        })
+        this.setState({
+          standardList: responseData.xxx,
+          xData: newxxx,
+          yData: responseData.yyy,
+          initxxx,
+          isSpining: false
+        })
+      }
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.searchRule) !== JSON.stringify(nextProps.searchRule)){
+      this.setState({
+        start_time: nextProps.searchRule.start_time,
+        last_time: nextProps.searchRule.last_time,
+        custom: nextProps.searchRule.custom,
+        ifaceName: nextProps.searchRule.ifaceName,
+        appName: nextProps.searchRule.appName
+      },()=>{
+        this.getTableData()
+      })
+    }
+  }
+  standarChange = (value)=>{
+    let newxxx = []
+    this.state.initxxx.map(item=>{
+      if(value.indexOf(item.dataIndex) !== -1){
+        newxxx.push(item)
+      }
+    })
+    this.setState({
+      selStandardList: [...value],
+      standarLength: value.length,
+      xData: _.cloneDeep(newxxx)
+    })
+  }
+  setTime = (value)=>{
+    this.setState({
+      start_time: value[0],
+      last_time: value[1]
+    },()=>{
+      this.getTableData()
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  downloadPackage = (info)=>{
+    wyAxiosPost('Download/downloadpacket',{info: info},(result)=>{
+      const a = document.createElement('a'); //创建一个<a></a>标签
+      a.href = result.data.msg; // response is a blob
+      //a.download = "package.pcap";  //文件名称
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+
+    let listType='',obj='',objType=''
+    if(this.props.type === 'app'){
+      listType = record.type === 'know_app'?'apply':'apply_not'
+      objType = record.objType
+      obj = record.name
+    }else if(this.props.type === 'ip'){
+      listType = 'host'
+      objType = this.props.objType
+      obj = record.ip
+    }else if(this.props.type === 'msg'){
+      listType = 'downloadpackage'
+    }
+
+    let info ={
+      listType,
+      start_time: this.state.start_time,
+      last_time: this.state.last_time,
+      obj,
+      objType,
+      previousPath:this.props.location.pathname,
+      //下载包特有属性
+      onClick: (param)=>{this.downloadPackage(param)},
+      param:{
+        appName: record.appName,
+        ap_id: record.ap_id,
+        start_time: this.state.start_time,
+        last_time: this.state.last_time
+      }
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    const curLen = this.state.standarLength
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>{this.props.moduleName}</span>
+          <span style={{marginLeft: '20px'}}>{`${this.state.start_time}~${this.state.last_time}`}</span>
+          <span style={{float: "right"}}>
+            <Select
+              style={{minWidth: "120px"}}
+              mode="tags"
+              size="small"
+              onChange={this.standarChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+curLen+'项')}
+              value={this.state.selStandardList}
+            >
+              {
+                this.state.standardList && this.state.standardList.length>0?
+                this.state.standardList.map(item=>{
+                  return(
+                    <Option key={item.dataIndex} value={item.dataIndex} title={item.title}> { item.title } </Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+        <Scrollbars
+          autoHide
+          autoHideTimeout={100}
+          autoHideDuration={200}
+          universal={true}
+          style={{height: "300px"}}
+          >
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                onTableContextmenu={this.tableContextmenu}
+                dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+              />
+            </WySpin>
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(StandarListTable)

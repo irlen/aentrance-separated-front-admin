@@ -1,0 +1,192 @@
+import React, { Component } from 'react'
+import { Select, message} from 'antd'
+import axios from 'axios'
+import propTypes from 'prop-types'
+import { wyAxiosPost } from '../components/WyAxios'
+import { host } from '../components/Host'
+const Option = Select.Option
+class WyTableSet extends Component{
+  state = {
+    standarList:{},//对应数据源IID所取的全部数据
+    order:'',
+    tableTitle: [],//数据列
+    orderSort:'asc',
+    time_unit:'min5',
+    limitCount:'10',
+    viewWidth:'12'
+  }
+  componentDidMount(){
+    const searchId = this.props.dataSource
+		if(searchId != ''){
+			wyAxiosPost('Source/getMonitField',{'id':searchId},(result)=>{
+				this.setState({
+				  standarList: Object.assign({},result.data.msg),
+				  tableTitle:[],//多个数据列
+				  order:''
+				},()=>{
+          if(this.props.initSetData){
+            const { tableTitle, order, orderSort, time_unit, limitCount, viewWidth } = this.props.initSetData
+            this.setState({
+              tableTitle, order, orderSort, limitCount, viewWidth,
+              time_unit: time_unit[2]
+            })
+          }
+        })
+			})
+		}
+  }
+  componentWillReceiveProps(nextProps){
+    const searchId = nextProps.dataSource
+    if(searchId !== '' && this.props.dataSource !== nextProps.dataSource){
+      wyAxiosPost('Source/getMonitField',{'id':searchId},(result)=>{
+				this.setState({
+				  standarList: Object.assign({},result.data.msg),
+				  tableTitle:[],//多个数据列
+				  order:''
+				})
+			})
+    }
+  }
+  orderChange = (value)=>{
+    this.setState({
+      order: value
+    })
+  }
+  orderSortChange = (value)=>{
+    this.setState({
+      orderSort: value
+    })
+  }
+  timeunitChange = (value)=>{
+    this.setState({
+      time_unit: value
+    })
+  }
+  limitCountChange = (value)=>{
+    this.setState({
+      limitCount: value
+    })
+  }
+  viewWidthChange = (value)=>{
+    this.setState({
+      viewWidth: value
+    })
+  }
+  tableTitleChange = (value)=>{
+    this.setState({
+      tableTitle: [...value]
+    })
+  }
+  render(){
+    return(
+       <div>
+         {
+           //数据列
+         }
+         <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+           <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+             数据列：
+           </div>
+           <div style={{flex:"auto"}}>
+              <Select
+                mode="multiple"
+                style={{width: "350px"}}
+                placeholder="请选择"
+                defaultValue={[]}
+                value={this.state.tableTitle}
+                onChange={this.tableTitleChange}
+               >
+                {
+                  this.state.standarList.all && this.state.standarList.all.length>0?
+                  this.state.standarList.all.map(item=>{
+                    return (
+                      <Option key={item.id} value={item.id}>{item.name}</Option>
+                    )
+                  })
+                  :
+                  ''
+                }
+              </Select>
+           </div>
+         </div>
+         {
+           //排序
+         }
+         <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+           <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+             排序：
+           </div>
+           <div style={{flex:"auto"}}>
+             <Select style={{width: "120px"}} value={this.state.order} onChange={this.orderChange}>
+               <Option key="mykey" value="">请选择</Option>
+                {
+                  this.state.standarList.all && this.state.standarList.all.length>0?
+                  this.state.standarList.all.map(item=>{
+                    return (
+                      <Option key={item.id} value={item.id}>{item.name}</Option>
+                    )
+                  })
+                  :
+                  ''
+                }
+              </Select>
+              <Select style={{width: "120px"}}  value={this.state.orderSort} onChange={this.orderSortChange}>
+               <Option key="asc" value="asc">升序</Option>
+               <Option key="desc" value="desc">降序</Option>
+              </Select>
+           </div>
+         </div>
+         {
+           //时间
+         }
+         <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+           <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+             时间选择：
+           </div>
+           <div style={{flex:"auto"}}>
+             <Select style={{width: "120px"}}  value={this.state.time_unit} onChange={this.timeunitChange}>
+               <Option key="min5" value="min5">最近五分钟</Option>
+               <Option key="hour1" value="hour1">最近一小时</Option>
+               <Option key="hour3" value="hour3">最近三小时</Option>
+               <Option key="hour6" value="hour6">最近六小时</Option>
+             </Select>
+           </div>
+         </div>
+         {
+           //条数
+         }
+         <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+           <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+             条数：
+           </div>
+           <div style={{flex:"auto"}}>
+             <Select style={{width: "120px"}}  value={this.state.limitCount} onChange={this.limitCountChange}>
+                <Option key="10" value="10">10</Option>
+                <Option key="50" value="50">50</Option>
+                <Option key="100" value="100">100</Option>
+                <Option key="all" value="all">全部</Option>
+              </Select>
+           </div>
+         </div>
+         {
+           //条数
+         }
+         <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+           <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+             视图宽度：
+           </div>
+           <div style={{flex:"auto"}}>
+             <Select style={{width: "120px"}}  value={this.state.viewWidth} onChange={this.viewWidthChange}>
+                <Option key="12" value="12">50%</Option>
+                <Option key="24" value="24">100%</Option>
+              </Select>
+           </div>
+         </div>
+       </div>
+    )
+  }
+}
+WyTableSet.propTypes = {
+  dataSource: propTypes.string.isRequired
+}
+export default WyTableSet

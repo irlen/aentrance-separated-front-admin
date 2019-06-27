@@ -1,0 +1,66 @@
+import React, {Component} from 'react'
+import {Select,Input} from 'antd'
+import propTypes from 'prop-types'
+const Option = Select.Option;
+class RuleTwo extends Component{
+  state={
+    id:'',
+    name:'',
+    operator:'=',
+    value:[]
+  }
+
+  valueChange = (value)=>{
+    const onerule = Object.assign({},{...this.state},{value: [...value]})
+    this.props.changeWhere(onerule)
+    this.setState({
+      value: [...value]
+    })
+  }
+  componentDidMount(){
+    this.setState({
+      id: this.props.item.id,
+      name: this.props.item.name
+    })
+  }
+  render(){
+    return(
+      <span style={{display: "block"}}>
+        <span style={{width: "64px",display: "inline-block"}}>{this.props.item.name}</span>
+        <Select defaultValue='='>
+          {
+            this.props.item.opera_array && this.props.item.opera_array.length >0?
+            this.props.item.opera_array.map(item=>{
+              return (
+                <Option value={item.key} key={item.key} onChange={(e)=>this.ruleChange}>{item.value}</Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+        <Select
+           mode="multiple"
+           style={{width: "315px"}}
+           placeholder="请选择"
+           defaultValue={[]}
+           onChange = {this.valueChange}
+          >
+          {
+            this.props.item.list_array.map(subitem=>{
+              return(
+                <Option value={subitem.id} key={subitem.id} >{subitem.name}</Option>
+              )
+            })
+          }
+        </Select>
+      </span>
+    )
+  }
+}
+
+RuleTwo.propTypes = {
+  item: propTypes.object.isRequired,
+  changeWhere: propTypes.func.isRequired
+}
+export default RuleTwo

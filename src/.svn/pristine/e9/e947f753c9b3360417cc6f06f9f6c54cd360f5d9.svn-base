@@ -1,0 +1,77 @@
+import React, { Component } from 'react'
+const contextList = (parameter)=>{
+  const realParam = encodeURIComponent(JSON.stringify(parameter))
+  let subPageList = []
+  if(parameter.listType === 'netmouth'){
+    //objType = 'iface'
+    //objType = 'port'
+    //网口二级视图菜单
+    subPageList = [
+     {name: '主机视图',url:'/subpage/hostview/'+realParam,key:'/subpage/hostview'},
+     {name: '端口视图',url:'/subpage/portview/'+realParam,key:'/subpage/portview'},
+     {name: '主机组视图',url:'/subpage/hostgroupview/'+realParam,key:'/subpage/hostgroupview'},
+     {name: '主机端对端',url:'/subpage/ptpview/'+realParam,key:'subpage/ptpview'}
+   ]
+ }else if(parameter.listType === 'host'){
+   // listType='host' objType='host' obj= record.ip
+   subPageList = [
+	  {name: '主机视图',url:'/subpage/hostview/'+realParam,key:'/subpage/hostview'},
+    {name: '端口视图',url:'/subpage/portview/'+realParam,key:'/subpage/portview'},
+    {name: '主机端对端',url:'/subpage/ptpview/'+realParam,key:'subpage/ptpview'},
+    {name: '网口视图',url:'/subpage/netmouthview/'+realParam,key:'subpage/netmouthview'}
+  ]
+}else if(parameter.listType === 'hostgroup'){
+  //objType = 'group'
+  //主机组二级菜单
+   subPageList = [
+     {name: '主机视图',url:'/subpage/hostview/'+realParam,key:'/subpage/hostview'},
+     {name: '端口视图',url:'/subpage/portview/'+realParam,key:'/subpage/portview'},
+     {name: '主机组端对端',url:'/subpage/ptgview/'+realParam,key:'/subpage/ptgview'},
+     {name: '网口视图',url:'/subpage/netmouthview/'+realParam,key:'subpage/netmouthview'}
+  ]
+}else if(parameter.listType === 'apply'){
+  // objType='http'
+  //应用二级菜单
+    subPageList = [
+      {name: '应用分析',url:'/subpage/applyview/'+realParam,key:'/subpage/applyview'},
+      {name: '会话分析',url:'/subpage/conversationview/'+realParam,key:'/subpage/conversationview'},
+      {name: '网口视图',url:'/subpage/netmouthview/'+realParam,key:'/subpage/netmouthview'},
+      {name: '时间响应',url:'/subpage/timeresponseview/'+realParam,key:'subpage/timeresponseview'},
+      {name: '网络错误',url:'/subpage/dropview/'+realParam,key:'subpage/dropview'},
+      {name: '业务错误',url:'/subpage/dropnessview/'+realParam,key:'subpage/dropnessview'}
+   ]
+}else if(parameter.listType === 'apply_not'){
+  // objType='db'
+  //应用二级菜单
+    subPageList = [
+      {name: '应用分析',url:'/subpage/applyview/'+realParam,key:'/subpage/applyview'},
+      {name: '会话分析',url:'/subpage/conversationview/'+realParam,key:'/subpage/conversationview'},
+      {name: '网口视图',url:'/subpage/netmouthview/'+realParam,key:'/subpage/netmouthview'},
+      {name: '时间响应',url:'/subpage/timeresponseview/'+realParam,key:'subpage/timeresponseview'},
+      {name: '网络错误',url:'/subpage/dropview/'+realParam,key:'subpage/dropview'},
+   ]
+ }else if(parameter.listType === 'sql' || parameter.listType === 'url'){
+   //objType = 'sql' || 'url'
+    subPageList = [
+      {name: '客户端',url:'/subpage/clientview/'+realParam,key:'/subpage/clientview'},
+      {name: '服务端',url:'/subpage/serverview/'+realParam,key:'/subpage/serverview'}
+    ]
+}else if(parameter.listType === 'downloadpackage'){
+   subPageList = [
+     {name: '下载包',url:''+realParam,key:'downloadpackage',onClick:parameter.onClick,param:parameter.param}
+   ]
+}else if(parameter.listType === 'statuscode'){
+  //objType = 'code' 'status'
+  subPageList = [
+    {name: '响应状态',url:'/subpage/statuscodeview/'+realParam,key:'/subpage/statuscodeview'},
+  ]
+}else if(parameter.listType === 'requestmethod'){
+  //objType = 'method' 'op'
+  subPageList = [
+    {name: '请求方法',url:'/subpage/requestmethodview/'+realParam,key:'/subpage/requestmethodview'},
+  ]
+}
+  return subPageList
+}
+
+export default contextList

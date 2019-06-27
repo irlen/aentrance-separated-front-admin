@@ -1,0 +1,111 @@
+import React, { Component } from 'react'
+import { withRouter } from 'react-router-dom'
+import $ from 'jquery'
+import { Breadcrumb, Icon } from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+
+import { routeOne, subPageRouteOne } from '../../Routes/routeConfig'
+import Header from '../../Layout/header'
+import { SubPageRoute } from '../../Routes'
+class Layout extends Component{
+  componentDidMount(){
+    const subPageContainerIn = document.querySelector(".subPageContainerIn")
+    const windowH = parseInt(document.body.clientHeight,0)-40
+    subPageContainerIn.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)-40
+      subPageContainerIn.style.height = rwindowH +'px'
+    }
+    //屏蔽右键，设置右键弹框状态
+    window.document.oncontextmenu = (event)=>{
+      let e = event || window.event
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    $(document).click(()=>{
+        $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    })
+  }
+  //面包屑导航
+  getBreadcrumb = (allPath,localPath)=>{
+    const curPath = allPath
+    const reg = /\/[a-z]+/g
+    const pathArray = curPath.match(reg)
+    let breadDom = []
+    if(pathArray && pathArray.length>0){
+      routeOne.map(item=>{
+        if(item.path === pathArray[0]){
+          breadDom.push(
+            <Breadcrumb.Item key={item.key} href={item.path}>
+                <span title={item.name} className={item.icon}></span>
+            </Breadcrumb.Item>
+          )
+        }
+        if(item.path === (pathArray[0]+pathArray[1])){
+          breadDom.push(
+            <Breadcrumb.Item key={item.key} href="">
+                <span title={item.name} className={item.icon}></span>
+            </Breadcrumb.Item>
+          )
+          item.routes.map(subItem=>{
+            if(subItem.path === (pathArray[0]+pathArray[1]+pathArray[2])){
+              breadDom.push(
+                <Breadcrumb.Item key={subItem.key} href={subItem.path}>
+                  <span>{subItem.name}</span>
+                </Breadcrumb.Item>
+              )
+            }
+          })
+        }
+      })
+      subPageRouteOne.map(item=>{
+        if(item.subPath === pathArray[3]){
+          breadDom.push(
+            <Breadcrumb.Item key={item.key} href={localPath}>
+              <span>{item.name}</span>
+            </Breadcrumb.Item>
+          )
+          return
+        }
+      })
+    }
+
+    let lastBread = <Breadcrumb  key='mykey' separator="|">
+      {breadDom}
+    </Breadcrumb>
+    return lastBread
+  }
+  render(){
+    const localPath = window.location.pathname
+    const reg = /\/[a-z]+/g
+    const pathArray = localPath.match(reg)
+    let allPath = ''
+    if(pathArray.length>1){
+      const pathLength = pathArray[0].length+pathArray[1].length+1
+      let param = localPath.substring(pathLength)
+      param = JSON.parse(decodeURIComponent(param))
+      allPath = param.previousPath+pathArray[1]
+    }
+    return(
+      <div className="subContainer">
+        <Header />
+        <div className="fullScreen">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            className='subPageContainerIn'
+            >
+            <div style={{height:"40px" ,padding: "10px 0 0 20px"}}>
+              { this.getBreadcrumb(allPath,localPath) }
+            </div>
+            <SubPageRoute />
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(Layout)

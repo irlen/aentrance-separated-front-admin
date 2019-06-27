@@ -1,0 +1,413 @@
+import React, { Component } from 'react'
+import { Select, Input, Button, Row, Col, message } from 'antd'
+import _ from 'lodash'
+
+import WyDatePicker from '../components/WyDatePicker'
+import ConversationListTable from './ConversationListTable'
+import ConversationListPic from './ConversationListPic'
+import { wyAxiosPost } from '../components/WyAxios'
+import { forNumber } from '../components/RegExp'
+import WySpin from '../components/WySpin'
+const Option = Select.Option
+
+class DataBaseSql extends Component{
+  constructor(props){
+    super(props)
+    this.objList = [
+      {
+        value: "sip",
+        name: "客户端",
+        unit: ""
+      },{
+        value: "sql",
+        name: "SQL语句",
+        unit: ""
+      },{
+        value: "op",
+        name: "操作",
+        unit: ""
+      },{
+        value: "tbname",
+        name: "表名",
+        unit: ""
+      },{
+        value: "num",
+        name: "次数",
+        unit: "cishu"
+      },{
+        value: "data_time",
+        name: "交易时间",
+        unit: "shijian"
+      },{
+        value: "bytes",
+        name: "流量(总)",
+        unit: "liuliang"
+      },{
+        value: "bytes_client",
+        name: "流量（客户端）",
+        unit: "liuliang"
+      },{
+        value: "bytes_server",
+        name: "流量（服务端）",
+        unit: "liuliang"
+      }
+    ]
+    this.liuliang = [
+      {
+        value: "b",
+        name:"b"
+      },{
+        value: "Kb",
+        name:"Kb"
+      },{
+        value: "Mb",
+        name:"Mb"
+      },{
+        value: "Gb",
+        name:"Gb"
+      }
+    ]
+    this.cishu = [
+      {
+        value:'次',
+        name:"次"
+      },{
+        value: "万次",
+        name:"万次"
+      }
+    ]
+    this.shijian = [
+      {
+        value: "us",
+        name:"us"
+      },{
+        value: "ms",
+        name:"ms"
+      },{
+        value: "s",
+        name:"s"
+      }
+    ]
+    this.operaterForMohu = [
+      {
+        value:"~",
+        name:"约等于"
+      }
+    ]
+    this.operaterForCommon = [
+      {
+        value:">",
+        name:"大于"
+      },{
+        value:"<",
+        name:"小于"
+      },{
+        value:"=",
+        name:"等于"
+      },{
+        value:"!=",
+        name:"不等于"
+      },{
+        value:">=",
+        name:"大于等于"
+      },{
+        value:"<=",
+        name:"小于等于"
+      }
+    ]
+  }
+  state = {
+    filterField:'',
+    operator:'=',
+    filterVal:'',
+    filterUnit:'',
+    unitList: [],
+    operatorList: this.operaterForCommon,
+    appValue:'0',
+    allTime:[],
+    xData: [],
+    yData: [],
+    //图表查询参数
+    appstr: '',
+    app_id:'',
+    field:'bytes',
+    xDataForPic:[],
+    yDataForPic:[],
+    aUnitForPic:'',
+    isSpining: false,
+    isSpining2: false,
+
+    isSearch: false,
+    client_sql:''
+  }
+  ///////////公共调用//////////////////////
+  getTableData = (isSearch)=>{
+    let info = {}
+    info.filterField = this.state.filterField
+    info.operator = this.state.operator
+    info.filterVal = ''
+    if(isSearch){
+      info.filterVal = this.state.filterVal
+    }
+    info.filterUnit = this.state.filterUnit
+    if(this.state.allTime.length===0){
+      info.start_time = ''
+      info.last_time = ''
+    }else{
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    info.appValue = this.state.appValue
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DB/getDbSqlList',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let curTime = []
+      curTime.push(responseData.start_time)
+      curTime.push(responseData.last_time)
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        allTime: curTime,
+        isSpining: false,
+        isSearch: false
+      })
+    })
+  }
+
+  getPicData = ()=>{
+    let info = {}
+    info.appstr  = this.state.appstr
+    info.app_id = this.state.app_id
+    info.field = this.state.field
+    if(this.state.allTime.length===0){
+      info.start_time = ''
+      info.last_time = ''
+    }else{
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    this.setState({
+      isSpining2: true
+    })
+    wyAxiosPost('DB/getSqlTimeLine',{info:info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xDataForPic: responseData.xxx,
+        yDataForPic: responseData.yyy,
+        aUnitForPic: responseData.unit,
+        isSpining2: false
+      })
+    })
+  }
+  ///////////公共调用完//////////////////////
+  componentDidMount(){
+    this.getTableData(this.state.isSearch)
+  }
+  filterFieldChange = (value)=>{
+    let unitType = ''
+    this.objList.map(item=>{
+      if(value === item.value){
+        unitType = item.unit
+      }
+    })
+    if(unitType === 'cishu'){
+      this.setState({
+        unitList: this.cishu,
+        filterUnit:'次',
+        operatorList: this.operaterForCommon,
+        operator: "="
+      })
+    }else if(unitType === 'liuliang'){
+      this.setState({
+        unitList: this.liuliang,
+        filterUnit:'B',
+        operatorList: this.operaterForCommon,
+        operator: "="
+      })
+    }else if(unitType === 'shijian'){
+      this.setState({
+        unitList: this.shijian,
+        filterUnit:'us',
+        operatorList: this.operaterForCommon,
+        operator: "="
+      })
+    }else if(value ==='sql' || value=== 'op' || value=== 'tbname'){
+      this.setState({
+        unitList: [],
+        filterUnit:'',
+        operatorList: this.operaterForMohu,
+        operator: "~"
+      })
+    }else{
+      this.setState({
+        unitList: [],
+        filterUnit:'',
+        operatorList: this.operaterForCommon,
+        operator: "="
+      })
+    }
+    this.setState({
+      filterField: value,
+      filterVal: ''
+    })
+  }
+  operatorChange = (value)=>{
+    this.setState({
+      operator: value
+    })
+  }
+  filterValChange = (e)=>{
+    this.setState({
+      filterVal: e.target.value
+    })
+  }
+  filterUnitChange = (value)=>{
+    this.setState({
+      filterUnit: value
+    })
+  }
+  setAppValue = (value)=>{
+    this.setState({
+      appValue: value
+    },()=>{
+      this.getTableData(this.state.isSearch)
+    })
+  }
+  searchBusiness = ()=>{
+    const erroList = []
+    if(this.state.filterVal !== '' && !forNumber.test(this.state.filterVal) && this.state.filterUnit !== ''){
+      erroList.push('指标值只能为数字')
+    }
+    if(this.state.filterVal !== '' && this.state.operator === ''){
+      erroList.push('运算符不能为空')
+    }
+    if(this.state.filterVal !== '' && this.state.filterField === ''){
+      erroList.push('指标不能为空')
+    }
+    if(erroList.length === 0){
+      this.setState({
+        isSearch: true
+      },()=>{
+        this.getTableData(this.state.isSearch)
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    },()=>{
+      this.getTableData(this.state.isSearch)
+    })
+
+  }
+  setPicPrama = (appstr,app_id,client_sql)=>{
+    this.setState({
+      appstr,
+      app_id,
+      client_sql
+    },()=>{
+      this.getPicData()
+    })
+  }
+  setPicField = (field)=>{
+    this.setState({
+      field
+    },()=>{
+      this.getPicData()
+    })
+  }
+  render(){
+    return(
+      <div>
+        <div className="amodule" style={{padding:"0 20px 0 20px",lineHeight:"60px"}}>
+          <Row gutter={16}>
+            <Col sm={{span: 24}} md={{span: 16}} lg={{span: 12}}>
+              <span>
+                <Select value={ this.state.filterField } onChange={this.filterFieldChange} style={{minWidth: "120px"}}>
+                  <Option key='mykey' value="">请选择</Option>
+                  {
+                    this.objList.map(item=>{
+                      return(
+                        <Option value={item.value} key={item.value}>{item.name}</Option>
+                      )
+                    })
+                  }
+                </Select>
+                <Select value={this.state.operator} onChange={this.operatorChange} style={{minWidth:"60px"}}>
+                  <Option value="" key="mykey">请选择</Option>
+                  {
+                    this.state.operatorList && this.state.operatorList.length?
+                    this.state.operatorList.map(item=>{
+                      return(
+                        <Option key={item.value}  value={item.value}>{item.name}</Option>
+                      )
+                    })
+                    :
+                    ''
+                  }
+                </Select>
+                <Input value={this.state.filterVal} onChange={this.filterValChange} type="text" style={{width: "120px"}}/>
+                {
+                  this.state.unitList !== '' && this.state.unitList.length>0?
+                  <Select value={this.state.filterUnit} onChange={this.filterUnitChange} style={{minWidth: "60px"}}>
+                    {
+                      this.state.unitList.map(item=>{
+                        return(
+                          <Option value={item.value} key={item.value}>{item.name}</Option>
+                        )
+                      })
+                    }
+                  </Select>
+                  :
+                  ''
+                }
+                <Button onClick={this.searchBusiness} type="primary">查询</Button>
+              </span>
+            </Col>
+            <Col sm={{span: 24}} md={{span: 8}} lg={{span: 12}}>
+              <span style={{float: "right"}}>
+                <WyDatePicker rangeTimeChange={this.allTimeChange} curTime={this.state.allTime} size="default" style={{maxWidth: "280px"}}/>
+              </span>
+            </Col>
+          </Row>
+        </div>
+        <Row gutter={16}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <ConversationListTable
+                setAppValue={(value)=>this.setAppValue(value)}
+                setPicPrama={(appstr,app_id,client_sql)=>this.setPicPrama(appstr,app_id,client_sql)}
+                xData={_.cloneDeep(this.state.xData)}
+                yData={_.cloneDeep(this.state.yData)}
+                moduleName="会话列表"
+              />
+            </WySpin>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining2}>
+              <ConversationListPic
+                setPicField={(field)=>this.setPicField(field)}
+                xData={this.state.xDataForPic.length>0?_.cloneDeep( this.state.xDataForPic ):[]}
+                yData={this.state.yDataForPic.length>0?_.cloneDeep( this.state.yDataForPic ):[]}
+                aUnit={this.state.aUnitForPic}
+                moduleName={this.state.client_sql}
+              />
+            </WySpin>
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default DataBaseSql

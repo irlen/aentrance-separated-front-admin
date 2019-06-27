@@ -1,0 +1,110 @@
+import React, { Component } from 'react'
+import propTypes from 'prop-types'
+import _ from 'lodash'
+
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import Line from '../components/Line'
+class ResponseTimepic extends Component{
+  state = {
+    subTime:[],
+    appName: '',
+    standard:'',
+    isSpining: false,
+    xData: [],
+    yData: [],
+    aUnit: ''
+  }
+  componentDidMount(){
+
+  }
+  componentWillReceiveProps(nextProps){
+    if(this.props.appName !== nextProps.appName){
+      let data = {}
+      data.appName = nextProps.appName
+      data.standard = nextProps.standard
+      data.start_time = this.state.subTime.length>0?this.state.subTime[0]:''
+      data.last_time = this.state.subTime.length>0?this.state.subTime[1]:''
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('Http/getHttpComponets',data,(result)=>{
+        const responseData = result.data.msg
+        let timeArray = []
+        timeArray.push(responseData.start_time)
+        timeArray.push(responseData.last_time)
+        let compiledData = _.cloneDeep(responseData.yyy)
+        compiledData = compiledData.map(item=>{
+          item.areaStyle = {}
+          item.stack = '总量'
+          return item
+        })
+        this.setState({
+          xData: responseData.xxx,
+          yData: compiledData,
+          aUnit: responseData.unit,
+          subTime: [...timeArray],
+          appName: nextProps.appName,
+          standard: nextProps.standard,
+          isSpining: false
+        })
+      })
+    }
+  }
+  subTimeChange = (value)=>{
+    let data = {}
+    data.appName = this.state.appName
+    data.standard = this.state.standard
+    data.start_time = value[0]
+    data.last_time = value[1]
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Http/getHttpComponets',data,(result)=>{
+      const responseData = result.data.msg
+      let compiledData = _.cloneDeep(responseData.yyy)
+      compiledData = compiledData.map(item=>{
+        item.areaStyle = {normal:{}}
+        item.stack = '总量'
+        return item
+      })
+      this.setState({
+        xData: responseData.xxx,
+        yData: compiledData,
+        aUnit: responseData.unit,
+        subTime: [...value],
+        isSpining: false
+      })
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader" style={{display:"flex"}}>
+          <div style={{flex:"1 1 auto"}}>
+            <span>{this.props.moduleName}</span>
+          </div>
+          <div style={{flex:"0 0 300px"}}>
+            <WyDatePicker curTime={ this.state.subTime } rangeTimeChange={this.subTimeChange} size="small" style={{maxWidth:"280px"}}/>
+          </div>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <Line
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              aUnit={this.state.aUnit}
+              nozoom={true}
+            />
+
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+ResponseTimepic.propTypes={
+  moduleName: propTypes.string
+}
+export default ResponseTimepic

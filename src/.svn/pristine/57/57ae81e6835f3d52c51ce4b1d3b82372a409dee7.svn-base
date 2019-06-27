@@ -1,0 +1,142 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WySpin from '../components/WySpin'
+class TemplateForTable extends Component{
+  state = {
+    showViewData: {},
+    xData: [],
+    yData: [],
+
+    subTime: [],
+    isSpining: false,
+    autoHeight: 0,
+
+    pageSize: 10
+  }
+  getCurViewData = ()=>{
+    const {
+      id,
+      moduleName,
+      dataSource,
+      viewType,
+      tableTitle,
+      time_unit,
+      order,
+      orderSort,
+      limitCount,
+      viewWidth
+    } = JSON.parse(this.state.showViewData.content)
+    const info = {
+      id,
+      moduleName,
+      dataSource,
+      viewType,
+      time_unit:time_unit.pop(),
+      tableTitle,
+      order,
+      orderSort,
+      limitCount,
+      viewWidth
+    }
+    if(this.state.subTime && this.state.subTime.length>0){
+      info.time_unit = this.state.subTime
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Source/selectData',{info: info},(result)=>{
+      const responseData = result.data
+
+      if(responseData){
+        if(this.state.subTime && this.state.subTime.length === 0){
+          const curTime = []
+          curTime.push(responseData.start_time)
+          curTime.push(responseData.last_time)
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            subTime: [...curTime],
+            isSpining: false
+          })
+        }else{
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            isSpining: false
+          })
+        }
+      }
+    })
+  }
+  componentDidMount(){
+    if(this.props.showViewData.id){
+      this.setState({
+        showViewData: this.props.showViewData,
+        autoHeight: this.props.autoHeight
+      },()=>{
+        this.getCurViewData()
+      })
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.showViewData) !== JSON.stringify(nextProps.showViewData)){
+      this.setState({
+        showViewData: nextProps.showViewData,
+        autoHeight: nextProps.autoHeight
+      },()=>{
+        this.getCurViewData()
+      })
+    }
+  }
+  subTimeChange = (value)=>{
+    this.setState({
+      subTime: value
+    },()=>{
+      this.getCurViewData()
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+        <div className="moduleHeader" style={{display:"flex"}}>
+          <div className="moduleHeaderIn"style={{flex:"1 1 auto"}}>
+            {JSON.parse(this.props.showViewData.content).moduleName}
+          </div>
+          <div style={{float: "right",flex:"0 0 300px"}}>
+            <WyDatePicker curTime={this.state.subTime} rangeTimeChange={this.subTimeChange}/>
+          </div>
+        </div>
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            style={{height: this.state.autoHeight+'px'}}
+            >
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                />
+              </WySpin>
+          </Scrollbars>
+        </div>
+
+      </div>
+    )
+  }
+}
+
+export default TemplateForTable

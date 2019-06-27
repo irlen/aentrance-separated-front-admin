@@ -1,0 +1,218 @@
+import React, { Component } from 'react'
+import { Row, Col, Input, Button, message } from 'antd'
+import _ from 'lodash'
+
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+import Line from '../components/Line'
+
+class AlertDetail extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state = {
+    allTime: [],
+    xData: [],
+    yData: [],
+    activeRowKey:'',
+    pageSize: 5,
+
+    lxData: [],
+    lyData: [],
+    searchStr:'',
+    isSpaning: false,
+    isSearch: true
+  }
+  getData = ()=>{
+    const info = {}
+    if(this.state.allTime.length>0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    info.searchStr = this.state.searchStr
+    wyAxiosPost('Alert/getAlertTable',{info},(result)=>{
+      const responseData = result.data.msg
+      const activeRowKey = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+      //const appName = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+      //const stringName = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].name:''
+      const newColumns = this.compileColumns(activeRowKey,responseData.xxx)
+      let allTime = []
+      if(this.state.allTime.length === 0){
+        allTime.push(responseData.start_time)
+        allTime.push(responseData.last_time)
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newColumns,
+          yData: responseData.yyy,
+          allTime,
+          activeRowKey,
+          isSpining: false,
+        },()=>{
+          this.getLineData()
+        })
+      }else{
+        this.setState({
+          initColumns: responseData.xxx,
+          xData: newColumns,
+          yData: responseData.yyy,
+          isSpining: false
+        },()=>{
+          this.getLineData()
+        })
+      }
+    })
+  }
+  getLineData = ()=>{
+    const data = {}
+    if(this.state.allTime.length>0){
+      data.start_time = this.state.allTime[0]
+      data.last_time = this.state.allTime[1]
+    }
+    data.id = this.state.activeRowKey
+    wyAxiosPost('Alert/getAlertLine',{data},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        lxData: result.data.xxx,
+        lyData: result.data.yyy
+      })
+    })
+  }
+  componentDidMount(){
+    this.getData()
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    },()=>{
+      this.getData()
+    })
+  }
+  searchStrChange = (e)=>{
+    this.setState({
+      searchStr: e.target.value
+    })
+  }
+  doSearch = ()=>{
+    if(this.state.searchStr !== ''){
+      this.getData()
+      this.setState({
+        isSearch: false
+      })
+    }else{
+      message.success('请输入要搜索的内容')
+    }
+
+  }
+  doReset = ()=>{
+    this.setState({
+      searchStr: '',
+      isSearch: true
+    },()=>{
+      this.getData()
+    })
+  }
+  tableClick = (record)=>{
+    const activeRowKey = record.key
+    console.log(record.key)
+    let newColumns = []
+    newColumns = this.compileColumns(activeRowKey,this.state.xData)
+    this.setState({
+      xData: newColumns,
+      activeRowKey
+    },()=>{
+      this.getLineData()
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row>
+          <Col style={{lineHeight:"60px"}}>
+            <span>时间：<WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth: "280px",marginLeft:"20px"}}/></span>
+            <span style={{float: "right",marginRight:"20px"}}>
+              <Input style={{width: "150px"}} value={this.state.searchStr} onChange={this.searchStrChange} placeholder="不限" />
+              {
+                this.state.isSearch?
+                <Button type="primary" onClick={this.doSearch} >搜索</Button>
+                :
+                <Button type="primary" onClick={this.doReset} >重置</Button>
+              }
+
+            </span>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <div className="amodule">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining}>
+                  <WyTable
+                    activeRowKey={this.state.activeRowKey}
+                    xData={this.state.xData?this.state.xData:[]}
+                    yData={this.state.yData?this.state.yData:[]}
+                    onTableClick={this.tableClick}
+                    pageSize={this.state.pageSize}
+                    onShowSizeChange={this.pageSizeChange}
+                    onTableContextmenu={this.tableContextmenu}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </WySpin>
+              </div>
+            </div>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <div className="amodule">
+              <div className="moduleBody">
+                <Line
+                  lxData={this.state.lxData?this.state.lxData:[]}
+                  lyData={this.state.lyData?this.state.lyData:[]}
+                />
+                <div style={{display: "flex"}}>
+                  <div style={{flex:"0 0 200px"}}>告警名称：</div>
+                  <div style={{flex:"0 0 200px"}}>告警对象：</div>
+                  <div style={{flex:"1 1 auto"}}>满足条件：</div>
+                </div>
+                <div style={{display: "flex"}}>
+                  <div style={{flex:"0 0 200px"}}>告警类型：</div>
+                  <div style={{flex:"0 0 200px"}}>触发事件：</div>
+                  <div style={{flex:"1 1 auto"}}>告警原因：</div>
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+
+
+      </div>
+    )
+  }
+}
+
+export default AlertDetail

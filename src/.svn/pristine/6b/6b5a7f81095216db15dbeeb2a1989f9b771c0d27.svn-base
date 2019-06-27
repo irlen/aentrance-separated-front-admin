@@ -1,0 +1,146 @@
+import React, { Component } from 'react'
+import { Select, Tabs } from 'antd'
+
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import Line from '../components/Line'
+
+const Option = Select.Option
+const TabPane = Tabs.TabPane
+class Toppic extends Component{
+  state = {
+    appValue:'',//应用
+    subTime:[],//模块时间
+    standard:'',//指标
+    pointType: 'topTable',//端类型
+    isSpining: false,
+    xData: [],
+    yData: [],
+    aUnit: ''
+  }
+  componentDidMount(){
+    this.setState({
+      standard: this.props.standard
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(JSON.stringify(this.props.allTime) === JSON.stringify(nextProps.allTime) && this.props.appValue === nextProps.appValue)){
+      if(JSON.stringify(this.props.allTime) !== JSON.stringify(nextProps.allTime)){
+        let data = {}
+        data.pointType = this.state.pointType
+        data.appValue = nextProps.appValue
+        data.standard = this.state.standard
+        data.start_time = nextProps.allTime[0]
+        data.last_time = nextProps.allTime[1]
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+          const responseData = result.data.msg
+          console.log("hello")
+          console.log(result.data)
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            aUnit: responseData.unit,
+            subTime: [...nextProps.allTime],
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }else{
+        let data = {}
+        data.pointType = this.state.pointType
+        data.appValue = nextProps.appValue
+        data.standard = this.state.standard
+        data.start_time = this.state.subTime[0]
+        data.last_time = this.state.subTime[1]
+        this.setState({
+          isSpining: true
+        })
+        wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+          const responseData = result.data.msg
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            aUnit: responseData.unit,
+            appValue: nextProps.appValue,
+            isSpining: false
+          })
+        })
+      }
+    }
+  }
+
+  subTimeChange = (value)=>{
+    let data = {}
+    data.pointType = this.state.pointType
+    data.appValue = this.state.appValue
+    data.standard = this.state.standard
+    data.start_time = value[0]
+    data.last_time = value[1]
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        subTime:[...value],
+        isSpining: false
+      })
+    })
+  }
+  pointTypeChange = (value)=>{
+    let data = {}
+    data.pointType = value
+    data.appValue = this.state.appValue
+    data.standard = this.state.standard
+    data.start_time = this.state.subTime[0]
+    data.last_time = this.state.subTime[1]
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DB/getDbDataByType',data,(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        pointType: value,
+        isSpining: false
+      })
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+          <Tabs defaultActiveKey={this.state.pointType} onChange={this.pointTypeChange} tabBarExtraContent={
+            <span style={{float:"right",paddingRight: "20px"}}>
+              <WyDatePicker size="small" rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} style={{maxWidth: "280px"}}/>
+            </span>
+          }>
+            <TabPane tab="Top请求表" key="topTable">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining} >
+                  <Line xData={this.state.xData} yData={this.state.yData} aUnit={this.state.aUnit}/>
+                </WySpin>
+              </div>
+            </TabPane>
+            <TabPane tab="Top请求库" key="topDatabase">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining} >
+                  <Line xData={this.state.xData} yData={this.state.yData} aUnit={this.state.aUnit}/>
+                </WySpin>
+              </div>
+            </TabPane>
+          </Tabs>
+      </div>
+    )
+  }
+}
+
+export default Toppic

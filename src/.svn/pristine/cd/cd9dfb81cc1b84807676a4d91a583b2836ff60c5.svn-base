@@ -1,0 +1,47 @@
+import React, { Component } from 'react'
+import Map from '../../components/Map'
+import mapStyle from '../mapStyle'
+class MapModule extends Component{
+  state = {
+    mapData:{},
+    height:13*30-10-70
+  }
+  componentDidMount(){
+    if(JSON.stringify(this.props.mapData).length>2){
+      this.setState({
+        mapData: this.props.mapData,
+        height: this.props.height
+      })
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      JSON.stringify(this.props.mapData) !== JSON.stringify(nextProps.mapData) ||
+      this.props.height !== nextProps.height
+    ){
+      this.setState({
+        mapData: nextProps.mapData,
+        height: nextProps.height
+      })
+    }
+  }
+  render(){
+    return(
+      <div className="amodule" style={{margin:"0px",background: mapStyle.moduleBackground}}>
+        <div className="moduleHeader" style={{
+          display:"flex",
+          background:"rgba(255,255,255,0)"
+        }}>
+          {this.state.mapData.mapName}
+        </div>
+        <div className="moduleBody" style={{
+          background:"rgba(255,255,255,0)"
+        }}>
+          <Map height={this.state.height} mapData={this.state.mapData}/>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default MapModule

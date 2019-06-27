@@ -1,0 +1,11 @@
+import { combineReducers } from 'redux'
+import user from './user'
+import userAuth from './userAuth'
+import navResize from './navResize'
+import homeview from './homeview'
+export default combineReducers({
+  user,
+  userAuth,
+  navResize,
+  homeview
+})

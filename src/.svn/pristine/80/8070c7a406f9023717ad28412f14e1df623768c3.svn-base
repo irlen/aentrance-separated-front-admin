@@ -1,0 +1,122 @@
+@import '../../styles/variable.less';
+:global {
+  .loginContainer{
+    width: 100%;
+    position: relative;
+    background: -webkit-@gradientbgcolor;
+  	background: -ms-@gradientbgcolor;
+  	background: -o-@gradientbgcolor;
+  	background: -moz-@gradientbgcolor;
+  	background: @gradientbgcolor;
+  }
+  .global{
+    width: 557px;
+    height: 547px;
+    position: absolute;
+    left: 50%;
+    margin-left: -280px;
+    top: 50%;
+    margin-top: -280px;
+    /*animation: globalmoving 2s;
+    -moz-animation: globalmoving 2s;
+    -webkit-animation: globalmoving 2s;
+    -o-animation: globalmoving 2s;
+    -moz-animation-fill-mode:both;
+    -webkit-animation-fill-mode:both;
+    -o-animation-fill-mode:both;*/
+  }
+  .halfglobal{
+    width: 557px;
+    height: 547px;
+    position: absolute;
+    left: 50%;
+    margin-left: -280px;
+    bottom: -280px;
+    display: none;
+  }
+  .apptitle{
+    width: 500px;
+    height: 100px;
+    position: absolute;
+    left: 50%;
+    margin-left: -250px;
+    top: 50%;
+    margin-top: -50px;
+    text-align: center;
+    line-height: 40px;
+    letter-spacing: 3px;
+  }
+  .loginform{
+    width: 300px;
+    height: 296px;
+    position: absolute;
+    left: 50%;
+    margin-left: -150px;
+    top: 50%;
+    margin-top: -100px;
+    display: none;
+  }
+
+  /*动画相关*/
+
+  @-moz-keyframes globalmoving{
+    from {margin-top: -280px; opacity: 1;}
+      to {margin-top: 400px; opacity: 0;}
+  }
+  @-webkit-keyframes globalmoving{
+    from {margin-top: -280px; opacity: 1;}
+      to {margin-top: 400px; opacity: 0;}
+  }
+  @-o-keyframes globalmoving{
+    from {margin-top: -280px; opacity: 1;}
+      to {margin-top: 400px; opacity: 0;}
+  }
+  @keyframes globalmoving{
+    from {margin-top: -280px; opacity: 1;}
+      to {margin-top: 400px; opacity: 0;}
+  }
+  .globaldomoving{
+    animation: globalmoving 2s;
+    -moz-animation: globalmoving 2s;
+    -webkit-animation: globalmoving 2s;
+    -o-animation: globalmoving 2s;
+    -moz-animation-fill-mode:both;
+    -webkit-animation-fill-mode:both;
+    -o-animation-fill-mode:both;
+  }
+
+
+  @-moz-keyframes apptitlemoving{
+    from {margin-top: -50px; opacity: 0;}
+      to {margin-top: -250px; opacity: 1;}
+  }
+  @-webkit-keyframes apptitlemoving{
+    from {margin-top: -50px; opacity: 0;}
+      to {margin-top: -250px; opacity: 1;}
+  }
+  @-o-keyframes apptitlemoving{
+    from {margin-top: -50px; opacity: 0;}
+      to {margin-top: -250px; opacity: 1;}
+  }
+  @keyframes apptitlemoving{
+    from {margin-top: -50px; opacity: 0;}
+      to {margin-top: -250px; opacity: 1;}
+  }
+  .apptitle{
+    opacity: 0;
+  }
+  .apptitledomoving{
+    animation: apptitlemoving 2s;
+    -moz-animation: apptitlemoving 2s;
+    -webkit-animation: apptitlemoving 2s;
+    -o-animation: apptitlemoving 2s;
+    -moz-animation-fill-mode:both;
+    -webkit-animation-fill-mode:both;
+    -o-animation-fill-mode:both;
+  }
+
+  .login-form input:-webkit-autofill{
+    -webkit-box-shadow:0 0 0 1000px #ffffff inset;
+  }
+
+}

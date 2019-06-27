@@ -1,0 +1,71 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+
+import WyTable from '../../components/WyTable'
+class RegionModule extends Component{
+  state = {
+    xData: [],
+    yData: [],
+    autoHeight:'',
+    autoHeight: 13*30-10-70,
+    pageSize: 10,
+    id:''
+  }
+  componentDidMount(){
+    if(this.props.cityListData.xData.length>0 && this.props.cityListData.yData.length>0){
+      const { xData, yData } = this.props.cityListData
+      this.setState({
+        xData,
+        yData,
+        autoHeight: this.props.autoHeight
+      })
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      JSON.stringify(this.props.cityListData) !== JSON.stringify(nextProps.cityListData) ||
+      this.props.autoHeight !== nextProps.autoHeight
+    ){
+      const { xData, yData } = nextProps.cityListData
+      this.setState({
+        xData,
+        yData,
+        autoHeight:nextProps.autoHeight
+      })
+    }
+  }
+
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+        <div className="moduleHeader" style={{display:"flex"}}>
+          当前区域
+        </div>
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            style={{height: this.state.autoHeight+'px'}}
+            >
+              <WyTable
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+              />
+          </Scrollbars>
+        </div>
+
+      </div>
+    )
+  }
+}
+
+export default RegionModule

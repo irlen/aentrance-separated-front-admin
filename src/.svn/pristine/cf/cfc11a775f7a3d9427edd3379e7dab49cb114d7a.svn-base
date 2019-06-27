@@ -1,0 +1,16 @@
+import React from 'react'
+import { connect } from 'react-redux'
+import { addModules,setPosition } from '../actions'
+import SetView from './SetView'
+
+
+const mapStateToProps  = (state)=>({
+  modules: state.homeview.modules
+})
+const mapDispatchToProps = (dispatch)=>({
+  doAdd: (moduleData)=>{dispatch(addModules(moduleData))},
+  doSetPosition : (positions)=>{
+    dispatch(setPosition(positions))
+  }
+})
+export default connect(mapStateToProps,mapDispatchToProps)(SetView)

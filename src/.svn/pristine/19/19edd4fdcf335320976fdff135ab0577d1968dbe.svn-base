@@ -1,0 +1,109 @@
+import React, { Component } from 'react'
+import { Button, Modal, Row, Col, Input } from 'antd'
+import axios from 'axios'
+//import { Terminal } from 'xterm'
+//import * as fit from 'xterm/lib/addons/fit/fit'
+//import '../../node_modules/xterm/dist/xterm.css'
+class TerminalPage extends Component{
+  state={
+    visible: false,
+    hostname:'10.0.0.100',
+    port:'80',
+    username:'root',
+    password:'scxgo@qq.com'
+  }
+  componentDidMount(){
+
+  }
+
+
+  showModal = () => {
+    var ip_addr = document.location.hostname;
+    const host  = 'http://'+ip_addr+':8888'
+    window.open(host)
+    
+  }
+
+  handleOk = (e) => {
+    axios({
+      url: 'http://10.0.0.100:8888',
+      data: this.state,
+      method: "post",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+      }
+    }).then((result)=>{
+
+    })
+    this.setState({
+      visible: false,
+    });
+  }
+
+  handleCancel = (e) => {
+    this.setState({
+      visible: false,
+    });
+  }
+  hostnameChange = (e)=>{
+    this.setState({
+      hostname: e.target.value
+    })
+  }
+  portChange = (e)=>{
+    this.setState({
+      port: e.target.value
+    })
+  }
+  usernameChange = (e)=>{
+    this.setState({
+      username: e.target.value
+    })
+  }
+  passwordChange = (e)=>{
+    this.setState({
+      password: e.target.value
+    })
+  }
+  render(){
+    return(
+      <div className="moduleBody">
+        <Button type="primary" onClick={this.showModal}>
+          打开新的终端
+        </Button>
+        <div id="terminal" style={{width:"100%",height:"200px"}}>
+
+        </div>
+        <Modal
+          title="创建连接"
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+        >
+          <Row>
+            <Col>
+              <div style={{display: "flex",marginBottom:"20px"}}>
+                <div style={{flex: "0 0 80px"}}>主机：</div>
+                <div style={{flex: "1 1 auto"}}><Input type="text" value={this.state.hostname} onChange={this.hostnameChange} /></div>
+              </div>
+              <div style={{display: "flex",marginBottom:"20px"}}>
+                <div style={{flex: "0 0 80px"}}>端口：</div>
+                <div style={{flex: "1 1 auto"}}><Input type="text" value={this.state.port} onChange={this.portChange} /></div>
+              </div>
+              <div style={{display: "flex",marginBottom:"20px"}}>
+                <div style={{flex: "0 0 80px"}}>用户名：</div>
+                <div style={{flex: "1 1 auto"}}><Input type="text" value={this.state.username} onChange={this.usernameChange} /></div>
+              </div>
+              <div style={{display: "flex",marginBottom:"20px"}}>
+                <div style={{flex: "0 0 80px"}}>密码：</div>
+                <div style={{flex: "1 1 auto"}}><Input type="password" value={this.state.password} onChange={this.passwordChange} /></div>
+              </div>
+            </Col>
+          </Row>
+        </Modal>
+      </div>
+    )
+  }
+}
+
+export default TerminalPage

@@ -1,0 +1,11 @@
+import React from 'react'
+import { connect } from 'react-redux'
+import { addModules } from '../actions'
+
+import SetView from './SetView'
+
+const mapDispatchToProps = (dispatch)=>({
+  doAdd: (moduleData)=>{dispatch(addModules(moduleData))}
+})
+
+export default connect(null,mapDispatchToProps)(SetView)

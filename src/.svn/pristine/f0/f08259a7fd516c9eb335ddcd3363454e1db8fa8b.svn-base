@@ -1,0 +1,378 @@
+import React, { Component } from 'react'
+import { Row,Col, message, Modal, Input, Select, Button ,Divider, Popconfirm } from 'antd'
+import axios from 'axios'
+import propTypes from 'prop-types'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import { host } from '../components/Host'
+import Line from '../components/Line'
+import WyDatePicker from '../components/WyDatePicker'
+import WySpin from '../components/WySpin'
+import LineSet from './LineSet'
+import WyTableSet from './WyTableSet'
+import { forName } from '../components/RegExp'
+const Option = Select.Option
+
+class TemplateForLine extends Component{
+  state = {
+    curViewData: {},
+    dataSourceList: [],
+
+    moduleName: '',
+    dataSource:'',
+    viewType:'',
+
+    initSetData:{},
+
+    xxx: [],
+    yyy: [],
+    unit:'',
+    isSpining: false,
+    visible: false,
+    source:{}
+  }
+  getViewData = ()=>{
+    const curViewData = this.state.curViewData
+    this.setState({
+      isSpining: true
+    })
+	  wyAxiosPost('Source/selectData',{info:curViewData},(result)=>{
+      this.setState({
+        xxx: result.data.xxx,
+        yyy: result.data.yyy,
+        unit: result.data.unit,
+        isSpining: false
+      })
+    })
+  }
+  componentDidMount(){
+    wyAxiosPost('Source/getSource',{},(result)=>{
+      const {moduleName, dataSource, viewType} = this.props.curViewData
+        console.log(this.props.curViewData)
+        this.setState({
+          curViewData: this.props.curViewData,
+          dataSourceList: [...result.data.msg],
+          moduleName,
+          dataSource,
+          viewType
+        },()=>{
+          this.getViewData()
+        })
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if( JSON.stringify(this.props.curViewData) !== JSON.stringify(nextProps.curViewData) ){
+      this.setState({
+        curViewData: nextProps.curViewData
+      },()=>{
+        this.getViewData()
+      })
+    }
+  }
+  curTimeChange = (value)=>{
+    let newTime_unit = {}
+    newTime_unit.time_unit = _.cloneDeep(this.state.curViewData.time_unit)
+    newTime_unit.time_unit[0] = value[0]
+    newTime_unit.time_unit[1] = value[1]
+    this.setState({
+      curViewData: Object.assign({},this.state.curViewData,newTime_unit)
+    },()=>{
+      this.getViewData()
+    })
+  }
+  chartClick = (params,id)=>{
+     console.log(
+    //   params.name,
+    //   params.componentType,
+    //   params.seriesType,
+    //   params.seriesIndex,
+    //   params.seriesName,
+    //   params.name,
+    //   params.dataIndex,
+    //   params.data,
+    //   params.value,
+       id
+    )
+  }
+  chartBrushSelected = (params,id)=>{
+    let batch = params.batch[0].selected;
+    console.log(
+      params,
+      params.seriesType,
+      id
+    )
+  }
+  chartContextmenu = (params,id,event)=>{
+
+  }
+  //获取设置图表组件
+  getChart = (viewType)=>{
+    if(viewType === 'line' || viewType === 'bar'){
+      return <LineSet
+        ref={(instance)=>{this.viewState=instance}}
+        dataSource={this.state.dataSource}
+        initSetData={this.state.initSetData} />
+    }else if(viewType === 'wytable'){
+      return <WyTableSet ref={(instance)=>{this.viewState=instance}} dataSource={this.state.dataSource} />
+    }
+  }
+  doEdit = ()=>{
+    wyAxiosPost('Source/getSourceById',{id: this.state.dataSource},(result)=>{
+      const responseData = result.data.msg
+      if(responseData === 1){
+        const { xdata, yydata, ydata, alldata, adata, order, orderSort, time_unit, limitCount, viewWidth } = this.props.curViewData
+        this.setState({
+          initSetData: {xdata, yydata, ydata, alldata, adata, order, orderSort, time_unit, limitCount, viewWidth},
+          visible: true
+        })
+      }else{
+        message.warning("对不起，此模块数据源已被删除，无法编辑属性")
+      }
+    })
+
+  }
+  moduleNameChange = (e)=>{
+    this.setState({
+      moduleName: e.target.value
+    })
+  }
+
+
+  dataSourceChange = (value)=>{
+    this.setState({
+      dataSource: value
+    },()=>{
+      wyAxiosPost('Source/editSource',{id: value},(result)=>{
+        const responseData = _.cloneDeep(result.data.msg)
+        const source = {}
+        const { td,group,logic,twhere } = responseData
+        source.data_str = {td, group, logic, twhere }
+        source.decribe = responseData.decribe
+        source.id = responseData.id
+        source.name = responseData.name
+        this.setState({
+          source
+        })
+      })
+    })
+  }
+  viewTypeChange = (value) => {
+    this.setState({
+      viewType: value
+    })
+  }
+  handleCancel = () => {
+    this.setState({
+      visible: false,
+    });
+  }
+  handleOk = ()=>{
+
+    const erroList = []
+    //名称
+    if(this.state.moduleName === ''){
+      erroList.push('名称不能为空')
+    }else if(this.state.moduleName !== '' && !forName.test(this.state.moduleName)){
+      erroList.push('名称格式错误')
+    }
+    if(this.state.dataSource === ''){
+      erroList.push('数据源不能为空')
+    }
+    if(this.state.viewType === ''){
+      erroList.push('视图类型不能为空')
+    }
+    if(erroList.length === 0){
+      const { moduleName, dataSource, viewType, source } = this.state
+      let newCurViewData = {}
+      if(this.state.viewType === 'line' || this.state.viewType === 'bar'){
+        const {
+          xdata,
+          yydata,
+          adata,
+          alldata,
+          order,
+          orderSort,
+          time_unit,
+          limitCount,
+          viewWidth
+        } = this.viewState.state
+        newCurViewData = Object.assign({},this.state.curViewData,{
+          moduleName,
+          dataSource,
+          viewType,
+          source,
+          xdata,
+          yydata,
+          adata,
+          alldata,
+          order,
+          orderSort,
+          time_unit,
+          limitCount,
+          viewWidth
+        })
+      }else if(this.state.viewType === 'wytable'){
+        const {
+          tableTitle,
+          order,
+          orderSort,
+          time_unit,
+          limitCount,
+          viewWidth
+        } = this.viewState.state
+        newCurViewData = Object.assign({},this.state.curViewData,{
+          moduleName,
+          dataSource,
+          viewType,
+          source,
+          tableTitle,
+          order,
+          orderSort,
+          time_unit,
+          limitCount,
+          viewWidth
+        })
+      }
+      const pageId = this.props.pageId
+      const viewId = this.props.viewId
+      wyAxiosPost('View/saveViewModule',{pageId,viewId,info:newCurViewData},(result)=>{
+        const responseData = result.data
+        if(responseData.status === 1){
+          this.props.updatePanes()
+          this.handleCancel()
+          message.success(responseData.msg)
+        }else{
+          message.warning(responseData.msg)
+        }
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  deleteViewModule = ()=>{
+    const pageId = this.props.pageId
+    const viewId = this.props.viewId
+    wyAxiosPost('View/delViewModule',{pageId,viewId},(result)=>{
+      const responseData = result.data
+      if(responseData.status === 1){
+        this.props.updatePanes()
+        message.warning(responseData.msg)
+      }else{
+        message.warning(responseData.msg)
+      }
+    })
+  }
+  render(){
+    let curTime = []
+    if(this.state.curViewData.time_unit && this.state.curViewData.time_unit.length>0){
+      curTime.push(this.state.curViewData.time_unit[0])
+      curTime.push(this.state.curViewData.time_unit[1])
+    }
+    return(
+      <div className="amodule">
+         <div className="moduleHeader">
+          <span>{this.state.curViewData.moduleName}</span>
+
+          <Popconfirm placement="topLeft" title={'您确定要删除此视图模块？'} onConfirm={this.deleteViewModule} okText="确定" cancelText="取消">
+              <span style={{float: "right",cursor:"pointer"}}>
+                <i className="fa fa-times" aria-hidden="true"></i>
+              </span>
+          </Popconfirm>
+          <span
+            style={{float: "right",cursor: "pointer",marginRight:"10px"}}
+            onClick={this.doEdit}
+          >
+            <i className="fa fa-bars ant-dropdown-trigger" aria-hidden="true">
+            </i>
+          </span>
+          <span style={{float: "right",marginRight:"10px"}}>
+            <WyDatePicker curTime={curTime} rangeTimeChange={this.curTimeChange} />
+          </span>
+         </div>
+         <div className="moduleBody">
+            <WySpin isSpining={this.state.isSpining}>
+              <Line
+                brush={true}
+                viewId={this.props.viewId}
+                xData={this.state.xxx}
+                yData={this.state.yyy}
+                aUnit={this.state.unit}
+                onChartClick={this.chartClick}
+                onBrushSelected={this.chartBrushSelected}
+                onContextmenu={this.chartContextmenu}
+              />
+            </WySpin>
+          </div>
+        <Modal
+          title="修改"
+          visible={this.state.visible}
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+          footer = {null}
+        >
+          <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+            <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+              模块名称：
+            </div>
+            <div style={{flex:"auto"}}>
+               <Input value={this.state.moduleName} onChange={this.moduleNameChange}/>
+            </div>
+          </div>
+          <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+            <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+              数据源：
+            </div>
+            <div style={{flex:"auto"}}>
+               <Select style={{width:"120px"}} value={this.state.dataSource} onChange={this.dataSourceChange}>
+                <Option key="mykey" value="">请选择</Option>
+                {
+                  this.state.dataSourceList && this.state.dataSourceList.length>0?
+                  this.state.dataSourceList.map(item=>{
+                    return(
+                      <Option key={item.id} value={item.id}>{item.name}</Option>
+                    )
+                  })
+                  :
+                  ''
+                }
+               </Select>
+            </div>
+          </div>
+          <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+            <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+              视图类型：
+            </div>
+            <div style={{flex:"auto"}}>
+               <Select style={{width:"120px"}} value={this.state.viewType} onChange={this.viewTypeChange}>
+                <Option key="mykey" value="">请选择</Option>
+                <Option key="line" value="line">曲线图</Option>
+                <Option key="bar" value="bar">柱状图</Option>
+                <Option key="wytable" value="wytable">表格</Option>
+               </Select>
+            </div>
+          </div>
+          {
+            this.getChart(this.state.viewType)
+          }
+          <Divider />
+          <div style={{display: "flex",justifyContent:"flex-end"}}>
+            <Button onClick={this.handleCancel} style={{marginRight: "10px"}}>取消</Button>
+            <Button onClick={this.handleOk} type="primary">确定</Button>
+          </div>
+        </Modal>
+      </div>
+    )
+  }
+}
+
+TemplateForLine.propTypes = {
+  viewId: propTypes.string.isRequired,
+  curViewData: propTypes.object.isRequired
+}
+
+export default TemplateForLine

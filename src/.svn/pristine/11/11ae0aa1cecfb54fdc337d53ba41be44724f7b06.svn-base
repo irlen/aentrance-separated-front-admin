@@ -1,0 +1,147 @@
+import React, { Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+import _ from 'lodash'
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WySpin from '../components/WySpin'
+class TemplateForTable extends Component{
+  state = {
+    showViewData: {},
+    xData: [],
+    yData: [],
+
+    subTime: [],
+    isSpining: false,
+    autoHeight: 0,
+
+    pageSize: 10
+  }
+  //获取数据
+  getCurViewData = ()=>{
+    if(this.state.showViewData.data && Object.keys(this.state.showViewData.data).length>0){
+      const info = {}
+      info.viewType = this.state.showViewData.viewType
+      info.api = this.state.showViewData.data.dataMethod
+      if(this.state.subTime.length>0 && this.props.env !== 'set'){
+        info.start_time = this.state.subTime[0]
+        info.last_time = this.state.subTime[1]
+      }
+      wyAxiosPost('Screen/getScreenData',{info},(result)=>{
+        const responseData = result.data.msg
+        if(this.state.subTime.length === 0){
+          const curTime = []
+          curTime.push(responseData.start_time)
+          curTime.push(responseData.last_time)
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            subTime: _.cloneDeep(curTime)
+          })
+        }else{
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+          })
+        }
+      })
+    }
+  }
+  getCurViewDataForRefresh = ()=>{
+    if(this.state.showViewData.data && Object.keys(this.state.showViewData.data).length>0){
+      const info = {}
+      info.viewType = this.state.showViewData.viewType
+      info.api = this.state.showViewData.data.dataMethod
+      wyAxiosPost('Screen/getScreenData',{info},(result)=>{
+        const responseData = result.data.msg
+        const curTime = []
+        curTime.push(responseData.start_time)
+        curTime.push(responseData.last_time)
+        this.setState({
+          xData: responseData.xxx,
+          yData: responseData.yyy,
+          subTime: _.cloneDeep(curTime)
+        })
+      })
+    }
+  }
+  componentDidMount(){
+    if(this.props.showViewData.id){
+      this.setState({
+        showViewData: this.props.showViewData,
+        autoHeight: this.props.autoHeight
+      },()=>{
+        this.getCurViewData()
+      })
+    }
+    if(this.props.env !== 'set'){
+      const timer = setInterval(()=>{
+        this.getCurViewDataForRefresh()
+      },60000)
+    }
+  }
+  subTimeChange = (value,event)=>{
+    this.setState({
+      subTime: value
+    },()=>{
+      this.getCurViewData()
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      ! (_.isEqual(this.props.showViewData,nextProps.showViewData))
+    ){
+      this.setState({
+        showViewData: nextProps.showViewData,
+        autoHeight: nextProps.autoHeight
+      },()=>{
+        this.getCurViewData()
+      })
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+        {
+          this.props.env === 'set'?
+          ''
+          :
+          <div className="moduleHeader" style={{display:"flex"}}>
+            <div className="moduleHeaderIn"style={{flex:"1 1 auto"}}>
+              {this.state.showViewData.data && Object.keys(this.state.showViewData.data).length>0?this.state.showViewData.data.moduleName:''}
+            </div>
+              <div style={{float: "right",flex:"0 0 300px"}}>
+                <WyDatePicker curTime={this.state.subTime} rangeTimeChange={this.subTimeChange}/>
+              </div>
+          </div>
+        }
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            style={{height: this.state.autoHeight+'px'}}
+            >
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  xData={this.state.xData?this.state.xData:[]}
+                  yData={this.state.yData?this.state.yData:[]}
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                />
+              </WySpin>
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default TemplateForTable

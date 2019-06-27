@@ -1,0 +1,117 @@
+import React, { Component } from 'react'
+import { Row, Col, Card, message, Icon, Menu, Dropdown, Input, Button, Tabs} from 'antd'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+
+import CpuRate from './CpuRate'
+import DiskRate from './DiskRate'
+import Interface from './Interface'
+import DevInfo from './DevInfo'
+
+const TabPane = Tabs.TabPane
+class SystemEquipment extends Component{
+  state={
+    //接口属性数据
+    interfaceData: [],
+    //接口指标时间
+    interfaceTime: [],
+    type:'flow',
+    isSlideDown: false
+
+  }
+  componentDidMount(){
+    //请求接口属性
+    wyAxiosPost('Dev/getIfInfo',{},(result)=>{
+      const interfaceData = [...result.data.msg]
+      this.setState({
+        interfaceData
+      })
+    })
+  }
+  isSlideDownChange = ()=>{
+    this.setState({
+      isSlideDown: !this.state.isSlideDown
+    })
+  }
+  //时间更新
+  interfaceTimeChange = (value)=>{
+    this.setState({
+      interfaceTime: [...value]
+    })
+  }
+  //type更新
+  typeChange = (key)=>{
+    this.setState({
+      type: key
+    })
+  }
+
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          {
+            this.state.interfaceData && this.state.interfaceData.length>0?
+            this.state.interfaceData.map((item,index)=>{
+              if(index>3){
+                return (
+                  <Col key={item.id} sm={{span:12}} md={{span: 6}} lg={{span: 6}} style={{marginBottom: "16px",display:this.state.isSlideDown?"block":"none"}} >
+                    <Interface interfaceData={item} />
+                  </Col>
+                )
+              }else{
+                return (
+                  <Col key={item.id} sm={{span:12}} md={{span: 6}} lg={{span: 6}} style={{marginBottom: "16px"}}>
+                    <Interface interfaceData={item} />
+                  </Col>
+                )
+              }
+
+            })
+            :
+            ''
+          }
+          {
+            this.state.interfaceData.length>3 ?
+              <Col span={24} style={{lineHeight:"20px",textAlign:"center",marginBottom: "10px"}}>
+
+                {
+                  this.state.isSlideDown?
+                  <div style={{cursor: "pointer"}} onClick={this.isSlideDownChange}>
+                    <span>收起</span>
+                    <span style={{marginLeft:"5px"}}><i className="fa fa-angle-double-up" aria-hidden="true"></i></span>
+                  </div>
+
+                  :
+                  <div style={{cursor: "pointer"}} onClick={this.isSlideDownChange}>
+                    <span>展开</span>
+                    <span style={{marginLeft:"5px"}}><i className="fa fa-angle-double-down" aria-hidden="true"></i></span>
+                  </div>
+                }
+              </Col>
+            :
+            ''
+          }
+        </Row>
+        <Row gutter={16}>
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <DevInfo />
+          </Col>
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <CpuRate requestPath="Dev/GetMemPercent" moduleName="内存使用率"/>
+          </Col>
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <CpuRate requestPath="Dev/GetCpuPercent" moduleName="cpu使用率"/>
+          </Col>
+          <Col sm={{span: 24}} md={{span: 24}} lg={{span: 12}}>
+            <DiskRate />
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default SystemEquipment

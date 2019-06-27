@@ -1,0 +1,207 @@
+import React, { Component } from 'react'
+import { Row, Col, Input, Button, message } from 'antd'
+import _ from 'lodash'
+
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WyTable from '../components/WyTable'
+import WySpin from '../components/WySpin'
+import AlertLine from '../components/AlertLine'
+
+
+class AlertDetail extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state = {
+    allTime: [],
+    xData: [],
+    yData: [],
+    activeRowKey:'',
+    pageSize: 5,
+
+    lineData: {},
+    isSpaning: false,
+    lineSpaning: false,
+  }
+  getData = ()=>{
+    const info = {}
+    if(this.state.allTime.length>0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    wyAxiosPost('Alert/getAlertTable',{info},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.yyy && responseData.yyy.length>0){
+        const activeRowKey = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+        const newColumns = this.compileColumns(activeRowKey,responseData.xxx)
+        let allTime = []
+        if(this.state.allTime.length === 0){
+          allTime.push(responseData.start_time)
+          allTime.push(responseData.last_time)
+          this.setState({
+            initColumns: responseData.xxx,
+            xData: newColumns,
+            yData: responseData.yyy,
+            allTime,
+            activeRowKey,
+            isSpining: false,
+          },()=>{
+            this.getLineData()
+          })
+        }else{
+          this.setState({
+            initColumns: responseData.xxx,
+            xData: newColumns,
+            yData: responseData.yyy,
+            activeRowKey,
+            isSpining: false
+          },()=>{
+            this.getLineData()
+          })
+        }
+      }else{
+        this.setState({
+          isSpining: false
+        })
+      }
+    })
+  }
+  getLineData = ()=>{
+    const data = {}
+    if(this.state.allTime.length>0){
+      data.start_time = this.state.allTime[0]
+      data.last_time = this.state.allTime[1]
+    }
+    data.id = this.state.activeRowKey
+    this.setState({
+      lineSpaning: true
+    })
+    wyAxiosPost('Alert/getAlertLine',{data},(result)=>{
+      const responseData = _.cloneDeep(result.data.msg)
+      this.setState({
+        lineData: responseData,
+        lineSpaning: false
+      })
+    })
+  }
+  componentDidMount(){
+    this.getData()
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    },()=>{
+      this.getData()
+    })
+  }
+  tableClick = (record)=>{
+    const activeRowKey = record.key
+    let newColumns = []
+    newColumns = this.compileColumns(activeRowKey,this.state.xData)
+    this.setState({
+      xData: newColumns,
+      activeRowKey
+    },()=>{
+      this.getLineData()
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  generateLine = ()=>{
+    const lineList = []
+    if(this.state.lineData && Object.keys(this.state.lineData).length>0 && this.state.lineData.data.length>0){
+      this.state.lineData.data.map((item,index)=>{
+        lineList.push(
+          <AlertLine
+            key={index}
+            xData={item.xxx?item.xxx:[]}
+            yData={item.yyy[0]?item.yyy[0].data:[]}
+            name={item.yyy[0]?item.yyy[0].name:''}
+            aUnit={item.unit?item.unit:''}
+            xMarkLine={item.xMarkLine?item.xMarkLine:0}
+            yMarkLine={item.yMarkLine?item.yMarkLine:0}
+          />
+        )
+      })
+    }
+    return lineList
+  }
+  render(){
+    return(
+      <div>
+        <Row>
+          <Col style={{lineHeight:"60px"}}>
+            <span>时间：<WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth: "280px",marginLeft:"20px"}}/></span>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <div className="amodule">
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.isSpining}>
+                  <WyTable
+                    activeRowKey={this.state.activeRowKey}
+                    xData={this.state.xData?this.state.xData:[]}
+                    yData={this.state.yData?this.state.yData:[]}
+                    onTableClick={this.tableClick}
+                    pageSize={this.state.pageSize}
+                    onShowSizeChange={this.pageSizeChange}
+                    onTableContextmenu={this.tableContextmenu}
+                    dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                  />
+                </WySpin>
+              </div>
+            </div>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <div className="amodule">
+              <div className="moduleBody">
+                <div style={{display: "flex",marginLeft:"60px",lineHeight:"40px"}}>
+                  <div style={{flex:"0 0 300px"}}>告警名称：{this.state.lineData?this.state.lineData.name:''}</div>
+                  <div style={{flex:"0 0 300px"}}>告警对象：{this.state.lineData?this.state.lineData.alert_obj:''}</div>
+                  <div style={{flex:"1 1 auto"}}>满足条件：{this.state.lineData?this.state.lineData.cond:''}</div>
+                </div>
+                <div style={{display: "flex",marginLeft:"60px",lineHeight:"40px"}}>
+                  <div style={{flex:"0 0 300px"}}>告警类型：{this.state.lineData?this.state.lineData.alert_type:''}</div>
+                  <div style={{flex:"1 1 auto"}}>触发时间：{this.state.lineData?this.state.lineData.targettime_t:''}</div>
+
+                </div>
+                <WySpin isSpining={this.state.lineSpaning}>
+                  {
+                    this.generateLine()
+                  }
+                </WySpin>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      </div>
+    )
+  }
+}
+
+export default AlertDetail

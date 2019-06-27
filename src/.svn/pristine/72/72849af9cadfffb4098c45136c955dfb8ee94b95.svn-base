@@ -1,0 +1,448 @@
+import React, { Component } from 'react'
+import { Popconfirm, Button, Modal, Input, message, Transfer} from 'antd'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import WyTable from '../components/WyTable'
+
+const { TextArea } = Input;
+class PageList extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns){
+        if(initColumns.length > 0){
+          newColumns = initColumns.map(item=>{
+            const str = ''
+             item.render = (text, record, index) => {
+               if(record.key === activeRowKey){
+                 return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+               }else{
+                 return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+               }
+             }
+             return item
+          })
+        }
+      }
+      return newColumns
+    }
+  }
+  state = {
+    name: '',
+    note: '',
+    ids: [],
+
+    visible: false,
+    initColumns:[],
+    activeRowKey:'',
+    xData: [],
+    yData: [],
+
+    //选择页面模块
+    transVisible: false,
+    mockData: [],
+    targetKeys: [],
+    editId: '',
+    updateId:''
+
+  }
+  componentDidMount(){
+    if(this.props.pageData){
+      this.getPageTable(this.props.pageData)
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    const cur = this.props.pageData
+    const next = nextProps.pageData
+    const isEqual = _.isEqual(cur,next)
+    if(!isEqual){
+      this.getPageTable(next)
+    }
+  }
+  //获取自定义页面列表
+  getPageTable = (data)=>{
+    if(Object.keys(data).length>0){
+      const responseData = data
+      let newActiveRowKey = ''
+      if(this.state.activeRowKey  === ''){
+        newActiveRowKey = responseData.yyy && responseData.yyy.length>0?responseData.yyy[0].key:''
+      }else{
+        if(responseData.yyy && responseData.yyy.length>0){
+          const noExist = responseData.yyy.every((item)=>{
+            return item.key !== this.state.activeRowKey
+          })
+          if(!noExist){
+            newActiveRowKey = this.state.activeRowKey
+          }else{
+            newActiveRowKey = responseData.yyy[0].key
+          }
+        }
+      }
+
+      const initColumns = responseData.xxx
+      const newxxx = this.compileColumns(newActiveRowKey,initColumns)
+      newxxx.push({
+        title: '操作',
+        dataIndex: 'edit',
+        render: (text, record, index)=> (
+          <div>
+            <span style={{cursor:"pointer",color: "#00CC66",cursor:"pointer"}} title="更多视图" onClick={(e)=>this.showTransModal(e,record.id)} ><i className="fa fa-plus" aria-hidden="true"></i></span>
+            <span style={{cursor:"pointer",color: "#00CC66",marginLeft:"10px"}} title="编辑" onClick={(e)=>{this.newPage(e,record.id)}}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+          </div>
+        )
+      })
+      const randomCount = Math.random();
+      const curTime = new Date().getTime();
+      const asId = parseInt(randomCount,10) + parseInt(curTime,10)*100
+      const id = asId.toString()
+      this.setState({
+        xData: newxxx,
+        yData: responseData.yyy,
+        initColumns,
+        activeRowKey: newActiveRowKey,
+      })
+    }
+  }
+  //获取穿梭框数据
+  getMock = () => {
+    const targetKeys = [];
+    const mockData = [];
+    const id = this.state.editId
+    const p1 = new Promise((resolve,reject)=>{
+      wyAxiosPost('Dashboard/getDefList',{},(result)=>{
+        const responseData = result.data.msg
+        const mockData = []
+        if(responseData && responseData.length>0){
+          responseData.map(item=>{
+            let itemObj = {}
+            itemObj.key = item.id
+            const content = JSON.parse(item.content)
+            itemObj.title = content.moduleName
+            mockData.push(itemObj)
+          })
+        }
+        resolve(mockData)
+      })
+    })
+
+    const p2 = new Promise((resolve,reject)=>{
+      wyAxiosPost('Dashboard/getPageModule',{id},(result)=>{
+        const responseData = result.data.msg
+        resolve(responseData)
+      })
+    })
+
+    Promise.all([p1,p2]).then(result=>{
+      const mockData = result[0]
+      const targetKeys = []
+      if(mockData && mockData.length>0 && result[1].length>0){
+        mockData.map(item=>{
+          if(result[1].indexOf(item.key) !== -1){
+            targetKeys.push(item.key)
+          }
+        })
+      }
+      this.setState({
+        mockData,
+        targetKeys
+      })
+
+    }).catch(e=>{
+      message.warning(e)
+    })
+  }
+
+
+
+  tableClick = (record)=>{
+    const activeRowKey = record.key
+    let newxxx = []
+    newxxx = this.compileColumns(activeRowKey,this.state.initColumns)
+    newxxx.push({
+      title: '操作',
+      dataIndex: 'edit',
+      render: (text, record, index)=> (
+        <div>
+          <span style={{cursor:"pointer",color: "#00CC66",cursor:"pointer"}} title="更多视图" onClick={(e)=>this.showTransModal(e,record.id)} ><i className="fa fa-plus" aria-hidden="true"></i></span>
+          <span style={{cursor:"pointer",color: "#00CC66",marginLeft:"10px"}} title="编辑" onClick={(e)=>{this.newPage(e,record.id)}}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        </div>
+      )
+    })
+    this.setState({
+      xData: newxxx,
+      activeRowKey
+    },()=>{
+      this.props.setId(activeRowKey)
+    })
+  }
+
+
+
+
+
+  handleOk = (e) => {
+    this.setState({
+      visible: false,
+    });
+    const info = {}
+    info.name = this.state.name
+    info.note = this.state.note
+    info.id = this.state.updateId
+    info.position = []
+    info.module = ''
+    wyAxiosPost('Dashboard/saveDbdPage',{info},(result)=>{
+      const responseData = result.data.msg
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+      }else{
+        message.warning(responseData.msg)
+      }
+      //this.props.getPageTableData()
+      //if(this.state.activeRowKey === this.state.updateId){
+        this.props.getShowData()
+      //}
+    })
+  }
+
+  handleCancel = (e) => {
+    this.setState({
+      visible: false,
+    });
+  }
+
+  newPage = (e,id)=>{
+    e.stopPropagation()
+    this.setState({
+      updateId:id
+    },()=>{
+      if(this.state.updateId){
+        const curId = JSON.stringify(this.state.updateId)
+        if(this.state.yData && this.state.yData.length>0){
+          this.state.yData.map(item=>{
+            const itemId = JSON.stringify(item.id)
+            if(itemId === curId){
+              this.setState({
+                name: item.name,
+                note: item.note,
+                visible: true
+              })
+              return
+            }
+          })
+        }
+      }else{
+        this.setState({
+          name:'',
+          note:'',
+          visible: true
+        })
+      }
+    })
+  }
+
+  nameChange = (e)=>{
+    this.setState({
+      name: e.target.value
+    })
+  }
+
+  noteChange = (e)=>{
+    this.setState({
+      note: e.target.value
+    })
+  }
+
+  //选定模块提交
+  handleTransOk = (e) => {
+    const info = {}
+    info.moduleIds = this.state.targetKeys
+    info.id = this.state.editId
+    info.position = []
+
+    if(info.moduleIds.length>0){
+      const listData = this.state.yData
+      let allPosition = []  //存放之前模块的位置
+      let modules = [] //存放之前就有的模块id
+      listData.map((item,index)=>{
+        if(item.id === info.id){
+          if(listData[index].position){
+            allPosition = listData[index].position
+          }
+          if(listData[index].module.length>1){
+            modules = listData[index].module.split(',')
+          }else if(listData[index].module.length === 1){
+            modules.push(listData[index].module)
+          }
+        }
+      })
+      if(allPosition.length !== 0){
+
+
+        info.moduleIds.map(item=>{
+          if(modules.indexOf(item) !== -1){
+            allPosition.map((subItem,index)=>{
+              if(item === subItem.i){
+                const {i,h,w,x,y}  = subItem
+                const curPo = {
+                  i,
+                  h: parseInt(h),
+                  w: parseInt(w),
+                  x: parseInt(x),
+                  y: parseInt(y),
+                }
+                info.position.push(curPo)
+                return
+              }
+            })
+          }else{
+            info.position.push({
+              i:item,
+              h:13,
+              w:12,
+              x:0,
+              y:0
+            })
+          }
+        })
+      }else{
+        info.moduleIds.map(item=>{
+          info.position.push({
+            i:item,
+            h:13,
+            w:12,
+            x:0,
+            y:0
+          })
+        })
+      }
+    }
+    wyAxiosPost('Dashboard/savePageModule',{info},(result)=>{
+      message.success(result.data.msg.msg)
+      this.props.getShowData()
+    })
+    this.setState({
+      transVisible: false,
+    });
+  }
+
+
+
+  handleTransCancel = (e) => {
+    this.setState({
+      transVisible: false,
+    });
+  }
+  filterOption = (inputValue, option) => {
+    if(!option){
+      return ''
+    }
+    return option.title.indexOf(inputValue) > -1;
+  }
+  transferChange = (targetKeys) => {
+    this.setState({ targetKeys });
+  }
+  showTransModal = (e,editId) => {
+    e.stopPropagation()
+    this.setState({
+      transVisible: true,
+      editId
+    },()=>{
+      this.getMock()
+    });
+  }
+  //删除数据
+  delDbdPage = ()=>{
+    const ids = this.state.ids
+    wyAxiosPost('Dashboard/delDbdPage',{ids},(result)=>{
+      const responseData = result.data
+      if(responseData.status === 1){
+        message.success(responseData.msg)
+        this.props.getShowData()
+      }else{
+        message.warning(responseData.msg)
+      }
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div>
+        <div className="amodule" style={{marginTop:"20px"}}>
+          <div className="moduleHeader">
+            <Button type="primary" style={{marginRight: "20px"}} onClick={this.newPage} >新建</Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.delDbdPage:()=>{}} okText="确定" cancelText="取消">
+              <Button>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </div>
+          <div className="moduleBody">
+            <WyTable
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              pageSize={this.state.pageSize}
+              onShowSizeChange={this.pageSizeChange}
+              rowSelection={rowSelection}
+              activeRowKey={this.state.activeRowKey}
+              onTableClick={this.tableClick}
+            />
+          </div>
+        </div>
+        <div>
+          <Modal
+            title={this.state.updateId?"修改自定义仪表板":"新建自定义仪表板"}
+            visible={this.state.visible}
+            onOk={this.handleOk}
+            onCancel={this.handleCancel}
+          >
+            <div style={{display:"flex",lineHeight:"40px"}}>
+              <div style={{flex:"0 0 80px", verticalAlign:"middle"}}>名称：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <Input value={this.state.name} onChange={this.nameChange}/>
+              </div>
+            </div>
+            <div style={{display:"flex",lineHeight:"40px"}}>
+              <div style={{flex:"0 0 80px", verticalAlign:"middle"}}>备注：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <TextArea autosize={{ minRows: 2, maxRows: 6 }} value={this.state.note} onChange={this.noteChange} />
+              </div>
+            </div>
+          </Modal>
+          <Modal
+            title="视图选择"
+            visible={this.state.transVisible}
+            onOk={this.handleTransOk}
+            onCancel={this.handleTransCancel}
+            width={700}
+          >
+            <Transfer
+              dataSource={this.state.mockData}
+              listStyle={{
+                width: 300,
+                height: 400,
+              }}
+              showSearch
+              filterOption={this.filterOption}
+              targetKeys={this.state.targetKeys}
+              onChange={this.transferChange}
+              render={item => item.title}
+            />
+          </Modal>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default PageList

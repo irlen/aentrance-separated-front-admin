@@ -1,0 +1,370 @@
+import React, { Component } from 'react'
+import { Row, Col, Tabs, Select, Tooltip } from 'antd'
+import { Scrollbars } from 'react-custom-scrollbars'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+import WyDatePicker from '../components/WyDatePicker'
+import WyTable from '../components/WyTable'
+import Line from '../components/Line'
+import WySpin from '../components/WySpin'
+import { netStandard } from '../components/StandarConstant'
+import FirstTable from './FirstTable'
+import { appStandard } from '../components/StandarConstant'
+import { wyAxiosPost } from '../components/WyAxios'
+import contextList from '../SubPage/ContextList'
+
+const TabPane = Tabs.TabPane
+const Option = Select.Option
+class NetInteractive extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns && initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return (
+                <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+              )
+             }else{
+              return (
+                <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+              )
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state={
+    type:'top',
+    field: 'bytes',
+    allTime: [],
+
+    appXdata:[],
+    appYdata:[],
+    initColumns:[],
+    activeRowKey:'',
+    id:'',
+
+    picXdata:[],
+    picYdata:[],
+    picAunit:'',
+
+    tableSpining: false,
+    picSpining: false,
+    pageSize: 5,
+
+    dropListInfo: {
+       dropData: [],
+       dropPosition: {x:"0px",y:"0px"},
+       isexist: false
+     }
+  }
+  getTopTableData = (value)=>{
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.allTime.length>0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    info.type = this.state.type
+    info.field = value
+    this.setState({
+      talbeSpining: true
+    })
+    wyAxiosPost('NetWork/getAreaData',{info:info},(result)=>{
+      const responseData = result.data.msg
+      let activeRowKey = 'mykey'
+      if(responseData.yyy.length>0){
+        activeRowKey = responseData.yyy[0].key
+      }
+      const initColumns = responseData.xxx
+      const newColumns = this.compileColumns(activeRowKey,initColumns)
+        this.setState({
+          appXdata: [...newColumns],
+          appYdata: responseData.yyy,
+          field: value,
+          id: activeRowKey,
+          activeRowKey,
+          initColumns,
+          tableSpining: false
+        },()=>{
+          this.getPicData()
+        })
+    })
+  }
+  getPicData = ()=>{
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.allTime.length>0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    info.id = this.state.id
+    info.field = this.state.field
+    this.setState({
+      picSpining: true
+    })
+    wyAxiosPost('NetWork/getAreaTimeLine',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        picXdata: responseData.xxx,
+        picYdata: responseData.yyy,
+        picAunit: responseData.unit,
+        picSpining: false
+      })
+    })
+  }
+  componentDidMount(){
+    let info = {}
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.allTime.length>0){
+      info.start_time = this.state.allTime[0]
+      info.last_time = this.state.allTime[1]
+    }
+    info.type = this.state.type
+    info.field = this.state.field
+    wyAxiosPost('NetWork/getAreaData',{info:info},(result)=>{
+      const responseData = result.data.msg
+      let activeRowKey = 'mykey'
+      if(responseData.yyy.length>0){
+        activeRowKey = responseData.yyy[0].key
+      }
+      const initColumns = responseData.xxx
+      const newColumns = this.compileColumns(activeRowKey,initColumns)
+      if(this.state.allTime.length === 0){
+        let allTime = []
+        allTime.push(responseData.start_time)
+        allTime.push(responseData.last_time)
+        this.setState({
+          appXdata: [...newColumns],
+          appYdata: responseData.yyy,
+          initColumns,
+          activeRowKey,
+          allTime,
+          id: activeRowKey
+        },()=>{
+          this.getPicData()
+        })
+      }else{
+        this.setState({
+          appXdata: [...newColumns],
+          appYdata: responseData.yyy,
+          initColumns,
+          activeRowKey,
+          id: activeRowKey
+        },()=>{
+          this.getPicData()
+        })
+      }
+    })
+  }
+  fieldChange = (value)=>{
+    this.getTopTableData(value)
+  }
+  typeChange = (value)=>{
+    this.setState({
+      type: value,
+    },()=>{
+      this.getTopTableData(this.state.field)
+    })
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    },()=>{
+      this.getTopTableData(this.state.field)
+    })
+  }
+  onTableClick = (record)=>{
+    const activeRowKey = record.key
+    const initColumns = this.state.initColumns
+    const newColumns = this.compileColumns(activeRowKey,initColumns)
+    this.setState({
+      activeRowKey,
+      xData: [...newColumns],
+      id: activeRowKey
+    },()=>{
+      this.getPicData()
+    })
+  }
+  chartClick = (param)=>{
+    const flowPicTime = []
+    flowPicTime.push(param.name)
+    flowPicTime.push(param.name)
+    this.subTable.resetSubTime(flowPicTime)
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.picXdata[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.picXdata[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.picXdata[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.picXdata[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.picXdata[parseInt(this.state.picXdata.length-1,0)]
+      }
+      this.subTable.resetSubTime(flowPicTime)
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'hostgroup',
+      start_time: this.state.allTime[0],
+      last_time: this.state.allTime[1],
+      obj: record.area,
+      objType: 'group',
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16}>
+          <Col span={24}>
+            <div className="amodule" style={{lineHeight:"60px",padding: "0 0 0 20px"}}>
+              <span>全局时间：</span>
+              <WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth:"280px"}}/>
+              <span style={{marginLeft: "20px"}}>指标：</span>
+              <Select value={this.state.field} onChange={this.fieldChange} style={{minWidth:"180px"}}>
+                {
+                  netStandard.map(item=>{
+                    return(
+                      <Option key={item.value} value={item.value}>{item.name}</Option>
+                    )
+                  })
+                }
+              </Select>
+            </div>
+           </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col sm={{span: 24}} md={{span: 12}} lg={{span: 8}}>
+            <div className="amodule">
+              <div className="moduleBody" style={{paddingTop:"5px"}}>
+                <Tabs activekey={this.state.type} onChange={this.typeChange}>
+                  <TabPane tab="top10 区域" key="top">
+                    <Scrollbars
+                      autoHide
+                      autoHideTimeout={100}
+                      autoHideDuration={200}
+                      universal={true}
+                      style={{height: "295px"}}
+                      >
+                      <WySpin isSpining={this.state.tableSpining}>
+                        {
+                          this.state.type === 'top'?
+                          <WyTable
+                            xData={_.cloneDeep(this.state.appXdata)}
+                            yData={_.cloneDeep(this.state.appYdata)}
+                            activeRowKey={this.state.activeRowKey}
+                            onTableClick={this.onTableClick}
+                            pageSize={this.state.pageSize}
+                            onShowSizeChange={this.pageSizeChange}
+                            onTableContextmenu={this.tableContextmenu}
+                            dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                          />
+                          :
+                          ''
+                        }
+                      </WySpin>
+
+                    </Scrollbars>
+                  </TabPane>
+                  <TabPane tab="所有区域" key="define">
+                    <Scrollbars
+                      autoHide
+                      autoHideTimeout={100}
+                      autoHideDuration={200}
+                      universal={true}
+                      style={{height: "295px"}}
+                      >
+                        <WySpin isSpining={this.state.tableSpining}>
+                        {
+                          this.state.type === 'define'?
+                          <WyTable
+                            xData={_.cloneDeep(this.state.appXdata)}
+                            yData={_.cloneDeep(this.state.appYdata)}
+                            activeRowKey={this.state.activeRowKey}
+                            onTableClick={this.onTableClick}
+                            pageSize={this.state.pageSize}
+                            onShowSizeChange={this.pageSizeChange}
+                            onTableContextmenu={this.tableContextmenu}
+                            dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                          />
+                          :
+                          ''
+                        }
+                      </WySpin>
+                    </Scrollbars>
+                  </TabPane>
+                </Tabs>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{span: 24}} md={{span: 12}} lg={{span: 16}}>
+            <div className="amodule">
+              <div className="moduleHeader">
+              {
+                netStandard.map(item=>{
+                  if(item.value === this.state.field){
+                    return item.name
+                  }
+                })
+              }
+              </div>
+              <div className="moduleBody">
+                <WySpin isSpining={this.state.picSpining}>
+                  <Line
+                    onChartClick={this.chartClick}
+                    brush={true}
+                    onBrushSelected={this.brushSelect}
+                    xData={this.state.picXdata?this.state.picXdata:[]}
+                    yData={this.state.picYdata?this.state.picYdata:[]}
+                    aUnit={this.state.picAunit}
+                  />
+                </WySpin>
+              </div>
+            </div>
+          </Col>
+        </Row>
+        <FirstTable
+          id={this.state.id}
+          field={this.state.field}
+          subTime={_.cloneDeep(this.state.allTime)}
+          ref={(constance)=>{this.subTable = constance}}
+          location={this.props.location}
+        />
+      </div>
+    )
+  }
+}
+
+export default withRouter(NetInteractive)

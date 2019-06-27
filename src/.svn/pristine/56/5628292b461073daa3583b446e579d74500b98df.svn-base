@@ -1,0 +1,15 @@
+import { connect } from 'react-redux'
+import ShowPage from './ShowPage'
+
+import { setPosition } from '../actions'
+const mapStateToProps  = (state)=>({
+  modules: state.homeview.modules
+})
+const mapDispatchToProps = (dispatch)=>({
+  doSetPosition : (positions)=>{
+    dispatch(setPosition(positions))
+  }
+})
+
+
+export default connect(mapStateToProps,mapDispatchToProps)(ShowPage)

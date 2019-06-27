@@ -1,0 +1,28 @@
+import React, { Component }  from 'react'
+import { Tabs } from 'antd'
+
+import HostForm from './HostForm'
+import EmailForm from './EmailForm'
+import NtpForm from './NtpForm'
+const TabPane = Tabs.TabPane
+class SystemBase extends Component{
+  render(){
+    return(
+      <div>
+        <Tabs defaultActiveKey="1" onChange={this.tabsChange}>
+          <TabPane tab="本地主机" key="1">
+            <HostForm />
+          </TabPane>
+          <TabPane tab="邮件服务器" key="2">
+            <EmailForm />
+          </TabPane>
+          <TabPane tab="NTP服务器" key="5">
+            <NtpForm />
+          </TabPane>
+        </Tabs>
+      </div>
+    )
+  }
+}
+
+export default SystemBase

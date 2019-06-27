@@ -1,0 +1,180 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyTable from '../components/WyTable'
+import WyDatePicker from '../components/WyDatePicker'
+import { wyAxiosPost } from '../components/WyAxios'
+import contextList from '../SubPage/ContextList'
+import WySpin from '../components/WySpin'
+const Option = Select.Option
+class NetTable extends Component{
+  constructor(props){
+    super(props)
+    const { getInstance } = props;
+    if (typeof getInstance === 'function') {
+      getInstance(this); // 在这里把this暴露给`parentComponent`
+    }
+  }
+  state = {
+    xData: [],
+    yData: [],
+    subTime: [],
+    repostTime:'',
+    pageSize: 5,
+    initColumns: [],//原始title行
+    standarList: ['iface_name','bytes','packets','ret','conn','rttin','rttout'],//被选中要显示的指标
+    curLen: 7,//被选中指标的长度
+
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+   isSpining: false
+  }
+  subTimeChange = (value)=>{
+    this.setState({
+      subTime: value
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+
+  /*****供调用*******************/
+  getChartData = ()=>{
+    let info = {}
+    if(this.state.subTime.length>0){
+      info.start_time = this.state.subTime[0]
+      info.last_time = this.state.subTime[1]
+    }else{
+      info.start_time = ''
+      info.last_time = ''
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('NetWork/getIfaceData',{info: info},(result)=>{
+      const responseData = result.data.msg
+      let curTime = []
+      curTime.push(responseData.start_time)
+      curTime.push(responseData.last_time)
+      const newxxx = []
+      if(responseData.xxx && responseData.xxx.length>0){
+        responseData.xxx.map(item=>{
+          if(this.state.standarList.indexOf(item.key) !== -1){
+            newxxx.push(item)
+          }
+        })
+      }
+      this.setState({
+        initColumns: responseData.xxx,
+        xData:newxxx,
+        yData: responseData.yyy,
+        subTime: curTime,
+        isSpining: false
+      })
+    })
+  }
+  /*****供调用完*******************/
+  componentDidMount(){
+    this.getChartData()
+  }
+
+  subTimeChange = (value)=>{
+    this.setState({
+      subTime: value
+    },()=>{
+      this.getChartData()
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let info ={
+      listType: 'netmouth',
+      start_time: this.state.subTime[0],
+      last_time: this.state.subTime[1],
+      obj: record.iface_name,
+      objType: 'iface',
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  standarChange = (value)=>{
+    this.setState({
+      standarList: value,
+      curLen: value.length
+    },()=>{
+      const newxxx = []
+      if(this.state.initColumns && this.state.initColumns.length>0){
+        this.state.initColumns.map(item=>{
+          if(this.state.standarList.indexOf(item.key) !== -1){
+            newxxx.push(item)
+          }
+        })
+        this.setState({
+          xData: newxxx
+        })
+      }
+    })
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span style={{marginRight: "20px"}}>网口统计</span>
+          <WyDatePicker rangeTimeChange={this.subTimeChange} curTime={this.state.subTime} style={{width: "280px"}}rangeTimeChange={this.subTimeChange} curTime={this.state.subTime}/>
+          <span style={{float:"right"}}>
+            <span>指标显示：</span>
+            <Select
+              style={{minWidth: "180px"}}
+              mode="tags"
+              size="small"
+              onChange={this.standarChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+this.state.curLen+'项')}
+              value={this.state.standarList}
+            >
+              {
+                this.state.initColumns && this.state.initColumns.length>0?
+                this.state.initColumns.map(item=>{
+                  return(
+                    <Option key={item.key}>{item.title}</Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <WyTable
+              xData={this.state.xData}
+              yData={this.state.yData}
+              pageSize={this.state.pageSize}
+              onShowSizeChange={this.pageSizeChange}
+              onTableContextmenu={this.tableContextmenu}
+              dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+            />
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(NetTable)

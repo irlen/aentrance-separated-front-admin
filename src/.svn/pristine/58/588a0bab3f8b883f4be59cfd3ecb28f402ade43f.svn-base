@@ -1,0 +1,94 @@
+import React from 'react'
+import { withRouter } from 'react-router-dom'
+import { Scrollbars } from 'react-custom-scrollbars'
+import { Breadcrumb, Icon } from 'antd'
+
+//import DevTools from '../reduxDevTools'
+import { SubRoute } from '../Routes'
+import Nav from '../components/Nav'
+import { routeOne } from '../Routes/routeConfig'
+
+class Container extends React.Component {
+  state = {
+    wide: false
+  }
+  slideContainer(islide){
+    this.setState({wide: islide})
+  }
+  componentDidMount(){
+    this.getBreadcrumb()
+  }
+  //面包屑导航
+  getBreadcrumb = ()=>{
+    const curPath = window.location.pathname
+    const reg = /\/[a-z]+/g
+    const pathArray = curPath.match(reg)
+    let breadDom = []
+    if(pathArray && pathArray.length>0){
+      routeOne.map(item=>{
+        if(item.path === pathArray[0]){
+          breadDom.push(
+            <Breadcrumb.Item key={item.key} href={item.path}>
+                <span title={item.name} className={item.icon}></span>
+            </Breadcrumb.Item>
+          )
+        }
+        if(item.path === (pathArray[0]+pathArray[1])){
+          breadDom.push(
+            <Breadcrumb.Item key={item.key} href="">
+                <i title={item.name} className={item.icon}></i>
+            </Breadcrumb.Item>
+          )
+          item.routes.map(subItem=>{
+            if(subItem.path === (pathArray[0]+pathArray[1]+pathArray[2])){
+              breadDom.push(
+                <Breadcrumb.Item key={subItem.key} href={subItem.path}>
+                  <span>{subItem.name}</span>
+                </Breadcrumb.Item>
+              )
+            }
+          })
+        }
+      })
+    }
+    let lastBread = <Breadcrumb  key='mykey' separator="|">
+      {breadDom}
+    </Breadcrumb>
+    return lastBread
+  }
+  render(){
+    const {location} = this.props
+    return(
+      <div className="clearfloat">
+          <div className={`leftContainer ${this.state.wide ? 'leftClose':'leftOpen'}`}>
+              <Nav laystate={this.slideContainer.bind(this)} path={location.pathname}/>
+          </div>
+          <div className={`rightContainer fullScreen ${this.state.wide ? 'containerClose':'containerOpen'}`}>
+            <Scrollbars
+              autoHide
+              autoHideTimeout={100}
+              autoHideDuration={200}
+              universal={true}
+              className='containerIn'
+              >
+              <div style={{marginTop:"16px",paddingLeft: "20px"}}>
+                {
+                  this.getBreadcrumb()
+                }
+              </div>
+              <div style={{padding: "16px"}}>
+                <SubRoute />
+              </div>
+            </Scrollbars>
+            {
+            //  <DevTools />
+            }
+
+          </div>
+      </div>
+    )
+  }
+}
+
+
+export default withRouter(Container)

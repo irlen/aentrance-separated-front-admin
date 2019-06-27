@@ -1,0 +1,202 @@
+import React from 'react'
+import {
+  Route,
+  Switch,
+  Redirect
+} from 'react-router-dom'
+
+import { userAuth } from '../components/UserAuth'
+import VerticFail from './VerticFail'
+import VerticSuccess from './VerticSuccess'
+
+import Login from '../Login'
+import Layout from '../Layout'
+import Home from '../Home'
+import NavRemember from '../NavRemember'
+//数据源
+import DataSource from '../DataSource'
+import MyDataSource from '../MyDataSource'
+import AppAnalysis from '../AppAnalysis'
+import ProductPages from '../ProductPages'
+
+//系統设置-基本设置
+import SystemBase from '../SystemBase'
+//系统设置-对象定义
+import SystemObject from '../SystemObject'
+//系统设置-设备相关
+import SystemEquipment from '../SystemEquipment'
+//系统设置-工具
+import SystemTool from '../SystemTool'
+
+//网络-网络流量
+import NetAllElement from '../NetAllElement'
+//网络-网络过滤
+import NetFilter from '../NetFilter'
+//网络-交互分析
+import NetInteractive from '../NetInteractive'
+
+//HTTP应用-tophttp
+import HttpTop from '../HttpTop'
+//HTTP应用-http页面分析
+import HttpAnalysis from '../HttpAnalysis'
+//HTTP应用-http应用状态
+import HttpAppStatus from '../HttpAppStatus'
+
+//应用分析-应用交互
+import AppInteractive from '../AppInteractive'
+//应用分析-应用过滤
+import AppTimeResponse from '../AppTimeResponse'
+//应用分析-所有应用
+import AppList from '../AppList'
+
+//数据库-TOP数据库
+import DataBaseTop from '../DataBaseTop'
+//数据库-数据状态
+import DataBaseStatus from '../DataBaseStatus'
+//数据库-sql
+import DataBaseSql from '../DataBaseSql'
+
+//仪表板-内置仪表板
+import DashboardBuiltIn from '../DashboardBuiltIn'
+import DashboardDefine from '../DashboardDefine'
+import DashboardMap from '../DashboardMap'
+
+//告警-告警管理
+//import AlertList from '../AlertList'
+
+//用戶-用戶管理
+import UserManage from '../UserManage'
+import UserRole from '../UserRole'
+import UserAuthority from '../UserAuthority'
+
+//二级视图******************************************************************************/
+import SubPage from '../SubPage/Layout'
+//主机视图
+import HostView from '../SubPage/HostView'
+//端口视图
+import PortView from '../SubPage/PortView'
+//主机组视图
+import HostGroupView from '../SubPage/HostGroupView'
+//主机端到端
+import PtpView from '../SubPage/PtpView'
+//网口视图
+import NetMouthView from '../SubPage/NetMouthView'
+//主机组端对端
+import PtgView from '../SubPage/PtgView'
+
+//应用分析
+import ApplyView from '../SubPage/ApplyView'
+//会话分析
+import ConversationView from '../SubPage/ConversationView'
+//时间响应
+import TimeresponseView from '../SubPage/TimeresponseView'
+//网络错误
+import DropView from '../SubPage/DropView'
+//业务错误
+import DropnessView from '../SubPage/DropnessView'
+//客户端
+import ClientView from '../SubPage/ClientView'
+//服务端
+import ServerView from '../SubPage/ServerView'
+//响应状态
+import StatusCodeView from '../SubPage/StatusCodeView'
+//请求分析
+import RequestMethodView from '../SubPage/RequestMethodView'
+
+export const AppRoute = ()=>(
+  <div>
+    <Switch>
+      <Route path='/login' exact component={  Login } />
+      <Route path='/app' render={()=> userAuth()?<Layout />:<VerticFail />}/>
+      <Route path='/subpage' render={()=> userAuth()?<SubPage />:<VerticFail />} />
+      <Route path='/navremember' render={()=> userAuth()?<NavRemember />:<VerticFail />} />
+      <Redirect from='/' to="/navremember" />
+    </Switch>
+  </div>
+);
+
+
+export const SubRoute = () => (
+    <div>
+     {
+       //总览
+     }
+      <Route path='/app' exact render={()=> userAuth()?<Home />:<VerticFail />} />
+      {
+        //数据源
+      }
+      <Route path='/app/source/datasource' exact render={()=> userAuth()?VerticSuccess('/app/source/datasource',<DataSource />):<VerticFail />} />
+      <Route path='/app/source/mydatasource' exact render={()=> userAuth()?VerticSuccess('/app/source/mydatasource',<MyDataSource />):<VerticFail />} />
+      <Route path='/app/source/appanalysis' exact render={()=> userAuth()?VerticSuccess('/app/source/appanalysis',<AppAnalysis />):<VerticFail />} />
+      <Route path='/app/source/productpages' exact render={()=> userAuth()?VerticSuccess('/app/source/productpages',<ProductPages />):<VerticFail />} />
+      {
+        //设置
+      }
+      <Route path='/app/system/systembase' exact render={()=> userAuth()?VerticSuccess('/app/system/systembase',<SystemBase />):<VerticFail /> } />
+      <Route path='/app/system/systemobject' exact render={()=> userAuth()?VerticSuccess('/app/system/systemobject',<SystemObject />):<VerticFail />} />
+      <Route path='/app/system/systemequipment' exact render={()=> userAuth()?VerticSuccess('/app/system/systemequipment',<SystemEquipment />):<VerticFail />} />
+      <Route path='/app/system/systemtool' exact render={()=> userAuth()?VerticSuccess('/app/system/systemtool',<SystemTool />):<VerticFail />} />
+      {
+        //应用分析
+      }
+      <Route path='/app/apply/appinteractive' exact render={()=> userAuth()?VerticSuccess('/app/apply/appinteractive',<AppInteractive />):<VerticFail />} />
+      <Route path='/app/apply/apptimeresponse' exact render={()=> userAuth()?VerticSuccess('/app/apply/apptimeresponse',<AppTimeResponse />):<VerticFail />} />
+      <Route path='/app/apply/applist' exact render={()=> userAuth()?VerticSuccess('/app/apply/applist',<AppList />):<VerticFail />} />
+      {
+        //http应用
+      }
+      <Route path='/app/http/httptop' exact render={()=> userAuth()?VerticSuccess('/app/http/httptop',<HttpTop/>):<VerticFail />} />
+      <Route path='/app/http/httpanalysis' exact render={()=> userAuth()?VerticSuccess('/app/http/httpanalysis',<HttpAnalysis />):<VerticFail />} />
+      <Route path='/app/http/httpappstatus' exact render={()=> userAuth()?VerticSuccess('/app/http/httpappstatus',<HttpAppStatus />):<VerticFail />} />
+      {
+        //数据库
+      }
+      <Route path='/app/database/databasetop' exact render={()=> userAuth()?VerticSuccess('/app/database/databasetop',<DataBaseTop />):<VerticFail />} />
+      <Route path='/app/database/databasestatus' exact render={()=> userAuth()?VerticSuccess('/app/database/databasestatus',<DataBaseStatus />):<VerticFail />} />
+      <Route path='/app/database/databasesql' exact render={()=> userAuth()?VerticSuccess('/app/database/databasesql',<DataBaseSql />):<VerticFail />} />
+      {
+        //网络
+      }
+      <Route path='/app/net/netallelement' exact render={()=> userAuth()?VerticSuccess('/app/net/netallelement',<NetAllElement />):<VerticFail />} />
+      <Route path='/app/net/netfilter' exact render={()=> userAuth()?VerticSuccess('/app/net/netfilter',<NetFilter />):<VerticFail />} />
+      <Route path='/app/net/netinteractive' exact render={()=> userAuth()?VerticSuccess('/app/net/netinteractive',<NetInteractive />):<VerticFail />} />
+      {
+        //仪表板
+      }
+      <Route path='/app/dashboard/dashboardbuiltin' exact render={()=> userAuth()?VerticSuccess('/app/dashboard/dashboardbuiltin',<DashboardBuiltIn />):<VerticFail />} />
+      <Route path='/app/dashboard/dashboarddefine' exact render={()=> userAuth()?VerticSuccess('/app/dashboard/dashboarddefine',<DashboardDefine />):<VerticFail />} />
+      <Route path='/app/dashboard/dashboardmap' exact render={()=> userAuth()?VerticSuccess('/app/dashboard/dashboardmap',<DashboardMap />):<VerticFail />} />
+      {
+        //告警
+      }
+      
+      {
+        //用戶
+      }
+      <Route path='/app/user/usermanage' exact render={()=> userAuth()?VerticSuccess('/app/user/usermanage',<UserManage />):<VerticFail />} />
+      <Route path='/app/user/userrole' exact render={()=> userAuth()?VerticSuccess('/app/user/userrole',<UserRole />):<VerticFail />} />
+      <Route path='/app/user/userauthority' exact render={()=> userAuth()?VerticSuccess('/app/user/userauthority',<UserAuthority />):<VerticFail />} />
+  </div>
+)
+
+export const SubPageRoute = ()=>(
+    <div className="subPageContent">
+      <Route path='/subpage/hostview/:info' exact render={()=> userAuth()?<HostView />:<VerticFail /> } />
+      <Route path='/subpage/portview/:info' exact render={()=> userAuth()?<PortView />:<VerticFail /> } />
+      <Route path='/subpage/hostgroupview/:info' exact render={()=> userAuth()?<HostGroupView />:<VerticFail /> } />
+      <Route path='/subpage/ptpview/:info' exact render={()=> userAuth()?<PtpView />:<VerticFail /> } />
+      <Route path='/subpage/netmouthview/:info' exact render={()=> userAuth()?<NetMouthView />:<VerticFail /> } />
+      <Route path='/subpage/ptgview/:info' exact render={()=> userAuth()?<PtgView />:<VerticFail /> } />
+
+
+      <Route path='/subpage/applyview/:info' exact render={()=> userAuth()?<ApplyView />:<VerticFail /> } />
+      <Route path='/subpage/conversationview/:info' exact render={()=> userAuth()?<ConversationView />:<VerticFail /> } />
+      <Route path='/subpage/timeresponseview/:info' exact render={()=> userAuth()?<TimeresponseView />:<VerticFail /> } />
+      <Route path='/subpage/dropview/:info' exact render={()=> userAuth()?<DropView />:<VerticFail /> } />
+      <Route path='/subpage/dropnessview/:info' exact render={()=> userAuth()?<DropnessView />:<VerticFail /> } />
+      <Route path='/subpage/clientview/:info' exact render={()=> userAuth()?<ClientView />:<VerticFail /> } />
+      <Route path='/subpage/serverview/:info' exact render={()=> userAuth()?<ServerView />:<VerticFail /> } />
+      <Route path='/subpage/statuscodeview/:info' exact render={()=> userAuth()?<StatusCodeView />:<VerticFail /> } />
+      <Route path='/subpage/requestmethodview/:info' exact render={()=> userAuth()?<RequestMethodView />:<VerticFail /> } />
+    </div>
+)

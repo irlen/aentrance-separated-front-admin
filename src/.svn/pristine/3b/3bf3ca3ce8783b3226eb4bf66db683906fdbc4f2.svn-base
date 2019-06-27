@@ -1,0 +1,10 @@
+import React, { Component } from 'react'
+
+class ReportGenerate extends Component{
+  render(){
+    return '生成报表'
+  }
+}
+
+
+export default ReportGenerate

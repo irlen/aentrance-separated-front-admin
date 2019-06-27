@@ -1,0 +1,19 @@
+import React ,{ Component } from 'react'
+import { Scrollbars } from 'react-custom-scrollbars'
+import $ from 'jquery'
+
+
+class GenerateView extends Component{
+  state = {
+    sHeight: '0px',
+  }
+  componentDidMount(){}
+  render(){
+    return (
+      <div>哈哈哈</div>
+    )
+  }
+}
+
+
+export default GenerateView

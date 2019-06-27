@@ -1,0 +1,37 @@
+import React, { Component } from 'react'
+import { Tabs } from 'antd'
+
+
+import HostGroup from './HostGroup'
+import AppBusiness from './AppBusiness'
+import PortStuff from './PortStuff'
+import HostSingle from './HostSingle'
+import Ptop from './Ptop'
+const TabPane = Tabs.TabPane
+class SystemObject extends Component{
+  render(){
+    return(
+      <div className="amodule">
+        <Tabs defaultActiveKey="1">
+          <TabPane tab="主机组" key="1">
+            <HostGroup />
+          </TabPane>
+          <TabPane tab="应用" key="2">
+            <AppBusiness />
+          </TabPane>
+          <TabPane tab="端口" key="3">
+            <PortStuff />
+          </TabPane>
+          <TabPane tab="服务器定义" key="4">
+            <HostSingle />
+          </TabPane>
+          <TabPane tab="端对端" key="5">
+            <Ptop />
+          </TabPane>
+        </Tabs>
+      </div>
+    )
+  }
+}
+
+export default SystemObject

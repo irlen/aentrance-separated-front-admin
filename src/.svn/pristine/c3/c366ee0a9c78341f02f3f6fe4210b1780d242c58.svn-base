@@ -1,0 +1,247 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import _ from 'lodash'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import { Scrollbars } from 'react-custom-scrollbars'
+import WySpin from '../components/WySpin'
+import { netFilterPic } from '../components/StandarConstant'
+import contextList from '../SubPage/ContextList'
+
+const Option = Select.Option
+
+class SeniorTemplateTable extends Component{
+  constructor(props){
+    super(props)
+    const { getInstance } = props
+    if(typeof getInstance === 'function'){
+      getInstance(this)
+    }
+  }
+  state={
+    xData: [],
+    allXdata:[],
+    yData: [],
+    standarList:[],
+    selStandarList: [],
+    isSpining: false,
+    pageSize: 5,
+    dropListInfo: {
+     dropData: [],
+     dropPosition: {x:"0px",y:"0px"},
+     isexist: false
+   },
+   start_time:'',
+   last_time:'',
+   searchRule:{}
+  }
+  /*****供调用*****************************/
+  getTableData = ()=>{
+    const info = _.cloneDeep(this.state.searchRule)
+    info.start_time = this.state.start_time
+    info.last_time = this.state.last_time
+    info.type = this.props.type
+    this.setState({
+      isSpining: true,
+    })
+    wyAxiosPost('NetWork/getHighFilter',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        standarList: responseData.xxx
+      },()=>{
+        let compiledxxx = []
+        if(responseData.xxx.length>0){
+          responseData.xxx.map(item=>{
+            if(this.state.selStandarList.indexOf(item.key) !== -1){
+              compiledxxx.push(item)
+            }
+          })
+        }
+        this.setState({
+          xData: compiledxxx,
+          yData: responseData.yyy,
+          allXdata: responseData.xxx,
+          isSpining: false
+        })
+      })
+    })
+
+
+
+  }
+  /*****供调用（完）*****************************/
+  componentDidMount(){
+    this.setState({
+      searchRule: _.cloneDeep(this.props.searchRule),
+      start_time: this.props.searchRule.start_time,
+      last_time: this.props.searchRule.last_time
+    },()=>{
+      if(this.props.type === 'port'){
+        this.setState({
+          selStandarList: ['port','bytes','packets','ret']
+        },()=>{
+          if(JSON.stringify(this.state.searchRule).length>2){
+            this.getTableData()
+          }
+        })
+      }else if(this.props.type === 'crossip'){
+        this.setState({
+          selStandarList: ['sip','sport','dip','dport','bytes','packets','ret']
+        },()=>{
+          if(JSON.stringify(this.state.searchRule).length>2){
+            this.getTableData()
+          }
+        })
+      }else if(this.props.type === 'topip'){
+        this.setState({
+          selStandarList: ['ip','mac','bytes','packets','ret']
+        },()=>{
+          if(JSON.stringify(this.state.searchRule).length>2){
+            this.getTableData()
+          }
+        })
+      }else if(this.props.type === 'topdip'){
+        this.setState({
+          selStandarList: ['ip','mac','bytes','packets','ret']
+        },()=>{
+          if(JSON.stringify(this.state.searchRule).length>2){
+            this.getTableData()
+          }
+        })
+      }
+    })
+  }
+
+
+  componentWillReceiveProps(nextProps){
+    if( JSON.stringify(this.props.searchRule) !== JSON.stringify(nextProps.searchRule) ){
+      // let info = _.cloneDeep(nextProps.searchRule)
+      // info.type = nextProps.type
+      this.setState({
+        searchRule: _.cloneDeep(nextProps.searchRule),
+        start_time: nextProps.searchRule.start_time,
+        last_time: nextProps.searchRule.last_time
+      },()=>{
+        this.getTableData()
+      })
+    }
+  }
+  selStandarListChange = (value)=>{
+    let info = _.cloneDeep(this.props.searchRule)
+    info.type = this.props.type
+    this.setState({
+      selStandarList: [...value]
+    },()=>{
+      let compiledxxx = []
+      if(this.state.allXdata && this.state.allXdata.length>0){
+        this.state.allXdata.map(item=>{
+          if(this.state.selStandarList.indexOf(item.key) !== -1){
+            compiledxxx.push(item)
+          }
+        })
+      }
+      this.setState({
+        xData: compiledxxx
+      })
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  tableContextmenu = (record,position,dom)=>{
+    $('.drcontainer').removeClass('dropShow').addClass('dropHide')
+    $(dom).closest('.moduleBody').find('.drcontainer').removeClass('dropHide').addClass('dropShow')
+    let objVal = ''
+    if(this.props.obj === 'ptp'){
+      objVal = record.sip+'_'+record.dip
+    }else{
+      objVal = record[this.props.obj]
+    }
+    let info ={
+      listType: 'netmouth',
+      start_time: this.props.searchRule.start_time,
+      last_time: this.props.searchRule.last_time,
+      obj: objVal,
+      objType: this.props.objType,
+      previousPath:this.props.location.pathname
+    }
+    this.setState({
+      dropListInfo: {
+         dropData: contextList(info),
+         dropPosition: {x:position.x+"px",y:position.y+"px"},
+         isexist: true
+      }
+    })
+  }
+  setSubTime=(value)=>{
+    this.setState({
+      start_time: value[0],
+      last_time: value[1]
+    },()=>{
+      this.getTableData()
+    })
+  }
+  render(){
+    const curLen = this.state.selStandarList.length
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>{this.props.name}</span>
+          <span style={{marginLeft:"20px"}}>
+            {`${this.state.start_time}~${this.state.last_time}`}
+          </span>
+          <span style={{float:"right"}}>
+            <Select
+              mode="tags"
+              style={{width: "160px"}}
+              size="small"
+              onChange={this.selStandarListChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+curLen+'项')}
+              value={this.state.selStandarList}
+            >
+              {
+                this.state.standarList && this.state.standarList.length>0?
+                this.state.standarList.map(item=>{
+                  return(
+                    <Option title={item.title} value={item.key} key={item.key}>{item.title}</Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <Scrollbars
+            autoHide
+            autoHideTimeout={100}
+            autoHideDuration={200}
+            universal={true}
+            style={{height: "300px"}}
+            >
+              <WySpin isSpining={this.state.isSpining}>
+                <WyTable
+                  xData={this.state.xData?this.state.xData: []}
+                  yData={this.state.yData?this.state.yData: []}
+                  pageSize={this.state.pageSize}
+                  onShowSizeChange={this.pageSizeChange}
+                  onTableContextmenu={this.tableContextmenu}
+                  dropListInfo={_.cloneDeep(this.state.dropListInfo)}
+                />
+              </WySpin>
+          </Scrollbars>
+        </div>
+      </div>
+    )
+  }
+}
+
+
+export default withRouter(SeniorTemplateTable)

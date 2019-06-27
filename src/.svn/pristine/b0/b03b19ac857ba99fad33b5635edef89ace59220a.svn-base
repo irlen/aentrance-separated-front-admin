@@ -1,0 +1,54 @@
+import React, { Component } from 'react'
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WySpin from '../components/WySpin'
+
+
+class TemplateForLine extends Component{
+  state={
+    xData: [],
+    yData: [],
+    aUnit:'',
+
+    isSpining: false,
+    autoHeight: 300,
+    subTime: [],
+  }
+  subTimeChange = (value,event)=>{
+    this.setState({
+      subTime: value
+    },()=>{
+      //this.getCurViewData()
+    })
+  }
+  render(){
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+      {
+        this.props.env === 'set'?
+        ''
+        :
+        <div className="moduleHeader" style={{display:"flex"}}>
+          <div className="moduleHeaderIn"style={{flex:"1 1 auto"}}>
+          </div>
+            <div style={{float: "right",flex:"0 0 300px"}}>
+              <WyDatePicker curTime={this.state.subTime} rangeTimeChange={this.subTimeChange}/>
+            </div>
+        </div>
+      }
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <Line
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              aUnit={this.state.aUnit}
+              height={this.state.autoHeight}
+            />
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default TemplateForLine

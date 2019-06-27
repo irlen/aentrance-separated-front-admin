@@ -1,0 +1,390 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, Drawer, Input, message, Popconfirm, Select } from 'antd'
+import _ from 'lodash'
+
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import { forName, singleIp, rangeIp, groupIp} from '../components/RegExp'
+
+
+const TextArea = Input.TextArea
+class HostGroup extends Component{
+  state={
+    visible: false,
+    isSpining: false,
+    pageSize:5,
+
+    hostGroupName:'',
+    ipGroup:[],
+
+    ids:[],
+    description:'',
+    searchGroupName: '',
+    searchIpName: [],
+    id:'',
+    xData: [],
+    yData: [],
+    searchRule: {}
+  }
+  /*******************供调用***************************************************/
+  //获取所有主机组
+    getHostGroupData = ()=>{
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('DevObject/getHostGroup',{},(result)=>{
+        const responseData = result.data.msg
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '编辑',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        })
+        this.setState({
+          xData: curxData,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    }
+
+    //保存主机组
+    saveHostGroup = ()=>{
+      let data = {}
+      if(this.state.id !== ''){
+        data.id = this.state.id
+      }
+      data.name = this.state.hostGroupName
+      data.describe = this.state.description
+      data.ip_range = this.state.ipGroup
+      wyAxiosPost('DevObject/saveHostGroup',data,(result)=>{
+        this.getHostGroupData()
+        this.onClose()
+        message.success(result.data.msg)
+      })
+    }
+
+  /*******************供调用完**************************************************/
+  componentDidMount(){
+    this.getHostGroupData()
+  }
+  handleEdit = (id)=>{  //onChange={(value)=>this.nameChange(item,value)}
+    wyAxiosPost('DevObject/getHostGroup',{id:id},(result)=>{
+      console.log(result)
+      const responseData = result.data.msg
+      this.setState({
+        id: id,
+        hostGroupName: responseData.name,
+        ipGroup: responseData.ip_range.split(','),
+        description: responseData.describe
+      })
+      this.showDrawer()
+    })
+  }
+  handleOk = ()=>{
+    //这里验证提交
+    const erroList = []
+    if(this.state.hostGroupName === ''){
+      erroList.push('名称不能为空')
+    }
+    if(this.state.hostGroupName !== '' && !(forName.test(this.state.hostGroupName)) ){
+      erroList.push('名称格式有误')
+    }
+    if(this.state.ipGroup.length === 0){
+      erroList.push('ip/ip段不能为空')
+    }
+    if(this.state.ipGroup.length > 0){
+      this.state.ipGroup.map(item=>{
+        if(!(
+          singleIp.test(item) ||
+          groupIp.test(item) ||
+          rangeIp(item)
+        )){
+          erroList.push('ip/ip段格式有误')
+          return
+        }
+      })
+    }
+    if(erroList.length === 0){
+      this.saveHostGroup()
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  hostGroupNameChange = (e)=>{
+    this.setState({
+      hostGroupName: e.target.value
+    })
+  }
+
+  ipGroupChange = (value)=>{
+    this.setState({
+      ipGroup: value
+    })
+  }
+
+  descriptionChange = (e)=>{
+    this.setState({
+      description:e.target.value
+    })
+  }
+  searchGroupNameChange = (e)=>{
+    this.setState({
+      searchGroupName: e.target.value
+    })
+  }
+  searchIpNameChange = (value)=>{
+    this.setState({
+      searchIpName: value
+    })
+  }
+  doSearch = ()=>{
+    const erroList = []
+    if(this.state.searchIpName.length > 0){
+      this.state.searchIpName.map(item=>{
+        if(!(
+          singleIp.test(item) ||
+          groupIp.test(item) ||
+          rangeIp(item)
+        )){
+          erroList.push('ip/ip段格式有误')
+          return
+        }
+      })
+    }
+    if(erroList.length === 0){
+      let curRule = {}
+      curRule.name = this.state.searchGroupName
+      curRule.ips = this.state.searchIpName
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('DevObject/getHostGroup',curRule,(result)=>{
+        const responseData = result.data.msg
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '编辑',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        })
+        this.setState({
+          xData: curxData,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  resetSearch = ()=>{
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('DevObject/getHostGroup',{},(result)=>{
+      const responseData = result.data.msg
+      let curxData = _.cloneDeep(responseData.xxx)
+      curxData.push({
+        title: '编辑',
+        dataIndex: 'edit',
+        render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+      })
+      this.setState({
+        xData: curxData,
+        yData: responseData.yyy,
+        searchIpName:[],
+        searchGroupName:'',
+        isSpining: false
+      })
+    })
+  }
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    });
+  };
+
+  onClose = () => {
+    this.setState({
+      hostGroupName:'',
+      ipGroup:[],
+      description:'',
+      visible: false,
+      id: ''
+    });
+  };
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('DevObject/deleteHostGroup',{ids: this.state.ids},(result)=>{
+        message.success(result.data.msg)
+        this.getHostGroupData()
+        this.setState({
+          ids: []
+        })
+      })
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div className="moduleBody">
+        <Row gutter={16}>
+          <Col sm={{ span: 24}} md={{ span: 6}} lg={{span:6}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 46px"}}>组名：</div>
+              <div style={{flex:"1 1 auto"}}><Input placeholder="不限" value={this.state.searchGroupName} onChange={this.searchGroupNameChange}/></div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 8}} lg={{span:6,offset: 1}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 60px"}}>IP/IP段：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <Select
+                  mode="tags"
+                  style={{ width: '100%' }}
+                  placeholder="不限"
+                  value={this.state.searchIpName}
+                  onChange={this.searchIpNameChange}
+                >
+
+                </Select>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 10}} lg={{span:6}}>
+            <div style={{lineHeight: "40px"}}>
+              <Button type="primary" onClick={this.doSearch}>查询</Button>
+              {
+                (this.state.searchGroupName === '' && this.state.searchIpName.length === 0) ?
+                ''
+                :
+                <Button style={{marginLeft: "10px"}} onClick={this.resetSearch}>重置</Button>
+              }
+
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable
+                pageSize={this.state.pageSize}
+                onShowSizeChange={this.pageSizeChange}
+                rowSelection={rowSelection}
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+              />
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title={this.state.id?"修改":"新建"}
+          width={620}
+          placement="right"
+          onClose={this.onClose}
+          maskClosable={true}
+          visible={this.state.visible}
+          destroyOnClose={true}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <div>
+            <ul>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>名称：</div>
+                <div style={{flex:"1 1  auto"}}><Input value={this.state.hostGroupName} onChange={this.hostGroupNameChange} /></div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>ip/ip段：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="不限"
+                    value={this.state.ipGroup}
+                    onChange={this.ipGroupChange}
+                  >
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>描述：</div>
+                <div style={{flex:"1 1  auto"}}><TextArea value={this.state.description} onChange={this.descriptionChange} autosize={{ minRows: 1 }} /></div>
+              </li>
+            </ul>
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '100%',
+              borderTop: '1px solid #e8e8e8',
+              padding: '10px 20px',
+              textAlign: 'right',
+              left: 0,
+              background: '#fff',
+              borderRadius: '0 0 4px 4px',
+            }}
+          >
+            <Button
+              style={{
+                marginRight: 8,
+              }}
+              onClick={this.onClose}
+            >
+              取消
+            </Button>
+            <Button onClick={this.handleOk} type="primary">确定</Button>
+          </div>
+        </Drawer>
+
+
+      </div>
+    )
+  }
+}
+
+export default HostGroup

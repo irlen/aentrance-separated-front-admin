@@ -1,0 +1,78 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import AuthList from './AuthList'
+
+
+class DataAuth extends Component{
+  state = {
+    pageList: [],
+  }
+  componentDidMount(){
+    wyAxiosPost('Auth/getAuthFunc',{control:"1"},(result)=>{
+      const responseData = _.cloneDeep(result.data.msg)
+      const selectList = []
+      if(responseData && responseData.length>0){
+        responseData.map(item=>{
+          let selcObj = {}
+          item.checkedList = []
+          if(item.list && item.list.length>0){
+            const jian = item.item
+            selcObj.page = jian
+            selcObj.data = []
+            item.list.map(subItem=>{
+              subItem.label = subItem.func_name
+              subItem.value = subItem.id
+              if(subItem.control === '1'){
+                selcObj.data.push(subItem.id)
+                if(this.props.selectedList.length>0 && this.props.selectedList.indexOf(subItem.id) !== -1){
+                  item.checkedList.push(subItem.id)
+                }
+              }
+            })
+          }
+        })
+      }
+      this.setState({
+        pageList: responseData
+      })
+    })
+  }
+  setPageList = (page,data)=>{
+    let curPageList = _.cloneDeep(this.state.pageList)
+    if(curPageList && curPageList.length>0){
+      curPageList.map(item=>{
+        if(item.item === page){
+          item.checkedList = data
+        }
+      })
+    }
+    this.setState({
+      pageList: curPageList
+    })
+  }
+  render(){
+    return (
+      <div>
+        {
+          this.state.pageList && this.state.pageList.length>0?
+          this.state.pageList.map(item=>{
+            return(
+              <AuthList
+                setData={(page,data)=>this.setPageList(page,data)}
+                page={item.item} plainOptions={item.list} menu={item.menu}
+                checkedList={item.checkedList} key={item.list[0].id}
+              />
+            )
+          })
+          :
+          ''
+        }
+
+      </div>
+    )
+  }
+}
+
+export default DataAuth

@@ -1,0 +1,12 @@
+import { connect } from 'react-redux'
+import GenerateView from './GenerateView'
+import { setPosition } from '../actions'
+const mapStateToProps  = (state)=>({
+  modules: state.homeview.modules
+})
+const mapDispatchToProps = (dispatch)=>({
+  doSetPosition : (positions)=>{
+    dispatch(setPosition(positions))
+  }
+})
+export default connect(mapStateToProps,mapDispatchToProps)(GenerateView)

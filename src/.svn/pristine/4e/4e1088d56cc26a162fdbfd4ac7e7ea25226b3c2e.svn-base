@@ -1,0 +1,33 @@
+import React, { Component } from 'react'
+import { Tabs } from 'antd'
+
+
+import TerminalPage from './Terminal'
+import Ping from './Ping'
+import SnmpPing from './SnmpPing'
+import TraceRoute from './TraceRoute'
+const TabPane = Tabs.TabPane
+class SystemTool extends Component{
+  render(){
+    return(
+      <div className="amodule">
+        <Tabs defaultActiveKey="terminal">
+          <TabPane tab="SSH" key="terminal">
+            <TerminalPage />
+          </TabPane>
+          <TabPane tab="Ping" key="ping">
+            <Ping />
+          </TabPane>
+          <TabPane tab="SnmpPing" key="snmpping">
+            <SnmpPing />
+          </TabPane>
+          <TabPane tab="TraceRoute" key="tracceroute">
+            <TraceRoute />
+          </TabPane>
+        </Tabs>
+      </div>
+    )
+  }
+}
+
+export default SystemTool

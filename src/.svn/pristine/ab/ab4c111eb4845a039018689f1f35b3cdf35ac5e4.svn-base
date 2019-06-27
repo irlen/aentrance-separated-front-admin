@@ -1,0 +1,151 @@
+import React, { Component } from 'react'
+import RGL, { WidthProvider } from "react-grid-layout"
+import _ from 'lodash'
+import { Icon, Button, Modal, Input, Select, message } from 'antd'
+
+import { wyAxiosPost } from '../components/WyAxios'
+import TemplateForLine from './TemplateForLine'
+import TemplateForColumn from './TemplateForColumn'
+import TemplateForTable from './TemplateForTable'
+import TemplateForPie from './TemplateForPie'
+import TemplateForMap from './TemplateForMap'
+require('../../node_modules/react-grid-layout/css/styles.css')
+require('../../node_modules/react-resizable/css/styles.css')
+const ReactGridLayout = WidthProvider(RGL);
+const Option = Select.Option
+
+
+class ShowPage extends Component{
+  static defaultProps = {
+    className: "layout",
+    cols: 24,
+    margin:[10,10],
+    rowHeight: 20,
+    autoSize: true,
+    onLayoutChange: function(){}
+  }
+  state = {
+    modules:[],
+    layout:[],
+
+    // setId:'',
+    // viewType:'',
+    // moduleName:'',
+    // dataMethod:'',
+    //
+    // visible: false,
+    // dataSourceList:[]
+  }
+  componentDidMount(){
+    wyAxiosPost('Screen/getScreen',{},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        modules: _.cloneDeep(responseData)
+      })
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(this.props.isRefresh !== nextProps.isRefresh){
+      wyAxiosPost('Screen/getScreen',{},(result)=>{
+        const responseData = result.data.msg
+        this.setState({
+          modules: _.cloneDeep(responseData)
+        })
+      })
+    }
+  }
+  onLayoutChange = (layout)=>{
+    const newLayout = []
+    if(layout && layout.length>0){
+      layout.map(item=>{
+        const {i,h,w,x,y} = item
+        newLayout.push({i,h,w,x,y})
+      })
+    }
+    if(newLayout.length>0){
+      this.props.doSetPosition(newLayout)
+      //先存下modules，更新位置后再取出來
+
+                  // wyAxiosPost('Screen/getScreen',{},(result)=>{
+                  //   const responseData = result.data.msg
+                  //   this.setState({
+                  //     modules: _.cloneDeep(responseData)
+                  //   })
+                  // })
+    }
+  }
+
+
+  generatedView =()=>{
+    let divArry = []
+    if(this.state.modules && this.state.modules.length>0){
+      this.state.modules.map((item,index)=>{
+        let compiledPosition = {}
+        if(item.position){
+          const h = parseInt(item.position.h)
+          const w = parseInt(item.position.w)
+          const x = parseInt(item.position.x)
+          const y = parseInt(item.position.y)
+          compiledPosition = Object.assign({},{h,w,x,y})
+        }
+        if(Object.keys(compiledPosition).length > 0){
+          if(item.viewType === 'line' || item.viewType === 'bar'){
+            divArry.push(
+              <div style={{background: "rgba(0,0,0,0.4)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+                <TemplateForLine autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+              </div>
+            )
+          }else if(item.viewType === 'column'){
+            divArry.push(
+              <div style={{background: "rgba(0,0,0,0.4)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+                <TemplateForColumn autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+              </div>
+            )
+          }else if(item.viewType === 'table'){
+            divArry.push(
+              <div style={{background: "rgba(0,0,0,0.4)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+                <TemplateForTable autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+              </div>
+            )
+          }else if(item.viewType === 'pie'){
+            divArry.push(
+              <div style={{background: "rgba(0,0,0,0.4)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+                <TemplateForPie autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+              </div>
+            )
+          }else if(item.viewType === 'map'){
+           divArry.push(
+            <div style={{background: "rgba(0,0,0,0.2)",borderRadius:"5px",overflow:"hidden"}} key={item.id} data-grid={compiledPosition}>
+              <TemplateForMap autoHeight={compiledPosition?compiledPosition.h*30-10-70:13*30-10-70} showViewData={_.cloneDeep(item)}/>
+            </div>
+            )
+          }
+        }
+      })
+    }
+    return divArry
+  }
+  render(){
+    return(
+      <div>
+        <ReactGridLayout
+          {...this.props}
+          draggableHandle=".moduleHeader"
+          useCSSTransforms={true}
+          onLayoutChange={this.onLayoutChange}
+          style={{position: "relative"}}
+          layout={this.state.layout}
+          isDraggable={false}
+          isResizable={false}
+        >
+          {
+            this.generatedView()
+          }
+        </ReactGridLayout>
+      </div>
+    )
+  }
+}
+
+
+export default ShowPage

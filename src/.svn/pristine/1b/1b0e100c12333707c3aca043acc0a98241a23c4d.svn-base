@@ -1,0 +1,60 @@
+
+
+/*公用选中颜色*/
+@selectColor : #0f153a;
+
+/*公用选中字体颜色定义*/
+@focusColor: #01D39F;
+
+/*共用选中字体颜色*/
+.activeFontColor{
+	color: @focusColor
+}
+
+/*表格选中行样式供调用*/
+.activeRow{
+	color: @focusColor;
+	font-weight: bold;
+}
+
+/*上面页头背景色*/
+.pagetop{
+	background: #171d29;
+}
+
+/*左侧导航背景色和字体颜色*/
+.leftContainer{      //把container.less里定义leftOpen的宽度改为57px,leftClose宽度改为181px
+	background: linear-gradient(180deg,#2a4280,#152354);
+	color: #333333;
+}
+
+
+/*导航展开部分背景颜色*/
+.ant-menu-sub.ant-menu-inline{
+	background: #0f153a;
+}
+
+/*导航展开后二级标题被选中后背景颜色和字体颜色*/
+.ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected{
+	background: rgba(1,211,159,0.16);
+	color: #ffffff;
+}
+
+/*右侧主体部分背景色和字体*/
+.rightContainer{        //先把container.less里定义rightContainer的background属性注释掉
+	background: linear-gradient(228deg, #b0d7cd 0%, #5291c6 32%, #283872 100%);
+	color: #ffffff;
+}
+/*模块背景色*/
+.amodule{
+	background: rgba(0,0,0,0.36);
+}
+/*模块头背景色*/
+.moduleHeader{
+	// background: rgba(0,0,0,0.24);
+	border-bottom: rgba(255,255,255,0.32) solid 1px;
+}
+/*模块body部分背景色*/
+.moduleBody{
+	// background: rgba(0,0,0,0.24);
+}

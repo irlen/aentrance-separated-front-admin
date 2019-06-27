@@ -1,0 +1,434 @@
+import React, { Component } from 'react'
+import { Select, Input, Button, message} from 'antd'
+import axios from 'axios'
+import propTypes from 'prop-types'
+import { wyAxiosPost } from '../components/WyAxios'
+import { host } from '../components/Host'
+const Option = Select.Option
+class LineSet extends Component{
+  state = {
+    standarList:{},//对应数据源IID所取的全部数据
+    xdata:'',//x轴对象
+    ydata:'',//y轴类
+    yydata:'',
+    alldata:[],//多个数据列
+    adata:'',//单个数据列
+    orderSort:'asc',
+    order:'',
+    time_unit:'min5',
+    limitCount:'10',
+    viewWidth:'12'
+  }
+  componentDidMount(){
+    const searchId = this.props.dataSource
+	  if(searchId != ''){
+		 wyAxiosPost('Source/getMonitField',{'id':searchId},(result)=>{
+  			this.setState({
+  			  standarList: Object.assign({},result.data.msg),
+  			  xdata:'',//x轴对象
+  			  ydata:'',//y轴类
+  			  yydata:'',//y轴对象
+  			  alldata:[],//多个数据列
+  			  adata:'',//单个数据列
+  			  order:''
+        },()=>{
+          if(this.props.initSetData){
+            const { xdata, yydata, ydata, alldata, order, orderSort, time_unit, limitCount, viewWidth } = this.props.initSetData
+            this.setState({
+              xdata, yydata, ydata, alldata, order, orderSort, limitCount, viewWidth,
+              time_unit: time_unit[2]
+            })
+          }
+        })
+		  })
+	  }
+  }
+  componentWillReceiveProps(nextProps){
+    const searchId = nextProps.dataSource
+    if(searchId != '' && this.props.dataSource !== nextProps.dataSource){
+		 wyAxiosPost('Source/getMonitField',{'id':searchId},(result)=>{
+  			this.setState({
+  			  standarList: Object.assign({},result.data.msg),
+  			  xdata:'',//x轴对象
+  			  ydata:'',//y轴对象
+  			  yydata:'', //y轴类
+  			  alldata:[],//多个数据列
+  			  adata:'',//单个数据列
+  			  order:''
+			   })
+		  })
+	  }
+  }
+  //xdataChange事件
+  xdataChange = (value) =>{
+    this.setState({
+      xdata: value,
+      alldata:[],
+      adata:'',
+      order:''
+    })
+  }
+  //ydataChange事件
+  ydataChange = (value)=>{
+    this.setState({
+      ydata: value,
+      yydata:'',
+      alldata:[],
+      adata:'',
+      order:''
+    })
+  }
+  //yydataChange事件
+  yydataChange = (value)=>{
+    this.setState({
+      yydata: value,
+      alldata:[],
+      adata:'',
+      order:''
+    })
+  }
+  //alldataChange事件
+  alldataChange = (value)=>{
+    this.setState({
+      alldata: [...value]
+    })
+  }
+  //adataChange事件
+  adataChange = (value)=>{
+    this.setState({
+      adata: value
+    })
+  }
+  //orderChange事件
+  orderChange = (value)=>{
+    this.setState({
+      order:value
+    })
+  }
+  orderSortChange = (value)=>{
+    this.setState({
+      orderSort: value
+    })
+  }
+  //time_unitChange事件
+  timeunitChange = (value)=>{
+    this.setState({
+      time_unit: value
+    })
+  }
+  //limitCountChange事件
+  limitCountChange = (value)=>{
+    this.setState({
+      limitCount: value
+    })
+
+  }
+  //viewWidthChange事件
+  viewWidthChange = (value)=>{
+    this.setState({
+      viewWidth: value
+    })
+  }
+
+  //生成ylist事件
+  foryyDataList = (value)=>{
+    if(value === ''){
+      return ''
+    }else if(value === 'bytes'){
+      return(
+        <Select style={{minWidth:"120px"}} onChange={this.yydataChange} value={this.state.yydata}>
+          <Option key="mykey" value="">请选择</Option>
+          {
+            this.state.standarList.bytes && this.state.standarList.bytes.length>0?
+            this.state.standarList.bytes.map(item=>{
+              return(
+                <Option key={item.id} value={item.id}>{item.name}</Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+      )
+    }else if(value === 'packets'){
+      return(
+        <Select style={{minWidth:"120px"}} onChange={this.yydataChange} value={this.state.yydata}>
+          <Option key="mykey" value="">请选择</Option>
+          {
+            this.state.standarList.packets && this.state.standarList.packets.length>0?
+            this.state.standarList.packets.map(item=>{
+              return(
+                <Option key={item.id} value={item.id}>{item.name}</Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+      )
+    }else if(value === 'time'){
+      return(
+        <Select style={{minWidth:"120px"}} onChange={this.yydataChange} value={this.state.yydata}>
+          <Option key="mykey" value="">请选择</Option>
+          {
+            this.state.standarList.time && this.state.standarList.time.length>0?
+            this.state.standarList.time.map(item=>{
+              return(
+                <Option key={item.id} value={item.id}>{item.name}</Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+      )
+    }
+  }
+  //数据列
+  forDataList = (xdata,ydata,yydata,untreatedData) =>{
+    if(xdata !== '' && ydata !== ''){
+      if(yydata === ''){
+        if(ydata === 'bytes' && untreatedData.bytes && untreatedData.bytes.length>0){
+          return(
+            <Select
+               mode="multiple"
+               style={{width: "350px"}}
+               placeholder="请选择"
+               defaultValue={[]}
+               value={this.state.alldata}
+               onChange={this.alldataChange}
+              >
+              {
+                untreatedData.bytes.map(item=>{
+                  return(
+                    <Option key={item.id} value={item.id}> {item.name} </Option>
+                  )
+                })
+              }
+            </Select>
+          )
+        }else if(ydata === 'packets' && untreatedData.packets && untreatedData.packets.length>0){
+          return(
+            <Select
+               mode="multiple"
+               style={{width: "350px"}}
+               placeholder="请选择"
+               defaultValue={[]}
+               value={this.state.alldata}
+               onChange={this.alldataChange}
+              >
+              {
+                untreatedData.packets.map(item=>{
+                  return(
+                    <Option key={item.id} value={item.id}>{item.name}</Option>
+                  )
+                })
+              }
+            </Select>
+          )
+        }else if(ydata === 'time' && untreatedData.time && untreatedData.time.length>0){
+          return(
+            <Select
+               mode="multiple"
+               style={{width: "350px"}}
+               placeholder="请选择"
+               defaultValue={[]}
+               value={this.state.alldata}
+               onChange={this.alldataChange}
+              >
+              {
+                untreatedData.time.map(item=>{
+                  return(
+                    <Option key={item.id} value={item.id}>{item.name}</Option>
+                  )
+                })
+              }
+            </Select>
+          )
+        }
+      }else if(yydata !== ''){
+        if(untreatedData.default && untreatedData.default.length>0){
+          return(
+            <Select
+               style={{width: "350px"}}
+               placeholder="请选择"
+               defaultValue=''
+               value={this.state.adata}
+               onChange={this.adataChange}
+              >
+              <Option key='mykey' value=''>请选择</Option>
+              {
+                untreatedData.default.map(item=>{
+                  if(item.id != xdata){
+                    return(
+                      <Option key={item.id} value={item.id}>{item.name}</Option>
+                    )
+                  }
+                })
+              }
+            </Select>
+          )
+        }
+      }
+    }else{
+      return (
+        <Select
+           mode="multiple"
+           style={{width: "350px"}}
+           placeholder="请选择"
+           defaultValue={[]}
+           value={this.state.alldata}
+           onChange={this.alldataChange}
+          >
+        </Select>
+      )
+    }
+  }
+  render(){
+    return(
+      <div>
+        {
+          //Xdata
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            x轴：
+          </div>
+          <div style={{flex:"auto"}}>
+             <Select style={{width:"120px"}} value={this.state.xdata} onChange={this.xdataChange}>
+              <Option key="mykey" value="">请选择</Option>
+              {
+                this.state.standarList.default && this.state.standarList.default.length>0?
+                this.state.standarList.default.map(item=>{
+                  return(
+                    <Option key={item.id} value={item.id}>{item.name}</Option>
+                  )
+                })
+                :
+                ''
+              }
+             </Select>
+          </div>
+        </div>
+        {
+          //ydata
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            y轴：
+          </div>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            <Select style={{width:"120px"}} value={this.state.ydata} onChange={this.ydataChange}>
+              <Option key="mykey" value="">请选择</Option>
+              <Option key="bytes" value="bytes">流量类</Option>
+              <Option key="packets" value="packets">数据包类</Option>
+              <Option key="time" value="time">时间类</Option>
+            </Select>
+          </div>
+          <div style={{flex:"auto"}}>
+              {
+                this.foryyDataList(this.state.ydata)
+              }
+          </div>
+        </div>
+        {
+          //数据列
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            数据列：
+          </div>
+          <div style={{flex:"auto"}}>
+             {
+       				 this.forDataList(this.state.xdata,this.state.ydata,this.state.yydata,this.state.standarList)
+             }
+          </div>
+        </div>
+        {
+          //排序
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            排序：
+          </div>
+          <div style={{flex:"auto"}}>
+            <Select style={{width: "120px"}} value={this.state.order} onChange={this.orderChange}>
+              <Option key="mykey" value="">请选择</Option>
+               {
+                 this.state.standarList.all && this.state.standarList.all.length>0?this.state.standarList.all.map(item=>{
+                   if (item.id == this.state.xdata){
+                     return(
+                       <Option key={item.id} value={item.id}>{item.name}</Option>
+                     )
+                   }else if (this.state.yydata && item.id == this.state.yydata){
+                     return(
+                       <Option key={item.id} value={item.id}>{item.name}</Option>
+                     )
+                   }
+
+                 })
+                 :
+                 ''
+               }
+             </Select>
+             <Select style={{width: "120px"}}  value={this.state.orderSort} onChange={this.orderSortChange}>
+              <Option key="asc" value="asc">升序</Option>
+              <Option key="desc" value="desc">降序</Option>
+             </Select>
+          </div>
+        </div>
+        {
+          //数据列
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            时间选择：
+          </div>
+          <div style={{flex:"auto"}}>
+            <Select style={{width: "120px"}}  value={this.state.time_unit} onChange={this.timeunitChange}>
+              <Option key="min5" value="min5">最近五分钟</Option>
+              <Option key="hour1" value="hour1">最近一小时</Option>
+              <Option key="hour3" value="hour3">最近三小时</Option>
+              <Option key="hour6" value="hour6">最近六小时</Option>
+            </Select>
+          </div>
+        </div>
+        {
+          //条数
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            条数：
+          </div>
+          <div style={{flex:"auto"}}>
+            <Select style={{width: "120px"}}  value={this.state.limitCount} onChange={this.limitCountChange}>
+               <Option key="10" value="10">10</Option>
+               <Option key="50" value="50">50</Option>
+               <Option key="100" value="100">100</Option>
+               <Option key="all" value="all">全部</Option>
+             </Select>
+          </div>
+        </div>
+        {
+          //条数
+        }
+        <div style={{display: "flex",justifyContent:"flext-start", marginBottom:"10px"}}>
+          <div style={{flexBasis:"120px",lineHeight: "30px"}}>
+            视图宽度：
+          </div>
+          <div style={{flex:"auto"}}>
+            <Select style={{width: "120px"}}  value={this.state.viewWidth} onChange={this.viewWidthChange}>
+               <Option key="12" value="12">50%</Option>
+               <Option key="24" value="24">100%</Option>
+             </Select>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+LineSet.propTypes = {
+  dataSource: propTypes.string.isRequired
+}
+export default LineSet

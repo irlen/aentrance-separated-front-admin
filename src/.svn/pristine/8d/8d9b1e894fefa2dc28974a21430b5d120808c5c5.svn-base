@@ -1,0 +1,132 @@
+import React, { Component } from 'react'
+import _ from 'lodash'
+import { Button, Row, Col, Drawer, Input, message, Popconfirm} from 'antd'
+
+import WyTable from '../components/WyTable'
+import StepWindow from './StepWindow'
+import { wyAxiosPost } from '../components/WyAxios'
+
+class DataSource extends Component{
+  constructor(){
+    super()
+  }
+  state={
+    visible: false,
+    xData: [],
+    yData: [],
+    ids:[],
+    pageSize:5
+  }
+
+  refreshTable = ()=>{
+    wyAxiosPost('Source/getSourceList',{},(result)=>{
+      const responseData = result.data.msg
+      let curxData = _.cloneDeep(responseData.xxx)
+      curxData.push({
+        title: '编辑',
+        dataIndex: 'edit',
+        //render: (record) => <a href="javascript:;"><i className="fa fa-pencil-square" aria-hidden="true"></i></a>
+        render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+      })
+      this.setState({
+        xData: curxData,
+        yData: responseData.yyy
+      })
+    })
+  }
+  componentDidMount(){
+    this.refreshTable()
+  }
+
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    });
+  };
+
+  onClose = () => {
+    this.subStepWindow.setEditId()
+    this.setState({
+      visible: false,
+    });
+  };
+  handleEdit = (id)=>{
+    this.setState({visible: true},()=>{
+      this.subStepWindow.forEdit(id)
+    })
+  }
+
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('Source/delSource',{ids:this.state.ids},(result)=>{
+        this.refreshTable()
+        this.setState({
+          ids:[]
+        })
+        message.success(result.data.msg)
+      })
+    }
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div className="amodule">
+        <div className="moduleBody">
+          <Row gutter={16} style={{padding:"20px 0 0 20px"}}>
+            <Col>
+              <Button type="primary" onClick={this.showDrawer}>
+                <i className="fa fa-plus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>新建</span>
+              </Button>
+              <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+                <Button style={{marginLeft: "10px"}}>
+                  <i className="fa fa-minus-square" aria-hidden="true"></i>
+                  <span style={{marginLeft:"5px"}}>删除</span>
+                </Button>
+              </Popconfirm>
+            </Col>
+          </Row>
+          <Row gutter={16} style={{marginTop:"16px"}}>
+            <Col span={24}>
+              <WyTable pageSize={this.state.pageSize} onShowSizeChange={this.pageSizeChange} rowSelection={rowSelection} xData={this.state.xData} yData={this.state.yData}/>
+            </Col>
+          </Row>
+        </div>
+
+        <Drawer
+          title="新建数据源"
+          width={"90%"}
+          placement="right"
+          destroyOnClose={true}
+          onClose={this.onClose}
+          maskClosable={true}
+          visible={this.state.visible}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <StepWindow refreshTable={this.refreshTable} ref={instance=>(this.subStepWindow = instance)} onClose={this.onClose}/>
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+export default DataSource

@@ -1,0 +1,63 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import propTypes from 'prop-types'
+
+import Line from '../components/Line'
+const Option = Select.Option
+class CoversationListPic extends Component{
+  state={
+    field:'bytes',
+    xData: [],
+    yData: [],
+    aUnit: ''
+  }
+  fieldChange = (value)=>{
+    this.setState({
+      field: value
+    })
+    this.props.setPicField(value)
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(
+      JSON.stringify(this.props.xData) === JSON.stringify(nextProps.xData) &&
+      JSON.stringify(this.props.yData) === JSON.stringify(nextProps.yData) &&
+      JSON.stringify(this.props.aUnit) === JSON.stringify(nextProps.aUnit)
+    )){
+      const {xData, yData, aUnit} = nextProps
+      this.setState({
+        xData,
+        yData,
+        aUnit
+      })
+    }
+  }
+  render(){
+    return(
+      <div className="amodule">
+        <div className="moduleHeader" style={{display: "flex"}}>
+          <div style={{flex:"1 1 auto",textOverflow: "ellipsis",whiteSpace:"nowrap",overflow:"hidden"}} title={this.props.moduleName}>{this.props.moduleName}</div>
+          <div style={{flex:"0 0 240px",paddingLeft:"20px"}}>
+            <span>指标显示：</span>
+            <Select
+            style={{minWidth: "120px"}}
+            size="small"
+            value={this.state.field}
+            onChange={this.fieldChange}
+            >
+              <Option key="bytes" value="bytes">流量</Option>
+              <Option key="data_time" value="data_time">交易时间</Option>
+              <Option key="num" value="num">请求次数</Option>
+            </Select>
+          </div>
+        </div>
+        <div className="moduleBody">
+          <Line xData={this.state.xData.length>0?this.state.xData:[]} yData={this.state.yData.length>0?this.state.yData:[]} aUnit={this.state.aUnit}/>
+        </div>
+      </div>
+    )
+  }
+}
+CoversationListPic.propType={
+  moduleName: propTypes.string
+}
+export default CoversationListPic

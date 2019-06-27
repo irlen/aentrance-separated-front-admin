@@ -1,0 +1,358 @@
+import React, { Component } from 'react'
+import { Row, Col, Select, Input, Button, Tabs, message} from 'antd'
+import _ from 'lodash'
+
+import SeniorTemplateTable from './SeniorTemplateTable'
+import WyDatePicker from '../components/WyDatePicker'
+import ComprehensiveStandar from './ComprehensiveStandar'
+import SeniorTemplatePic from './SeniorTemplatePic'
+import { wyAxiosPost } from '../components/WyAxios'
+import { singleIp, groupIp, singlePort } from '../components/RegExp'
+const Option = Select.Option
+const TabPane = Tabs.TabPane
+class SeniorFilter extends Component{
+  state={
+    //过滤条件
+    isShow: false,
+    filterTime: [],
+    customObject: [],//单选
+    serverObject: [],//单选
+    portObject: [],
+    protocol:'',
+    vlanId:'',
+    ifname:'',
+    ifnameList: [],
+    searchRule: {}
+  }
+  componentDidMount(){
+    wyAxiosPost('NetWork/getIfaceList',{},(result)=>{
+      this.setState({
+        ifnameList: result.data.msg
+      })
+    })
+  }
+  isShowChange = ()=>{
+    this.setState({
+      isShow: !this.state.isShow
+    })
+  }
+  //时间
+  filterTimeChange = (value)=>{
+    this.setState({
+      filterTime: value
+    })
+  }
+  //端口
+  portObjectChange = (value)=>{
+    this.setState({
+      portObject:[...value]
+    })
+  }
+  protocolChange = (value)=>{
+    this.setState({
+      protocol: value
+    })
+  }
+  //控制多选为单选
+  customObjectChange = (value)=>{
+    if(value.length>0){
+      const lastOne = value.pop()
+      let arr =[]
+      arr.push(lastOne)
+      this.setState({
+        customObject: [...arr]
+      })
+    }else if(value.length === 0){
+      this.setState({
+        customObject: []
+      })
+    }
+  }
+  //接口改变
+  ifnameChange = (value)=>{
+    this.setState({
+      ifname: value
+    })
+  }
+  //控制多选为单选
+  serverObjectChange = (value)=>{
+    if(value.length>0){
+      const lastOne = value.pop()
+      let arr =[]
+      arr.push(lastOne)
+      this.setState({
+        serverObject: [...arr]
+      })
+    }else if(value.length === 0){
+      this.setState({
+        serverObject: []
+      })
+    }
+  }
+  //vlan
+  vlanIdChange = (e)=>{
+    this.setState({
+      vlanId: e.target.value
+    })
+  }
+
+  doSearch = ()=>{
+    const erroList = []
+    if(this.state.filterTime.length === 0){
+      erroList.push('时间不能为空')
+    }
+    if(this.state.customObject.length>0 && !(singleIp.test(this.state.customObject[0]) || groupIp.test(this.state.customObject[0]))){
+      erroList.push('客户端格式有误')
+    }
+    if(this.state.serverObject.length>0 && !(singleIp.test(this.state.serverObject[0]) || groupIp.test(this.state.serverObject[0]))){
+      erroList.push('服务端格式有误')
+    }
+    if(this.state.portObject.length > 0){
+      this.state.portObject.map(item=>{
+        if(!singlePort.test(item)){
+          erroList.push('端口格式有误')
+          return
+        }
+      })
+    }
+    if(erroList.length === 0){
+      let searchRule = {}
+      searchRule.start_time = this.state.filterTime[0]
+      searchRule.last_time = this.state.filterTime[1]
+      searchRule.protocol = this.state.protocol
+      searchRule.ifname = this.state.ifname
+      searchRule.sip = ''
+      searchRule.dip = ''
+      if(this.state.customObject.length>0){
+        searchRule.sip = this.state.customObject[0]
+      }
+      if(this.state.serverObject.length>0){
+        searchRule.dip = this.state.serverObject[0]
+      }
+      searchRule.vlan_id = this.state.vlanId
+      searchRule.port = this.state.portObject
+      this.setState({
+        searchRule
+      })
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  defaultSearch = ()=>{
+    this.setState({
+      filterTime: [],
+      customObject: [],//单选
+      serverObject: [],//单选
+      portObject: [],
+      protocol:'',
+      vlanId:'',
+      ifname:'',
+      searchRule: {}
+    })
+  }
+  setSubTime = (value)=>{
+    this.sub1Table.setSubTime(value)
+    this.sub2Table.setSubTime(value)
+    this.sub3Table.setSubTime(value)
+    this.sub4Table.setSubTime(value)
+  }
+  render(){
+    return(
+      <div>
+        <Row gutter={16} style={{lineHeight:"40px"}}>
+          <Col sm={{span: 24}} md={{span: 15}} lg={{span: 10}}>
+            <div style={{display: "flex"}}>
+              <div style={{flex: "0 0 60px"}}>时间：</div>
+              <div style={{flex: "1 1 auto"}}>
+                <WyDatePicker curTime={this.state.filterTime} size="default" rangeTimeChange={this.filterTimeChange}/>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{span: 24}} md={{span: 9}} lg={{span: 7}}>
+            <div style={{display: "flex"}}>
+              <div style={{flex: "0 0 60px"}}>客户端：</div>
+              <div style={{flex: "1 1 auto"}}>
+                <Select
+                  mode="tags"
+                  style={{ width: '100%' }}
+                  placeholder="不限"
+                  value={this.state.customObject.length>0?this.state.customObject : []}
+                  onChange={this.customObjectChange}
+                >
+                </Select>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{span: 24}} md={{span: 15}} lg={{span: 7}}>
+            <div style={{display: "flex"}}>
+              <div style={{flex: "0 0 60px"}}>服务端：</div>
+              <div style={{flex: "1 1 auto"}}>
+                <Select
+                  mode="tags"
+                  style={{ width: '100%' }}
+                  placeholder="不限"
+                  value={this.state.serverObject.length>0?this.state.serverObject : []}
+                  onChange={this.serverObjectChange}
+                >
+                </Select>
+              </div>
+            </div>
+          </Col>
+
+          {
+            this.state.isShow?
+            <Col sm={{span: 24}} md={{span: 9}} lg={{span: 10}}>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 60px"}}>协议：</div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Select onChange={this.protocolChange} value={this.state.protocol} placeholder="不限" style={{width: "100%"}}>
+                    <Option key="mykey" value="">不限</Option>
+                    <Option key="tcp" value="tcp">TCP</Option>
+                    <Option key="udp" value="udp">UDP</Option>
+                  </Select>
+                </div>
+              </div>
+            </Col>
+            :
+            ''
+          }
+          {
+            this.state.isShow?
+            <Col sm={{span: 24}} md={{span: 15}} lg={{span: 7}}>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 60px"}}>端口：</div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="不限"
+                    value={this.state.portObject}
+                    onChange={this.portObjectChange}
+                  >
+
+                  </Select>
+                </div>
+              </div>
+            </Col>
+            :
+            ''
+          }
+          {
+            this.state.isShow?
+            <Col sm={{span: 24}} md={{span: 9}} lg={{span: 7}}>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 60px"}}>接口：</div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Select onChange={this.ifnameChange} value={this.state.ifname} placeholder="不限" style={{width:"100%"}}>
+                    <Option key="mykey" value="">不限</Option>
+                    {
+                      this.state.ifnameList.length>0?
+                      this.state.ifnameList.map(item=>{
+                        return(
+                          <Option key={item.old_name} value={item.old_name}>{item.new_name}</Option>
+                        )
+                      })
+                      :
+                      ''
+                    }
+                  </Select>
+                </div>
+              </div>
+            </Col>
+            :
+            ''
+          }
+
+          {
+            this.state.isShow?
+            <Col sm={{span: 24}} md={{span: 15}} lg={{span: 10}}>
+              <div style={{display: "flex"}}>
+                <div style={{flex: "0 0 60px"}}>VLAN_ID：</div>
+                <div style={{flex: "1 1 auto"}}>
+                  <Input onChange={this.vlanIdChange} placeholder="不限" type="text"/>
+                </div>
+              </div>
+            </Col>
+            :
+            ''
+          }
+          <Col sm={{span: 24}} md={{span: 9}} lg={{span: 7}}>
+            <div>
+              <Button type="primary" onClick={this.doSearch}>过滤</Button>
+              {
+                this.state.searchRule && JSON.stringify(this.state.searchRule).length>2?
+                (<span style={{marginLeft: "10px"}}>
+                  <Button onClick={this.defaultSearch}>重置</Button>
+                </span>)
+                :
+                ''
+              }
+
+              <span className="activeFontColor" style={{cursor: "pointer",userSelect:"none"}} onClick={this.isShowChange}>
+                {
+                  this.state.isShow?
+                  <span style={{marginLeft:"10px"}}>
+                    收起
+                    <i className="fa fa-chevron-up" aria-hidden="true"></i>
+                  </span>
+                  :
+                  <span style={{marginLeft:"10px"}}>
+                    展开
+                    <i className="fa fa-chevron-down" aria-hidden="true"></i>
+                  </span>
+                }
+              </span>
+            </div>
+          </Col>
+        </Row>
+        <div style={{height: "16px"}}>
+        </div>
+        {
+          this.state.searchRule && JSON.stringify(this.state.searchRule).length>2?
+          <div>
+            <Row gutter={16}>
+              <Col span={24}>
+                <div className="amodule">
+                  <div className="moduleBody">
+                    <SeniorTemplatePic
+                      searchRule={_.cloneDeep(this.state.searchRule)}
+                      setSubTime={(value)=>{this.setSubTime(value)}}
+                    />
+                  </div>
+                </div>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col sm={{span: 24}} md={{span: 12}} lg={{span: 12}}>
+                <SeniorTemplateTable getInstance={instance=>this.sub1Table=instance} obj="port" objType="port" searchRule={_.cloneDeep(this.state.searchRule)} type="port" name="端口对象解析"/>
+              </Col>
+              <Col sm={{span: 24}} md={{span: 12}} lg={{span: 12}}>
+                <SeniorTemplateTable getInstance={instance=>this.sub2Table=instance} obj="ptp" objType="ptp" searchRule={_.cloneDeep(this.state.searchRule)} type="crossip" name="交互的ip"/>
+              </Col>
+              <Col sm={{span: 24}} md={{span: 12}} lg={{span: 12}}>
+                <SeniorTemplateTable getInstance={instance=>this.sub3Table=instance} obj="ip" objType="host" searchRule={_.cloneDeep(this.state.searchRule)} type="topip" name="Top源IP"/>
+              </Col>
+              <Col sm={{span: 24}} md={{span: 12}} lg={{span: 12}}>
+                <SeniorTemplateTable getInstance={instance=>this.sub4Table=instance} obj="ip" objType="host" searchRule={_.cloneDeep(this.state.searchRule)} type="topdip" name="Top目的IP"/>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={24}>
+                <ComprehensiveStandar searchRule={_.cloneDeep(this.state.searchRule)}/>
+              </Col>
+            </Row>
+          </div>
+          :
+          ''
+        }
+      </div>
+    )
+  }
+}
+
+
+export default SeniorFilter

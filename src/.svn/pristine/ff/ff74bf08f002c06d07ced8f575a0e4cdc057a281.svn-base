@@ -1,0 +1,125 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import WyTable from '../../components/WyTable'
+import { wyAxiosPost } from '../../components/WyAxios'
+import WySpin from '../../components/WySpin'
+const Option = Select.Option
+class TableDetail extends Component{
+  state={
+    xData: [],
+    yData: [],
+    initColumns: [],//原始title行
+    standarList: [],//被选中要显示的指标
+    curLen: 0,//被选中指标的长度
+    isSpining: false,
+    pageSize:5,
+  }
+  componentWillReceiveProps(nextProps){
+    if(!(
+      this.props.activeIp === nextProps.activeIp &&
+      JSON.stringify(this.props.subTime) === JSON.stringify(nextProps.subTime) &&
+      this.props.activeMac === nextProps.activeMac
+    )){
+      const info = {}
+      info.ip = nextProps.activeIp
+      info.start_time = nextProps.subTime[0]
+      info.last_time = nextProps.subTime[1]
+      info.mac = nextProps.activeMac
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost(nextProps.apiName,{info: info},(result)=>{
+          const responseData = result.data.msg
+
+          this.setState({
+            standarList: [...nextProps.standarList],
+            curLen: nextProps.curLen
+          },()=>{
+            const newxxx = []
+            if(responseData.xxx && responseData.xxx.length>0){
+              responseData.xxx.map(item=>{
+                if(this.state.standarList.indexOf(item.key) !== -1){
+                  newxxx.push(item)
+                }
+              })
+            }
+            this.setState({
+              initColumns: responseData.xxx,
+              xData: newxxx,
+              yData: responseData.yyy,
+              isSpining: false
+            })
+          })
+      })
+    }
+  }
+  standarChange = (value)=>{
+    this.setState({
+      standarList: value,
+      curLen: value.length
+    },()=>{
+      const newxxx = []
+      if(this.state.initColumns && this.state.initColumns.length>0){
+        this.state.initColumns.map(item=>{
+          if(this.state.standarList.indexOf(item.key) !== -1){
+            newxxx.push(item)
+          }
+        })
+        this.setState({
+          xData: newxxx
+        })
+      }
+    })
+  }
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+  render(){
+    console.log(this.state.standarList)
+    return(
+      <div className="amodule">
+        <div className="moduleHeader">
+          <span>{this.props.moduleName}</span>
+          <span style={{float:"right"}}>
+            <span>指标显示：</span>
+            <Select
+              style={{minWidth: "180px"}}
+              mode="tags"
+              size="small"
+              onChange={this.standarChange}
+              maxTagCount={0}
+              maxTagPlaceholder={()=>('已选'+this.state.curLen+'项')}
+              value={this.state.standarList}
+            >
+              {
+                this.state.initColumns && this.state.initColumns.length>0?
+                this.state.initColumns.map(item=>{
+                  return(
+                    <Option key={item.key}>{item.title}</Option>
+                  )
+                })
+                :
+                ''
+              }
+            </Select>
+          </span>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <WyTable
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              pageSize={this.state.pageSize}
+              onShowSizeChange={this.pageSizeChange}
+            />
+          </WySpin>
+        </div>
+      </div>
+
+    )
+  }
+}
+
+export default TableDetail

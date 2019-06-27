@@ -1,0 +1,476 @@
+import React, { Component } from 'react'
+import { Row, Col, Button, Drawer, Input, Select, Switch, message, Popconfirm } from 'antd'
+import _ from 'lodash'
+
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import WySpin from '../components/WySpin'
+import { singleIp, rangeIp, singlePort, rangePort, forName } from '../components/RegExp'
+
+const TextArea = Input.TextArea
+const Option = Select.Option
+class AppBusiness extends Component{
+  state={
+    visible: false,
+    name:'',
+    describe:'',
+    ip:[],
+    port:[],
+    url:'',
+    type:'',
+    curId:'',
+    pageSize: 5,
+    save_data: false,
+    save_type:'',
+
+    isSpining: false,
+    ids: [],
+
+    searchAppName:'',
+    searchAppIp:[],
+
+    xData:[],
+    yData:[]
+  }
+  /*******************供调用***************************************************/
+  //获取所有应用
+    getAppBusinessData = (id,name,ip)=>{
+      let info = {}
+      if(id !== ''){
+        info.id = id
+      }
+      if(name !== ''){
+        info.name = name
+      }
+      if(ip !== ''){
+        info.ip = ip
+      }
+      this.setState({
+        isSpining: true
+      })
+      wyAxiosPost('DevObject/getAppInfo',info,(result)=>{
+        const responseData = result.data.msg
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '编辑',
+          dataIndex: 'edit',
+          render: (text, record, index)=><span style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>this.handleEdit(record.id)}><i className="fa fa-pencil-square" aria-hidden="true"></i></span>
+        })
+        this.setState({
+          xData: curxData,
+          yData: responseData.yyy,
+          isSpining: false
+        })
+      })
+    }
+
+    //保存应用
+    saveAppBusiness = (id,name,describe,ip,port,url,type,save_data, save_type)=>{
+      let data = {}
+      if(id !== ''){
+        data.id = id
+      }
+      data.name = name
+      data.describe = describe
+      data.ip = ip
+      data.port = port
+      data.url = url
+      data.type = type
+      data.save_data = save_data
+      data.save_type = save_type
+      wyAxiosPost('DevObject/saveAppInfo',data,(result)=>{
+        this.getAppBusinessData('','','')
+        message.success(result.data.msg)
+      })
+    }
+
+  /*******************供调用完**************************************************/
+  componentDidMount(){
+    this.getAppBusinessData('','','')
+  }
+
+  searchAppNameChange = (e)=>{
+    this.setState({
+      searchAppName: e.target.value
+    })
+  }
+  searchAppIpChange = (value)=>{
+    this.setState({
+      searchAppIp: value
+    })
+  }
+
+
+  nameChange = (e)=>{
+    this.setState({
+      name:e.target.value
+    })
+  }
+  ipChange = (value)=>{
+    this.setState({
+      ip: value
+    })
+  }
+  portChange = (value)=>{
+    this.setState({
+      port:value
+    })
+  }
+  urlChange = (e)=>{
+    this.setState({
+      url:e.target.value
+    })
+  }
+  typeChange = (value)=>{
+    this.setState({
+      type:value
+    })
+  }
+  saveDataChange = (value)=>{
+    if(value){
+      this.setState({
+        save_data:value,
+        save_type:'0'
+      })
+    }else{
+      this.setState({
+        save_data:value,
+        save_type:''
+      })
+    }
+  }
+  saveTypeChange = (value)=>{
+    this.setState({
+      save_type:value
+    })
+  }
+  describeChange = (e)=>{
+    this.setState({
+      describe:e.target.value
+    })
+  }
+
+  showDrawer = () => {
+    this.setState({
+      visible: true
+    });
+  };
+
+  onClose = () => {
+    this.setState({
+      name:'',
+      describe:'',
+      ip:[],
+      port:[],
+      url:'',
+      type:'',
+      save_data:false,
+      save_type: '',
+      visible: false,
+      curId: ''
+    });
+  };
+  pageSizeChange = (current, size)=>{
+    this.setState({
+      pageSize: size
+    })
+  }
+
+  doSearch = ()=>{
+    const erroList = []
+    if(this.state.searchAppIp.length>0){
+      this.state.searchAppIp.map(item=>{
+        if(!(rangeIp(item) || singleIp.test(item))){
+          erroList.push('ip格式有误')
+        }
+      })
+    }
+    if(erroList.length === 0){
+      let curRule = {}
+      curRule.name = this.state.searchAppName
+      curRule.ip = this.state.searchAppIp
+      this.setState({
+        isSpining: true
+      })
+      this.getAppBusinessData('',curRule.name,curRule.ip)
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  resetSerch = ()=>{
+    this.setState({
+      searchAppName:'',
+      searchAppIp:[]
+    })
+    this.getAppBusinessData('','','')
+  }
+  handleDelete = ()=>{
+    if(this.state.ids.length === 0){
+      message.warning('请选择要删除的项')
+    }else{
+      wyAxiosPost('DevObject/deleteAppInfo',{ids: this.state.ids},(result)=>{
+        message.success(result.data.msg)
+        this.getAppBusinessData('','','')
+        this.setState({
+          ids: []
+        })
+      })
+    }
+  }
+  handleEdit = (id)=>{
+    wyAxiosPost('DevObject/getAppInfo',{id:id},(result)=>{
+      console.log(result)
+      const responseData = result.data.msg
+      this.setState({
+        curId: id,
+        name: responseData.name,
+        describe: responseData.describe,
+        ip: responseData.ip.split(','),
+        port: responseData.port.split(','),
+        url: responseData.url,
+        type: responseData.type,
+        save_data: responseData.save_data,
+        save_type: responseData.save_type === null?'':responseData.save_type
+      })
+      this.showDrawer()
+    })
+  }
+  onOk = ()=>{
+    const {name,ip,port,url,type} = this.state
+    const erroList = []
+    if(name === ''){
+      erroList.push('名称不能为空')
+    }
+    if(name !== '' && !forName.test(name)){
+      erroList.push('名称格式有误')
+    }
+    if(ip.length === 0){
+      erroList.push('ip不能为空')
+    }
+    if(ip.length>0){
+      ip.map(item=>{
+        if(!(rangeIp(item) || singleIp.test(item))){
+          erroList.push('ip格式有误')
+          return
+        }
+      })
+    }
+    if(port.length === 0){
+      erroList.push('ip不能为空')
+    }
+    if(port.length>0){
+      port.map(item=>{
+        if(!(rangePort(item) || singlePort.test(item))){
+          erroList.push('端口格式有误')
+          return
+        }
+      })
+    }
+    if(erroList.length === 0){
+      this.saveAppBusiness(
+        this.state.curId,
+        this.state.name,
+        this.state.describe,
+        this.state.ip,
+        this.state.port,
+        this.state.url,
+        this.state.type,
+        this.state.save_data,
+        this.state.save_type
+      )
+      this.onClose()
+    }else{
+      let str = ''
+      erroList.map((item,index)=>{
+        str += index+1+'.'+item+'  '
+      })
+      message.warning(str)
+    }
+  }
+  render(){
+    const selectedRowKeys = this.state.ids
+    const rowSelection = {
+      selectedRowKeys,
+      onChange: (selectedRowKeys) => {
+        this.setState({
+          ids: selectedRowKeys
+        })
+      }
+    }
+    return(
+      <div className="moduleBody">
+        <Row gutter={16}>
+          <Col sm={{ span: 24}} md={{ span: 6}} lg={{span:6}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 64px"}}>应用名：</div>
+              <div style={{flex:"1 1 auto"}}><Input value={this.state.searchAppName} onChange={this.searchAppNameChange} placeholder="不限"/></div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 8}} lg={{span:6,offset: 1}}>
+            <div style={{lineHeight: "40px",display: "flex"}}>
+              <div style={{flex:"0 0 40px"}}>ip：</div>
+              <div style={{flex:"1 1 auto"}}>
+                <Select
+                  mode="tags"
+                  style={{ width: '100%' }}
+                  placeholder="不限"
+                  value={this.state.searchAppIp}
+                  onChange={this.searchAppIpChange}
+                >
+
+                </Select>
+              </div>
+            </div>
+          </Col>
+          <Col sm={{ span: 24}} md={{ span: 10}} lg={{span:6}}>
+            <div style={{lineHeight: "40px"}}>
+              <Button type="primary" onClick={this.doSearch}>查询</Button>
+              {
+                (this.state.searchAppName === '' && this.state.searchAppIp.length === 0)?
+                ''
+                :
+                <Button style={{marginLeft: "10px"}} onClick={this.resetSerch}>重置</Button>
+              }
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"20px"}}>
+          <Col>
+            <Button type="primary" onClick={this.showDrawer}>
+              <i className="fa fa-plus-square" aria-hidden="true"></i>
+              <span style={{marginLeft:"5px"}}>新建</span>
+            </Button>
+            <Popconfirm placement="topLeft" title={this.state.ids.length>0?'确定要删除所选项？':'请先选择您要删除的项？'} onConfirm={this.state.ids.length>0?this.handleDelete:()=>{}} okText="确定" cancelText="取消">
+              <Button style={{marginLeft: "10px"}}>
+                <i className="fa fa-minus-square" aria-hidden="true"></i>
+                <span style={{marginLeft:"5px"}}>删除</span>
+              </Button>
+            </Popconfirm>
+          </Col>
+        </Row>
+        <Row gutter={16} style={{marginTop:"16px"}}>
+          <Col span={24}>
+            <WySpin isSpining={this.state.isSpining}>
+              <WyTable pageSize={this.state.pageSize} onShowSizeChange={this.pageSizeChange} rowSelection={rowSelection} xData={this.state.xData} yData={this.state.yData}/>
+            </WySpin>
+          </Col>
+        </Row>
+        <Drawer
+          title={this.state.curId?"修改":"新建"}
+          width={720}
+          destroyOnClose={true}
+          placement="right"
+          onClose={this.onClose}
+          maskClosable={true}
+          visible={this.state.visible}
+          style={{
+            height: 'calc(100% - 55px)',
+            overflow: 'auto',
+            paddingBottom: 53,
+          }}
+        >
+          <div>
+            <ul>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>名称：</div>
+                <div style={{flex:"1 1  auto"}}><Input value={this.state.name} onChange={this.nameChange} /></div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>ip：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="请输入"
+                    value={this.state.ip}
+                    onChange={this.ipChange}
+                  >
+
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>端口：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="请输入"
+                    value={this.state.port}
+                    onChange={this.portChange}
+                  >
+
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>URL：</div>
+                <div style={{flex:"1 1  auto"}}><Input value={this.state.url} onChange={this.urlChange} /></div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>解析类型：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Select value={this.state.type} onChange={this.typeChange}>
+                    <Option key="mykey" value="">不限</Option>
+                    <Option key="other" value="other">其他</Option>
+                    <Option key="http" value="http">http</Option>
+                    <Option key="mysql" value="mysql">mysql</Option>
+                    <Option key="oracle" value="oracle">oracle</Option>
+                  </Select>
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>数据包：</div>
+                <div style={{flex:"1 1  auto"}}>
+                  <Switch checkedChildren="存储" unCheckedChildren="不存储" checked={this.state.save_data} onChange={this.saveDataChange} />
+                  {
+                    this.state.save_data && this.state.save_data === true?
+                    <Select style={{marginLeft: "20px"}} value={this.state.save_type} onChange={this.saveTypeChange}>
+                      <Option key="0" value="0">数据包头部信息</Option>
+                      <Option key="1" value="1">所有信息</Option>
+                    </Select>
+                    :
+                    ''
+                  }
+                </div>
+              </li>
+              <li style={{display:"flex",lineHeight: '40px'}}>
+                <div style={{flex:"0 0 80px"}}>描述：</div>
+                <div style={{flex:"1 1  auto"}}><TextArea value={this.state.describe} onChange={this.describeChange} autosize={{ minRows: 1 }} /></div>
+              </li>
+            </ul>
+          </div>
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              width: '100%',
+              borderTop: '1px solid #e8e8e8',
+              padding: '10px 20px',
+              textAlign: 'right',
+              left: 0,
+              background: '#fff',
+              borderRadius: '0 0 4px 4px',
+            }}
+          >
+            <Button
+              style={{
+                marginRight: 8,
+              }}
+              onClick={this.onClose}
+            >
+              取消
+            </Button>
+            <Button onClick={this.onOk} type="primary">确定</Button>
+          </div>
+        </Drawer>
+      </div>
+    )
+  }
+}
+
+export default AppBusiness

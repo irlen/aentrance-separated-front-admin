@@ -1,0 +1,28 @@
+import React, { Component } from 'react'
+import { Row, Col } from 'antd'
+import '../styles/style.less'
+class ForCut extends Component{
+  componentDidMount(){
+    //容器高度自适应
+    const loginContainer = document.querySelector(".loginContainer")
+    const windowH = parseInt(document.body.clientHeight,0);
+    loginContainer.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)
+      loginContainer.style.height = rwindowH +'px'
+    }
+  }
+  render(){
+    return (
+        <div className="loginContainer evntContainer" style={{padding: '20px'}}>
+          <Row className="cutContent">
+            <Col>
+              asdfadfa
+            </Col>
+          </Row>
+        </div>
+    )
+  }
+}
+
+export default ForCut

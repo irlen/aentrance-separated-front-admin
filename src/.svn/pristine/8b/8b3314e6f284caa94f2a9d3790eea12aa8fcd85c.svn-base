@@ -1,0 +1,58 @@
+import React, {Component} from 'react'
+import {Select,Input} from 'antd'
+import propTypes from 'prop-types'
+const Option = Select.Option;
+class RuleOne extends Component{
+  state={
+    id:'',
+    name:'',
+    operator:'=',
+    value:''
+  }
+  operatorChange = (value)=>{
+    const onerule = Object.assign({},{...this.state},{operator: value})
+    this.props.changeWhere(onerule)
+    this.setState({
+      operator: value
+    })
+  }
+  valueChange = (e)=>{
+    const onerule = Object.assign({},{...this.state},{value: e.target.value})
+    this.props.changeWhere(onerule)
+    this.setState({
+      value: e.target.value
+    })
+  }
+  componentDidMount(){
+    this.setState({
+      id: this.props.item.id,
+      name: this.props.item.name
+    })
+  }
+  render(){
+    return(
+      <span style={{display: "block"}} key={this.props.item.id}>
+        <span style={{width: "64px",display: "inline-block"}}>{this.props.item.name}</span>
+        <Select value={this.state.operator} onChange={this.operatorChange}>
+          {
+            this.props.item.opera_array && this.props.item.opera_array.length >0?
+            this.props.item.opera_array.map(item=>{
+              return (
+                <Option value={item.key} key={item.key} title={item.value} onChange={(e)=>this.ruleChange}>{item.value}</Option>
+              )
+            })
+            :
+            ''
+          }
+        </Select>
+        <Input placeholder='请输入' style={{width: "315px"}} onChange={this.valueChange}/>
+      </span>
+    )
+  }
+}
+
+RuleOne.propTypes = {
+  item: propTypes.object.isRequired,
+  changeWhere: propTypes.func.isRequired
+}
+export default RuleOne

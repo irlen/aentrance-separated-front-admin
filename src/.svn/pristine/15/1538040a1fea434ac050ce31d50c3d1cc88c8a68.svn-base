@@ -1,0 +1,136 @@
+import React, { Component } from 'react'
+import Line from '../components/Line'
+import { wyAxiosPost } from '../components/WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WySpin from '../components/WySpin'
+class TemplateForLine extends Component{
+  state={
+    showViewData: {},
+
+    xData: [],
+    yData: [],
+    aUnit:'',
+
+    subTime: [],
+    isSpining: false,
+    autoHeight: 300
+  }
+  getCurViewData = ()=>{
+    const {
+      id,
+      moduleName,
+      dataSource,
+      viewType,
+      xdata,
+      yydata,
+      time_unit,
+      adata,
+      alldata,
+      order,
+      orderSort,
+      limitCount,
+      viewWidth,
+      source
+    } = JSON.parse(this.state.showViewData.content)
+    const info = {
+      id,
+      moduleName,
+      dataSource,
+      viewType,
+      xdata,
+      yydata,
+      time_unit:time_unit.pop(),
+      adata,
+      alldata,
+      order,
+      orderSort,
+      limitCount,
+      viewWidth,
+      source
+    }
+    if(this.state.subTime && this.state.subTime.length>0){
+
+      info.time_unit = this.state.subTime
+    }
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('Source/selectData',{info: info},(result)=>{
+      const responseData = result.data
+      if(responseData){
+        if(this.state.subTime && this.state.subTime.length === 0){
+          const curTime = []
+          curTime.push(responseData.start_time)
+          curTime.push(responseData.last_time)
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            aUnit: responseData.unit,
+            subTime: [...curTime],
+            isSpining: false
+          })
+        }else{
+          this.setState({
+            xData: responseData.xxx,
+            yData: responseData.yyy,
+            aUnit: responseData.unit,
+            isSpining: false
+          })
+        }
+      }
+    })
+  }
+  componentDidMount(){
+    if(this.props.showViewData.id){
+      this.setState({
+        showViewData: this.props.showViewData,
+        autoHeight: this.props.autoHeight
+      },()=>{
+        this.getCurViewData()
+      })
+    }
+  }
+  componentWillReceiveProps(nextProps){
+    if(JSON.stringify(this.props.showViewData) !== JSON.stringify(nextProps.showViewData)){
+      this.setState({
+        showViewData: nextProps.showViewData,
+        autoHeight: nextProps.autoHeight
+      },()=>{
+        this.getCurViewData()
+      })
+    }
+  }
+  subTimeChange = (value,event)=>{
+    this.setState({
+      subTime: value
+    },()=>{
+      this.getCurViewData()
+    })
+  }
+  render(){
+    return(
+      <div className="amodule" style={{margin:"0px"}}>
+        <div className="moduleHeader" style={{display:"flex"}}>
+          <div className="moduleHeaderIn"style={{flex:"1 1 auto"}}>
+          {JSON.parse(this.props.showViewData.content).moduleName}
+          </div>
+          <div style={{float: "right",flex:"0 0 300px"}}>
+            <WyDatePicker curTime={this.state.subTime} rangeTimeChange={this.subTimeChange}/>
+          </div>
+        </div>
+        <div className="moduleBody">
+          <WySpin isSpining={this.state.isSpining}>
+            <Line
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+              aUnit={this.state.aUnit}
+              height={this.state.autoHeight}
+            />
+          </WySpin>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default TemplateForLine

@@ -1,0 +1,148 @@
+import React, { Component } from 'react'
+import { Select } from 'antd'
+import propTypes from 'prop-types'
+import _ from 'lodash'
+
+import Line from '../components/Line'
+import WySpin from '../components/WySpin'
+import WyTable from '../components/WyTable'
+import { wyAxiosPost } from '../components/WyAxios'
+import AppListTable from './AppListTable'
+const Option = Select.Option
+class AppListPic extends Component{
+  state = {
+    appName: '',
+    stringName:'',
+    subTime: [],
+    field: 'bytes',
+
+    xData: [],
+    yData: [],
+    aUnit: '',
+    isSpining: false
+  }
+  getAppPicData = ()=>{
+    let info = {}
+    info.field = this.state.field
+    info.start_time = ''
+    info.last_time = ''
+    if(this.state.subTime && this.state.subTime.length>0){
+      info.start_time = this.state.subTime[0]
+      info.last_time = this.state.subTime[1]
+    }
+    info.appName = this.state.appName
+    this.setState({
+      isSpining: true
+    })
+    wyAxiosPost('App/getOneAppLine',{info: info},(result)=>{
+      const responseData = result.data.msg
+      this.setState({
+        xData: responseData.xxx,
+        yData: responseData.yyy,
+        aUnit: responseData.unit,
+        isSpining: false
+      })
+    })
+  }
+  componentDidMount(){
+    this.setState({
+      appName: this.props.appName,
+      subTime: this.props.subTime,
+      stringName: this.props.stringName
+    })
+  }
+  componentWillReceiveProps(nextProps){
+    if(
+      !(this.props.appName === nextProps.appName && JSON.stringify(this.props.subTime) === JSON.stringify(nextProps.subTime))
+    ){
+      this.setState({
+        appName: nextProps.appName,
+        subTime: nextProps.subTime,
+        stringName: nextProps.stringName
+      },()=>{
+        this.getAppPicData()
+      })
+    }
+  }
+  fieldChange = (value)=>{
+    this.setState({
+      field: value
+    },()=>{
+      this.getAppPicData()
+    })
+  }
+  chartClick = (param)=>{
+    const flowPicTime = []
+    flowPicTime.push(param.name)
+    flowPicTime.push(param.name)
+    this.setSubTime.setSubTime(flowPicTime)
+  }
+  brushSelect = (params)=>{
+    if(params.batch[0].areas.length>0){
+      let flowPicTime = []
+      const xxxRange = params.batch[0].areas[0].coordRange
+      if(Math.abs(xxxRange[0]) === Math.abs(xxxRange[1])){
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }else{
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[0])])
+        flowPicTime.push(this.state.xData[Math.abs(xxxRange[1])])
+      }
+      if(flowPicTime[1] === undefined){
+        flowPicTime[1] = this.state.xData[parseInt(this.state.xData.length-1,0)]
+      }
+      this.setSubTime.setSubTime(flowPicTime)
+    }
+  }
+  render(){
+    return(
+      <div>
+        <div className="amodule">
+          <div className="moduleHeader">
+            <span>{this.state.stringName}</span>
+            <span style={{float:"right"}}>
+              <span>指标显示：</span>
+              <Select
+                style={{minWidth: "120px"}}
+                size="small"
+                value={this.state.field}
+                onChange={this.fieldChange}
+              >
+                <Option key="bytes" value="bytes" title='流量'>流量</Option>
+                <Option key="packets" value="packets" title='数据包'>数据包</Option>
+                <Option key="app_bytes" value="app_bytes" title='净荷'>净荷</Option>
+                <Option key="request_num" value="request_num" title='请求数'>请求数</Option>
+                <Option key="server_time" value="server_time" title='服务器响应时间'>服务响应时间</Option>
+                <Option key="tran_time" value="tran_time" title='数据传输时间'>数据传输时间</Option>
+                <Option key="conn_time" value="conn_time" title='三次握手时间'>三次握手时间</Option>
+                <Option key="rtt" value="rtt" title='RTT'>RTT</Option>
+              </Select>
+            </span>
+          </div>
+          <div className="moduleBody">
+            <WySpin isSpining={this.state.isSpining}>
+              <Line
+                xData={this.state.xData?this.state.xData:[]}
+                yData={this.state.yData?this.state.yData:[]}
+                aUnit={this.state.aUnit}
+                onChartClick={this.chartClick}
+                brush={true}
+                onBrushSelected={this.brushSelect}
+              />
+            </WySpin>
+          </div>
+        </div>
+        <AppListTable
+          appName={this.state.appName}
+          subTime={_.cloneDeep(this.state.subTime)}
+          stringName={this.state.stringName}
+          ref={(instance)=>this.setSubTime = instance}
+        />
+      </div>
+    )
+  }
+}
+AppListPic.propType={
+  moduleName: propTypes.string
+}
+export default AppListPic

@@ -1,0 +1,442 @@
+import React from 'react';
+import { Form, Input, Select, Row, Col, message } from 'antd';
+import './form.css'
+// import PropTypes from "prop-types";
+const Option = Select.Option;
+//告警类型所对应的供选择项
+const emergency_type = [{ "label": '手动选择阈值', "key": "value" }, { "label": '自动基线', "key": "line" }];//为方便区分,用"value"代表'手动选择阈值',"line"代表 '自动基线',"helath"代表 '系统健康'
+//告警对象第一个选择框可供选择的选择项
+const emergency_obj = {
+    'value': [{ "label": '网络', "key": "net" }, { "label": '应用', "key": "app" }],
+    'line': [{ "label": '全网流量', "key": "flow" }, { "label": '节点', "key": "node" }],
+    // 'helath': ["系统健康对象"]
+};
+//选择网络或应用对应的选择项
+var emergency_name = { "net": [{ "label": '销售部', "key": "sale" }, { "label": '开发部', "key": "product" }], "app": [{ "label": 'db1', "key": "db1" }, { "label": 'mysql', "key": "mysql" }]};
+//选择节点对应的选择项
+var emergency_node = {"node":[{"label":'10.0.0.14',"key":"ip_1"},{"label":"10.0.0.18","key":"ip_2"}]};
+
+class SetBasic extends React.Component {
+    constructor(props) {
+        super(props);
+        this.onSubmit = this.onSubmit.bind(this);
+        localStorage.setItem('danger_type','value')
+
+        const { getInstance } = this.props;
+        if (typeof getInstance === 'function') {
+            getInstance(this); // 在这里把this暴露给`parentComponent`
+        }
+
+        let object = JSON.parse(localStorage.Net_App_Node);
+        for (let key in object) {
+           if(key === 'app') {
+            emergency_name.app = object[key].map(item =>{
+                return {'label': item.name, 'key': item.id}
+            })
+                        
+           }else if (key === 'node') {
+
+            emergency_node.node = object[key].map(item =>{
+                return {'label': item.name, 'key': item.id}
+            })
+           }else if ( key === 'net') {
+            emergency_name.net = object[key].map(item =>{
+                return {'label': item.name, 'key': item.id}
+            })
+           }
+        }
+        const { basic } = this.props;
+        this.state = {
+            type:basic ? basic.type : { "label": '手动选择阈值', "key": "value" },//告警类型
+            obj: basic ? basic.obj : { "label": '网络', "key": "net" },//告警对象第一个选择框
+            Netname: emergency_name.net[0],
+            appName: emergency_name.app[0],
+            nodeName: emergency_node.node[0]
+        }
+    }
+    // // 子组件声明自己需要使用 context
+    // static contextTypes = {
+    //     onSubmit: PropTypes.func,
+    // }
+
+    componentWillReceiveProps = (nextProps) => {
+        if (this.props !== nextProps) {
+            let object = JSON.parse(localStorage.Net_App_Node);
+            for (let key in object) {
+            if(key === 'app') {
+                emergency_name.app = object[key].map(item =>{
+                    return {'label': item.name, 'key': item.id}
+                })
+                            
+            }else if (key === 'node') {
+
+                emergency_node.node = object[key].map(item =>{
+                    return {'label': item.name, 'key': item.id}
+                })
+            }else if ( key === 'net') {
+                emergency_name.net = object[key].map(item =>{
+                    return {'label': item.name, 'key': item.id}
+                })
+            }
+            }
+            this.setState({
+                Netname: emergency_name.net[0],
+                appName: emergency_name.app[0],
+                nodeName: emergency_node.node[0]
+            })
+        }
+    }
+
+    handleTypeChange = (item) => {
+        localStorage.setItem('danger_type',item.key)
+        this.setState({
+            type: item ? item : "",
+            obj:item ?  emergency_obj[item.key][0] : ''
+        })
+    }
+
+    onObjChange = (key,item) => {
+        switch (key) {
+            case "value":
+                this.setState({
+                    obj: item ,
+                    Netname: item.key === 'net' ? emergency_name.net[0] : "",
+                    appName: item.key === 'app' ? emergency_name.app[0] : ""
+                });
+                break;
+            case "Netname":
+                this.setState({
+                    Netname: item
+                });
+                break;
+            case "line":
+                this.setState({
+                    obj: item,
+                    nodeName: item.key === "node" ? emergency_node.node[0] : ''
+                });
+                break;
+            case "nodeName":
+                this.setState({
+                    nodeName: item
+                });
+                break;
+            case "app":
+                this.setState({
+                    appName: item
+                });
+                break;
+            default:
+                break;
+        }
+    }
+    onSubmit=()=>{
+        let obj ={}
+        this.props.form.validateFields((err, fieldsValue) => {
+           if(!err){
+               obj = fieldsValue;
+           }else{
+               message.error("名称不能为空");
+               obj=false
+           }
+
+        });
+        return obj
+    }
+    render() {
+        // const { cities } = this.state;
+        const { getFieldDecorator } = this.props.form;
+        const { basic } = this.props;
+        // 左侧表单Item的布局设置
+        const formItemLayout = {
+            labelCol: {
+                xs: { span: 24 },
+                sm: { span: 5 },
+                md: { span: 2 },
+
+            },
+            wrapperCol: {
+                xs: { span: 24 },
+                sm: { span: 16 },
+                md: { span: 16 },
+                // margainTop:"-20px"
+            },
+        };
+        return (
+            <div>
+                <Form>
+                    <Row>
+                        <Col  >
+                            <Form.Item
+                                {...formItemLayout}
+
+                                label="名称"
+                            >
+                                {getFieldDecorator('name', {
+                                    initialValue: basic ? basic.name : "",
+                                    rules: [{ required: true }],
+                                })(
+                                    <Input style={{ "width": "40%" }} />
+                                )}
+                            </Form.Item>
+
+                            <Form.Item
+                                {...formItemLayout}
+                                label="告警类型"
+
+                            >
+                                {getFieldDecorator('type', {
+                                    initialValue: basic ? basic.type : emergency_type[0],
+                                    rules: [{ required: true }],
+                                })(
+                                    <Select
+                                        onChange={this.handleTypeChange.bind(this)}
+                                        // mode="tags"
+                                        labelInValue={true}
+                                        showArrow
+                                        showSearch={true}
+                                        optionFilterProp="children"
+                                        style={{"width":"40%"}}
+                                    >
+                                    {emergency_type.map((item) => <Option key={item.key} value={item.key} >{item.label}</Option>)}
+                                    </Select>
+                                )}
+                            </Form.Item>
+                            {
+                                this.state.type.key === 'value' ?
+                                    <Form.Item
+                                        {...formItemLayout}
+                                        label="告警对象"
+                                        className="obj_key"
+                                    >
+                                        <Input.Group   >
+                                                {/* <Select
+                                                    // mode="tags" //网络和应用选择栏
+                                                    value={this.state.obj ? this.state.obj : emergency_obj.value[0]}
+                                                    onChange={this.onObjChange.bind(this,"value")}
+                                                    showArrow
+                                                    labelInValue={true}
+                                                style={{ width: '20%' }}
+                                                optionFilterProp="children"
+                                                 wrappedComponentRef={(form) => this.form = form}
+                                                >
+
+                                                {(emergency_obj.value).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                </Select> */}
+                                            {/* <Form layout="inline"> */}
+                                            <Col span={4}>
+
+                                            <Form.Item
+                                            >
+                                                {getFieldDecorator('obj', {
+                                                    initialValue: basic ? basic.obj : emergency_obj.value[0],
+                                                    rules: [{ required: true }],
+                                                })(
+                                                    <Select
+                                                    // mode="tags" //网络和应用选择栏
+                                                    // value={this.state.obj ? this.state.obj : emergency_obj.value[0]}
+                                                    onChange={this.onObjChange.bind(this, "value")}
+                                                    showArrow
+                                                    labelInValue={true}
+                                                    style={{ width: '100%'  }}
+                                                    optionFilterProp="children"
+                                                    >
+                                                    {(emergency_obj.value).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                    </Select>
+                                                )}
+                                            </Form.Item>
+                                            </Col>
+
+                                               { this.state.obj.key === 'net'?
+                                            //    <Select
+                                            //         mode="multiple" //网络名选择栏
+                                            //         value={this.state.Netname ? this.state.Netname : [emergency_name.net[0]]}
+                                            //         onChange={this.onObjChange.bind(this,"Netname")}
+                                            //         showArrow
+                                            //         labelInValue={true}
+                                            //         style={{ width: '45%'  }}
+                                            //         optionFilterProp="children"
+                                            //     >
+                                            //         {(emergency_name.net).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                            //     </Select>
+                                                <Col span={12}>
+                                                <Form.Item
+                                                >
+                                                    {getFieldDecorator('net', {
+                                                        initialValue: basic ? basic.net : [emergency_name.net[0]],
+                                                        rules: [{ required: true }],
+                                                    })(
+                                                        <Select
+                                                            // mode="multiple" //网络名选择栏
+                                                            //value={this.state.Netname ? this.state.Netname : [emergency_name.net[0]]}
+                                                            onChange={this.onObjChange.bind(this, "Netname")}
+                                                            showArrow
+                                                            labelInValue={true}
+                                                            style={{ width: '100%'  }}
+                                                            optionFilterProp="children"
+                                                        >
+                                                        {(emergency_name.net).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                        </Select>
+                                                    )}
+                                                </Form.Item>
+                                                </Col>
+                                                :this.state.obj.key === 'app' ?
+                                                    // <Select
+                                                    //     mode="multiple"//应用名选择栏
+                                                    //     value={this.state.appName ? this.state.appName :[emergency_name.app[0]]}
+                                                    //     onChange={this.onObjChange.bind(this, "app")}
+                                                    //     showArrow
+                                                    //     labelInValue={true}
+                                                    //     // style={{"width":"200px"}}
+                                                    //     optionFilterProp="children"
+                                                    //     style={{ width: '45%'   }}
+                                                    // >
+                                                    //     {(emergency_name.app).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                    // </Select>
+                                                    <Col span={12}>
+                                                    <Form.Item
+                                                    >
+                                                        {getFieldDecorator('app', {
+                                                            initialValue: basic ? basic.app : [emergency_name.app[0]],
+                                                            rules: [{ required: true }],
+                                                        })(
+                                                            <Select
+                                                                // mode="multiple"//应用名选择栏
+                                                                // value={this.state.appName ? this.state.appName : [emergency_name.app[0]]}
+                                                                onChange={this.onObjChange.bind(this, "app")}
+                                                                showArrow
+                                                                labelInValue={true}
+                                                                // style={{"width":"200px"}}
+                                                                optionFilterProp="children"
+                                                                style={{ width: '100%'  }}
+                                                            >
+                                                            {(emergency_name.app).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                            </Select>
+                                                        )}
+                                                    </Form.Item>
+                                                    </Col>
+                                                    :''
+                                                }
+                                                {/* </Form> */}
+                                            </Input.Group>
+
+
+                                    </Form.Item >
+                                    :
+                                    (this.state.type.key === 'line' ?
+
+                                        <Form.Item
+                                            {...formItemLayout}
+
+                                            label="告警对象"
+                                        >
+                                            <Input.Group compact  >
+                                            {/* <Form layout="inline"> */}
+                                                {/* <Select
+                                                    // mode="tags" //节点和全网流量选择栏
+                                                    value={this.state.obj ? this.state.obj : emergency_obj.line[0]}
+                                                    onChange={this.onObjChange.bind(this,"line")}
+                                                    showArrow={true}
+                                                    labelInValue={true}
+                                                    showSearch={true}
+                                                    style={{ width: '20%' }}
+                                                    optionFilterProp="children"
+                                                >
+                                                    {(emergency_obj.line).map((item, index) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                </Select> */}
+                                                <Col span={4}>
+                                                <Form.Item
+                                                >
+                                                    {getFieldDecorator('line', {
+                                                        initialValue: basic ? basic.line: emergency_obj.line[0],
+                                                        // rules: [{ required: true }],
+                                                    })(
+                                                        <Select
+                                                            // mode="tags" //节点和全网流量选择栏
+                                                            onChange={this.onObjChange.bind(this, "line")}
+                                                            showArrow={true}
+                                                            labelInValue={true}
+                                                            showSearch={true}
+                                                            style={{ width: '101%' }}
+                                                            optionFilterProp="children"
+                                                        >
+                                                        {(emergency_obj.line).map((item, index) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                        </Select>
+                                                    )}
+                                                </Form.Item>
+                                                </Col>
+                                                {
+                                                    ( (basic && basic.flow) ||this.state.obj && (this.state.obj.key !== 'flow')) ?//节点名选择栏
+                                                        // <Select
+                                                        //     mode="multiple"
+                                                        //     value={this.state.nodeName ? this.state.nodeName : [emergency_node.node[0]]}
+                                                        //     onChange={this.onObjChange.bind(this,"nodeName")}
+                                                        //     showArrow={true}
+                                                        //     labelInValue={true}
+                                                        //     style={{ width: '45%'}}
+                                                        //     optionFilterProp="children"
+
+                                                        // >
+                                                        //     {(emergency_node.node).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                        // </Select>
+                                                        <Col span={12}>
+                                                        <Form.Item
+                                                        >
+                                                            {getFieldDecorator('flow', {
+                                                                initialValue: basic ? basic.flow : [emergency_node.node[0]],
+                                                                // rules: [{ required: true }],
+                                                            })(
+                                                                <Select
+                                                                // mode="multiple"
+                                                                // value={this.state.nodeName ? this.state.nodeName : [emergency_node.node[0]]}
+                                                                onChange={this.onObjChange.bind(this, "nodeName")}
+                                                                showArrow={true}
+                                                                labelInValue={true}
+                                                                style={{ width: '100%' }}
+                                                                optionFilterProp="children"
+                                                                >
+                                                                {(emergency_node.node).map((item) => <Option key={item.key} value={item.key}>{item.label}</Option>)}
+                                                                </Select>
+                                                            )}
+                                                        </Form.Item>
+                                                        </Col>
+                                            :""
+                                            
+                                            }
+                                            {/* </Form> */}
+                                            </Input.Group>
+                                        </Form.Item>
+                                        : this.state.type.key === 'helath' ?
+                                            <Form.Item
+                                                {...formItemLayout} //系统健康栏
+                                                label="告警对象"
+                                            >
+                                                {getFieldDecorator('helath', {
+                                                    initialValue: "系统健康对象",
+                                                    rules: [{ required: true, message: '请选择告警对象!' }],
+                                                })(
+
+                                                    <Input disabled={true} style={{ "width": '67.5%' }}/>
+
+                                                )}
+                                            </Form.Item>
+                                    : "")
+                                }
+                        <Form.Item
+                                {...formItemLayout}
+                                label="描述"
+                            >
+                                {getFieldDecorator('description', {
+                                    initialValue: basic ? basic.description : "",
+
+                                })(
+                                    <Input.TextArea rows={8}  style={{ "width": '67.5%',"height":"80px" }}/>
+                                )}
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                </Form>
+            </div>
+        )
+    }
+}
+export default Form.create()(SetBasic)

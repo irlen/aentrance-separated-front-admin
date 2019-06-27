@@ -1,0 +1,25 @@
+import _ from 'lodash'
+const homeview = (state={modules: []},action)=>{
+   switch(action.type){
+    case 'ADD_MODULE':
+      const newModules = _.cloneDeep(state.modules)
+       newModules.push(action.moduleData)
+      return {modules:newModules}
+    case 'SET_POSITION':
+      const newPosition = _.cloneDeep(state.modules)
+      newPosition.map((item,index)=>{
+        action.positions.map((subItem,subIndex)=>{
+          if(item.id === subItem.i){
+            const {h,w,x,y} = subItem
+            newPosition[index].position = Object.assign({},newPosition[index].position,{h,w,x,y})
+            return
+          }
+        })
+      })
+      return {modules:newPosition}
+    default:
+      return state
+  }
+}
+
+export default homeview

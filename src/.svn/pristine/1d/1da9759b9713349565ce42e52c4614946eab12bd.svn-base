@@ -1,0 +1,80 @@
+import React, { Component } from 'react'
+import { Row, Col } from 'antd'
+
+
+import { wyAxiosPost } from 'WyAxios'
+import WyDatePicker from '../components/WyDatePicker'
+import WyTable from '../components/WyTable'
+import Line from '../components/Line'
+class AlertDetail extends Component{
+  constructor(props){
+    super(props)
+    this.compileColumns = (activeRowKey,initColumns)=>{
+      let newColumns
+      if(initColumns.length > 0){
+        newColumns = initColumns.map(item=>{
+          const str = ''
+           item.render = (text, record, index) => {
+             if(record.key === activeRowKey){
+               return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="activeRow" > {text} </span>
+             }else{
+              return <span style={{cursor: "pointer",display: "inline-block",width: "100%"}} className="" > {text} </span>
+             }
+           }
+           return item
+        })
+      }
+      return newColumns
+    }
+  }
+  state = {
+    allTime: [],
+    xData: [],
+    yData: [],
+
+    lxData: [],
+    lyData: []
+  }
+  component(){
+    wyAxiosPost('',{},(result)=>{
+
+    })
+  }
+  allTimeChange = (value)=>{
+    this.setState({
+      allTime: value
+    })
+  }
+  render(){
+    return(
+      <div>
+        <Row>
+          <Col>
+            <span>时间：<WyDatePicker curTime={this.state.allTime} rangeTimeChange={this.allTimeChange} size="default" style={{maxWidth: "280px"}}/></span>
+            <span style="float: right;"></span>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <WyTable
+              xData={this.state.xData?this.state.xData:[]}
+              yData={this.state.yData?this.state.yData:[]}
+            />
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <Line
+              lxData={this.state.lxData?this.state.lxData:[]}
+              lyData={this.state.lyData?this.state.lyData:[]}
+            />
+          </Col>
+        </Row>
+
+
+      </div>
+    )
+  }
+}
+
+export default AlertDetail

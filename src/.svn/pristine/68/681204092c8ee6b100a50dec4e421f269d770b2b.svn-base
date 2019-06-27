@@ -1,0 +1,26 @@
+import React from 'react'
+import Avatarmenu from './Avatamenu'
+import { withRouter } from 'react-router'
+import { connect } from 'react-redux'
+import { userLogout } from '../actions'
+class Header extends React.Component {
+  toNavRemember = ()=>{
+    this.props.history.push('/navremember')
+  }
+  render(){
+    return (
+      <div className='pagetop' style={{display:"flex"}}>
+          <div style={{background:"#",height:"100%",flex:"0 0 168px"}}>
+            <img onClick={this.toNavRemember} style={{ height:"48px", margin:"-4px 0 0 0",cursor:"pointer"}} src={require("../Login/images/logo.png")} width="100%" />
+          </div>
+          <div style={{flex:"1 1 auto"}}>
+            <Avatarmenu
+              userName={ localStorage.userInfo?JSON.parse(localStorage.userInfo).username:''}
+            />
+          </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(Header)

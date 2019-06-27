@@ -1,0 +1,375 @@
+import React, { Component } from 'react'
+import { Row, Col, Input, Select, Spin, message } from 'antd'
+import $ from 'jquery'
+import { withRouter } from 'react-router-dom'
+import _ from 'lodash'
+import debounce from 'lodash/debounce'
+import moment from 'moment';
+import 'moment/locale/zh-cn';
+
+import Header from '../Layout/header'
+import { wyAxiosPost } from '../components/WyAxios'
+import { singleHost } from '../components/Host'
+import { singleIp, singlePort } from '../components/RegExp'
+import { routeOne } from '../Routes/routeConfig'
+
+moment.locale('zh-cn');
+const Option = Select.Option
+class NavRemember extends Component{
+  constructor(props) {
+    super(props);
+    this.lastFetchId = 0;
+    this.fetchUser = debounce(this.fetchUser, 800);
+  }
+  state={
+    invariableModule: [],
+    rememberModule: [],
+    data: [], //检索匹配后列表
+    value: [],
+    fetching: false,
+    searchList: []  //检索列表
+  }
+  componentWillMount(){
+    const invariableModule = []
+    if(routeOne && routeOne.length>0){
+      routeOne.map(item=>{
+        if(item.remember){
+          const data = {}
+          data.url = item.path
+          data.name = item.name
+          data.icon = item.icon
+          invariableModule.push(data)
+        }else{
+          if(item.routes && item.routes.length>0){
+            item.routes.map(subItem=>{
+              if(subItem.remember){
+                const data = {}
+                data.url = subItem.path
+                data.name = subItem.name
+                data.icon = item.icon
+                invariableModule.push(data)
+              }
+            })
+          }
+        }
+      })
+    }
+    this.setState({
+      invariableModule
+    })
+    wyAxiosPost('NavUrl/getNavUrl',{},(result)=>{
+      this.setState({
+        rememberModule: result.data.msg
+      })
+    })
+  }
+  componentDidMount(){
+    //容器高度自适应
+    const loginContainer = document.querySelector(".loginContainer")
+    const windowH = parseInt(document.body.clientHeight,0);
+    loginContainer.style.height = windowH +'px'
+    window.onresize = ()=>{
+      const rwindowH = parseInt(document.body.clientHeight,0)
+      loginContainer.style.height = rwindowH +'px'
+    }
+    $('.ant-input').css({
+      backgroundColor:"rgba(0,0,0,0.2)",
+      border:"solid 1px rgba(0,0,0,0.3)",
+      borderRadius:"40px",
+      color:"rgba(255,255,255,0.8)"
+    })
+    $('.ant-input-search-icon').css('color',"rgba(255,255,255,0.8)")
+    this.getDataList()
+  }
+  toPath = (curUrl)=>{
+    this.props.history.push(curUrl)
+  }
+  deviceMonitor = ()=>{
+    window.open('http://'+singleHost+':8878/pureportal/seconddevurl/seconddevurl.jsp?username=admin')
+  }
+  //搜索相关
+  getNavList = ()=>{
+    const navList = []
+    if(routeOne && routeOne.length>0){
+      routeOne.map(item=>{
+        if(item.routes && item.routes.length>0){
+          item.routes.map(subItem=>{
+            navList.push({
+              name: subItem.name,
+              value: subItem.path,
+              searchType: 'nav'
+            })
+          })
+        }
+      })
+    }
+    return navList
+  }
+  //获取可搜索数据列表
+  getDataList = ()=>{
+    const p1 = new Promise((resolve,reject)=>{
+        wyAxiosPost('NavUrl/getAppList',{},(result)=>{
+          resolve(result.data.msg)
+        })
+    })
+    const p2 = new Promise((resolve,reject)=>{
+        wyAxiosPost('NavUrl/getHostArr',{},(result)=>{
+          resolve(result.data.msg)
+        })
+    })
+
+    const p3 = new Promise((resolve,reject)=>{
+        wyAxiosPost('NavUrl/getIfaceList',{},(result)=>{
+          resolve(result.data.msg)
+        })
+    })
+    const arr = []
+    arr.push(p1)
+    arr.push(p2)
+    arr.push(p3)
+    Promise.all(arr).then((result)=>{
+      const appList = _.cloneDeep(result[0])
+      const compiledAppList = []
+      if(appList && appList.length>0){
+        appList.map(item=>{
+          const atom = {}
+          atom.listType = item.listType
+          atom.obj = item.name
+          atom.objType = item.objType
+          atom.previosPath = '/app'
+          atom.name = item.name
+          atom.value = '/subpage/applyview/'
+          atom.searchType = 'app'
+          compiledAppList.push(atom)
+        })
+      }
+      const hostGroupList = _.cloneDeep(result[1])
+      const compiledHostGroupList = []
+      if(hostGroupList && hostGroupList.length>0){
+        hostGroupList.map(item=>{
+          const atom = {}
+          atom.listType = item.listType
+          atom.obj = item.name
+          atom.objType = item.objType
+          atom.previosPath = '/app'
+          atom.name = item.name
+          atom.value = '/subpage/hostgroupview/'
+          atom.searchType = 'hostGroup'
+          compiledHostGroupList.push(atom)
+        })
+      }
+      const netMaskList = _.cloneDeep(result[2])
+      const compiledNetMaskList = []
+      //网口
+      if(netMaskList && netMaskList.length>0){
+        netMaskList.map(item=>{
+          const atom = {}
+          atom.listType = item.listType
+          atom.obj = item.obj
+          atom.objType = item.objType
+          atom.previosPath = '/app'
+          atom.name = item.obj
+          atom.value = '/subpage/hostview/'
+          atom.searchType = 'netMask'
+          compiledNetMaskList.push(atom)
+        })
+      }
+      const navList = this.getNavList()
+      let searchList = navList.concat(compiledAppList,compiledHostGroupList,compiledNetMaskList)
+      this.setState({
+        searchList
+      })
+    }).catch(err=>{
+      message.warning(err)
+    })
+  }
+  fetchUser = (value) => {
+    this.setState({ data: [], fetching: true });
+    if(value.length>0){
+      const data = _.cloneDeep(this.state.searchList)
+      const filterData = []
+      if(data && data.length>0){
+        data.map(item=>{
+          if(item.name.indexOf(value) !==  -1){
+            filterData.push(item)
+          }
+        })
+      }
+      this.setState({
+        data: filterData,
+        fetching: false
+      })
+    }else{
+      this.setState({
+        data: [],
+        fetching: false
+      })
+    }
+  }
+
+  handleChange = (value) => {
+    if(value.length>0){
+      const lastOne = value.pop()
+      let arr =[]
+      arr.push(lastOne)
+      this.setState({
+        value: [...arr],
+        fetching: false,
+      },()=>{
+        const filterList = _.cloneDeep(this.state.data)
+        if(filterList.length === 0){
+          //此处在ip和端口中进行匹配
+          const searchValue = this.state.value[0]
+          if(searchValue && singleIp.test(searchValue)){
+            const atom = {}
+            atom.listType = 'host'
+            atom.obj = searchValue
+            atom.objType = 'host'
+            atom.previosPath = '/app'
+            atom.name = searchValue
+            atom.value = '/subpage/hostview/'
+            atom.searchType = 'host'
+            const { listType, obj, objType, previousPath } = atom
+            const parameter = { listType, obj, objType, previousPath }
+            parameter.start_time = moment().subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+            parameter.last_time = moment().format('YYYY-MM-DD HH:mm')
+            const realParam = encodeURIComponent(JSON.stringify(parameter))
+            const url = atom.value+realParam
+            window.open(url)
+          }else if(searchValue && singlePort.test(searchValue)){
+            const atom = {}
+            atom.listType = 'port'
+            atom.obj = searchValue
+            atom.objType = 'port'
+            atom.previosPath = '/app'
+            atom.name = searchValue
+            atom.value = '/subpage/portview/'
+            atom.searchType = 'port'
+            const { listType, obj, objType, previousPath } = atom
+            const parameter = { listType, obj, objType, previousPath }
+            parameter.start_time = moment().subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+            parameter.last_time = moment().format('YYYY-MM-DD HH:mm')
+            const realParam = encodeURIComponent(JSON.stringify(parameter))
+            const url = atom.value+realParam
+            window.open(url)
+          }else{
+            message.warning('对不起，未检索到相应匹配资源')
+          }
+        }else if(filterList && filterList.length > 0){
+          let isCompa = false
+          for (let item of this.state.searchList){
+            if(this.state.value[0] === item.name){
+              if(item.searchType === 'nav'){
+                this.props.history.push(item.value)
+              }else if(item.searchType === 'app' || item.searchType === 'hostGroup' || item.searchType === 'netMask'){
+                const { listType, obj, objType, previousPath } = item
+                const parameter = { listType, obj, objType, previousPath }
+                parameter.start_time = moment().subtract(1, "hours").format('YYYY-MM-DD HH:mm')
+                parameter.last_time = moment().format('YYYY-MM-DD HH:mm')
+                const realParam = encodeURIComponent(JSON.stringify(parameter))
+                const url = item.value+realParam
+                window.open(url)
+              }
+              isCompa = true
+              break
+            }
+          }
+          if(!isCompa){
+            message.warning('对不起，未检索到相应匹配资源')
+          }
+        }
+      })
+    }else if(value.length === 0){
+      this.setState({
+        value: [],
+        fetching: false,
+      })
+    }
+  }
+  render(){
+    const { fetching, data, value } = this.state
+    return(
+      <div className="loginContainer">
+        <Header />
+        <div className="fullScreen" style={{
+            width: "600px",
+            marginLeft:"-300px",
+            height: "480px",
+            position: "absolute",
+            left:"50%",
+            top:"50%",
+            marginTop:"-160px",
+            color:"rgba(255,255,255,0.8)"
+          }}
+        >
+          <Row style={{margin:"20px 0 40px 0"}}>
+            <Col style={{textAlign:"center"}}>
+              <Select
+                mode="tags"
+                autoFocus={true}
+                value={value}
+                placeholder={<span><i className="fa fa-search" aria-hidden="true"></i></span>}
+                notFoundContent={fetching ?<Spin size="small" /> : null}
+                filterOption={false}
+                onSearch={this.fetchUser}
+                onChange={this.handleChange}
+                style={{ width: '518px'}}
+
+              >
+                {data.map(d => <Option key={d.value} value={d.name}>{d.name}</Option>)}
+              </Select>
+            </Col>
+          </Row>
+          <Row>
+            {
+              this.state.invariableModule && this.state.invariableModule.length>0?
+              this.state.invariableModule.map(item=>{
+                return (
+                  <Col span={6} key={item.url} style={{padding: "15px 0 15px 0"}}>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{width: "64px",height:"64px",borderRadius:"40px",background:"rgba(0,0,0,0.3)",margin:"0 auto",fontSize:"30px",textAlign:"center",lineHeight:"62px",cursor:"pointer"}}>
+                      <span><i className={ item.icon } aria-hidden="true"></i></span>
+                    </div>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{textAlign:"center", cursor:"pointer"}}>
+                      {item.name}
+                    </div>
+                  </Col>
+                )
+              })
+              :
+              ''
+            }
+            {
+              <Col span={6} key={'mykey'} style={{padding: "15px 0 15px 0"}}>
+                <div onClick={this.deviceMonitor} style={{width: "64px",height:"64px",borderRadius:"40px",background:"rgba(0,0,0,0.3)",margin:"0 auto",fontSize:"30px",textAlign:"center",lineHeight:"62px",cursor:"pointer"}}>
+                  <span><i className="fa fa-server" aria-hidden="true"></i></span>
+                </div>
+                <div onClick={this.deviceMonitor} style={{textAlign:"center", cursor:"pointer"}}>
+                  {'硬件监控'}
+                </div>
+              </Col>
+            }
+            {
+              this.state.rememberModule && this.state.rememberModule.length>0?
+              this.state.rememberModule.map(item=>{
+                return (
+                  <Col span={6} key={item.id} style={{padding: "15px 0 15px 0"}}>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{width: "64px",height:"64px",borderRadius:"40px",background:"rgba(0,0,0,0.3)",margin:"0 auto",fontSize:"30px",textAlign:"center",lineHeight:"62px",cursor:"pointer"}}>
+                      <span><i className={ item.icon } aria-hidden="true"></i></span>
+                    </div>
+                    <div onClick={()=>{this.toPath(item.url)}} style={{textAlign:"center",cursor:"pointer"}}>
+                      {item.name}
+                    </div>
+                  </Col>
+                )
+              })
+              :
+              ''
+            }
+          </Row>
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withRouter(NavRemember)
