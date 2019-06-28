@@ -2,8 +2,8 @@
 import React, { Component }  from 'react'
 import { Button } from 'antd'
 import { css, jsx } from '@emotion/core'
-import { withTheme } from 'emotion-theming'
 import { Scrollbars } from 'react-custom-scrollbars'
+import { withTheme } from 'emotion-theming'
 
 import SideNav from './SideNavContainer'
 import Header from './HeaderContainer'
@@ -36,36 +36,44 @@ class Layout extends Component {
   render(){
     const {navWidth} = this.props
     return (
-      <div css={{borderRight: this.props.theme.forBorder,display:"flex"}} >
-      {
-        // <div className="leftContainer" css={{borderRight: this.props.theme.forBorder}}  style={{flex:"0 0 "+this.props.navWidth}}>
-        //   <Scrollbars
-        //     autoHide
-        //     autoHideTimeout={100}
-        //     autoHideDuration={200}
-        //     universal={true}
-        //     className='leftContainer'
-        //     >
-        //     <SideNav />
-        //   </Scrollbars>
-        // </div>
-      }
 
-        <div className="rightContainer" css={{flex:"1 1 auto"}}>
-          <div className="headerContainer" css={{height:"60px",borderBottom: this.props.theme.forBorder }} >
-            <Header />
+        <div className="frontPage" css={{
+          borderRight: this.props.theme.forBorder,display:"flex",
+          background: this.props.theme.bodyBg,
+          color: this.props.theme.fontColor,
+          fontSize: this.props.theme.fontSize,
+          height: 'auto'
+        }} >
+        {
+          // <div className="leftContainer" css={{borderRight: this.props.theme.forBorder}}  style={{flex:"0 0 "+this.props.navWidth}}>
+          //   <Scrollbars
+          //     autoHide
+          //     autoHideTimeout={100}
+          //     autoHideDuration={200}
+          //     universal={true}
+          //     className='leftContainer'
+          //     >
+          //     <SideNav />
+          //   </Scrollbars>
+          // </div>
+        }
+
+          <div className="rightContainer" css={{flex:"1 1 auto"}}>
+            <div className="headerContainer" css={{height:"60px",borderBottom: this.props.theme.forBorder }} >
+              <Header />
+            </div>
+            <Scrollbars
+              autoHide
+              autoHideTimeout={100}
+              autoHideDuration={200}
+              universal={true}
+              className='containerIn'
+            >
+              <Container />
+            </Scrollbars>
           </div>
-          <Scrollbars
-            autoHide
-            autoHideTimeout={100}
-            autoHideDuration={200}
-            universal={true}
-            className='containerIn'
-          >
-            <Container />
-          </Scrollbars>
         </div>
-      </div>
+
     )
   }
 }

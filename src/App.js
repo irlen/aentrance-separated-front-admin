@@ -1,14 +1,10 @@
 /** @jsx jsx */
 import React from 'react'
 import { jsx, css, Global, ClassNames } from '@emotion/core'
-import { ThemeProvider, withTheme } from 'emotion-theming'
-
-
 import { AppRoute } from './Routes'
-import './styles/style.less'
-
+import { ThemeProvider } from 'emotion-theming'
 import { deepBlue } from './styles/globalStyle'
-
+import './styles/style.less'
 class App extends React.Component {
   render() {
     return (
@@ -27,7 +23,7 @@ class App extends React.Component {
               height:'100%'
             },
             div:{
-              boxSizing: 'borderBox'
+              boxSizing: 'border-box'
             }
           }}
         />
