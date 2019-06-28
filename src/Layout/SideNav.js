@@ -63,7 +63,7 @@ class SideNav extends Component {
     return (
       <div>
         <div style={{padding: "10px",height:"80px"}}>
-          <img src={this.state.collapsed?require("../asets/intimatelog.png"):require("../asets/INTIMATELOG.png")} height="36"/>
+          
         </div>
         <NavStyle>
         <Menu
