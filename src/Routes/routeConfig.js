@@ -65,5 +65,39 @@ const routeOne = [
   }
 ]
 
-
-export { routeOne }
+const adminRoute = [
+  // {
+  //   key:'/admin/searchfor',
+  //   path:'/admin/searchfor',
+  //   component:'',
+  //   name:'信息检索',
+  //   icon: 'fa fa-search',
+  //   routes:[
+  //     { key:'/admin/searchfor', path: '/admin/searchfor', component:'../SearchFor', name:'地域和企业'},
+  //   ]
+  // },
+  {
+    key:'/admin/datanote',
+    path:'/admin/datanote',
+    component:'',
+    name:'地域',
+    icon: 'fa fa-database',
+    routes:[
+      { key:'/admin/datanote', path: '/admin/datanote', component:'../DataNote', name:'产业园'},
+      { key:'/admin/databuilding', path: '/admin/databuilding', component:'../DataBuilding', name:'楼宇'},
+      { key:'/admin/datacompany', path: '/admin/datacompany', component:'../DataCompany', name:'企业'},
+      { key:'/admin/datatech', path: '/admin/datatech', component:'../DataTech', name:'科技创新'},
+    ]
+  }
+  // ,{
+  //   key:'/admin/indusclassify',
+  //   path:'/admin/indusclassify',
+  //   component:'',
+  //   name:'产业',
+  //   icon: 'fa fa-th-list',
+  //   routes:[
+  //     { key:'/admin/indusclassify', path: '/admin/indusclassify', component:'../IndusClassify', name:'管理'},
+  //   ]
+  // }
+]
+export { routeOne, adminRoute}

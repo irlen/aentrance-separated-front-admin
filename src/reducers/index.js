@@ -1,9 +1,9 @@
 import { combineReducers } from 'redux'
-import nav from './nav'
-import homeview from './homeview'
+//import nav from './nav'
 import windowH from './windowH'
+import indus from './indus'
 export default combineReducers({
-  homeview,
-  nav,
-  windowH
+//  nav,
+  windowH,
+  indus
 })

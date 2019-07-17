@@ -29,10 +29,15 @@ const Body = (props)=>{
     </div>
   )
 }
-
+const FormModule = (props)=>(
+  <div>
+    <div css={{lineHeight:"30px"}}>{props.title}</div>
+    <div>{props.children}</div>
+  </div>
+)
 
 const Amodule = withTheme(Whole)
 const Header = withTheme(Head)
 const Bodyer = withTheme(Body)
 
-export { Amodule, Header, Bodyer }
+export { Amodule, Header, Bodyer, FormModule }

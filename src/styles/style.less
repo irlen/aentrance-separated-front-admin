@@ -18,6 +18,9 @@ body{
 *{margin: 0; padding: 0; box-sizing: border-box;}
 
 .frontPage{
+*{
+	color:@font_color_light;
+}
 ul{list-style: none;}
 img{border: none; outline: none; display: inline-block;}
 img{ -ms-interpolation-mode: bicubic; }
@@ -118,7 +121,10 @@ tr.ant-table-expanded-row, tr.ant-table-expanded-row:hover{
 /***********warning框样式完*****************************************************************/
 
 
-
+/*******************************input样式********************************************/
+.ant-input{
+	background-color: @bg_color_dark;
+}
 
 
 
@@ -278,6 +284,7 @@ input.ant-select-search__field{
 .ant-input-number{                   /*数字选择器样式*/
 	border: rgba(1,211,159,0.4) solid 1px;
 }
+
 /***********select样式完******************************************************************/
 
 
@@ -496,6 +503,9 @@ li.ant-time-picker-panel-select-option-selected:hover,.ant-time-picker-panel-sel
 	font-size: "12px"
 }
 /*导航展开后二级标题被选中后背景颜色和字体颜色*/
+.ant-menu-item > a{
+	color: @font_color_light;
+}
 .ant-menu:not(.ant-menu-horizontal) .ant-menu-item-selected{
 	background: rgba(22,84,190,0.16);
 }
@@ -642,11 +652,51 @@ li.ant-time-picker-panel-select-option-selected:hover,.ant-time-picker-panel-sel
 }
 
 }
+
+
+
 /*字体图标*/
 @import './font-awesome.min.less';
-
+/******************************飘出部分颜色*************************************/
+.ant-dropdown-menu-item, .ant-dropdown-menu-submenu-title{
+	color:"#333333"
+}
 .ant-select-tree li .ant-select-tree-node-content-wrapper,
 .ant-select-dropdown,
 .ant-select-tree{
 	color: #333333;
+}
+.ant-popover-inner{
+	background: #fff;
+}
+.ant-popover-placement-bottom > .ant-popover-content > .ant-popover-arrow, .ant-popover-placement-bottomLeft > .ant-popover-content > .ant-popover-arrow, .ant-popover-placement-bottomRight > .ant-popover-content > .ant-popover-arrow{
+	border-top-color:#fff;
+	border-left-color:#fff;
+}
+/******************************管理页面*******************/
+.adminContainer{
+	/**********************导航目录************************/
+	.ant-menu-root.ant-menu-vertical, .ant-menu-root.ant-menu-vertical-left, .ant-menu-root.ant-menu-vertical-right, .ant-menu-root.ant-menu-inline{
+		background: none;
+	}
+	.ant-menu-inline, .ant-menu-vertical, .ant-menu-vertical-left{
+		border: none;
+	}
+	.ant-menu-inline-collapsed{
+		width: 60px;
+	}
+	.ant-menu-inline-collapsed > .ant-menu-item, .ant-menu-inline-collapsed > .ant-menu-item-group > .ant-menu-item-group-list > .ant-menu-item, .ant-menu-inline-collapsed > .ant-menu-item-group > .ant-menu-item-group-list > .ant-menu-submenu > .ant-menu-submenu-title, .ant-menu-inline-collapsed > .ant-menu-submenu > .ant-menu-submenu-title{
+		padding: 0 22px !important;
+	}
+	.ant-menu.ant-menu-sub.ant-menu-inline{
+		background:rgba(0,0,0,0.2);
+	}
+	.ant-select-selection--multiple{
+		padding-bottom: 0px;
+	}
+
+
+}
+.ant-select-selection--multiple{
+	padding-bottom: 0px;
 }

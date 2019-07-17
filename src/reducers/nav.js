@@ -2,8 +2,8 @@
 
 const nav = (state={collapsed: true,navWidth:'56px'},action)=>{
    switch(action.type){
-    case 'DO_TOGGLE':
-      return {collapsed: action.collapsed, navWidth: action.collapsed?'56px':'160px'}
+    case 'UPDATE_INDUS':
+      return Object.assign({},state,action.value)
     default:
       return state
   }

@@ -14,7 +14,9 @@ class WyTable extends Component{
       onTableContextmenu: function(){},
       dropPosition:{x:"0px",y:"0px"},
       dropData: [],
-      isexist: false
+      isexist: false,
+      current:1,
+      total:''
     }
   }
   componentDidMount(){
@@ -46,28 +48,36 @@ class WyTable extends Component{
         JSON.stringify(_.cloneDeep(this.props.xData)) === JSON.stringify(_.cloneDeep(nextProps.xData)) &&
         JSON.stringify(_.cloneDeep(this.props.yData)) === JSON.stringify(_.cloneDeep(nextProps.yData )) &&
         this.props.activeRowKey === nextProps.activeRowKey &&
-        JSON.stringify(this.props.dropListInfo) === JSON.stringify(nextProps.dropListInfo)
+        JSON.stringify(this.props.dropListInfo) === JSON.stringify(nextProps.dropListInfo) &&
+        this.props.current === nextProps.current &&
+        this.props.total === nextProps.total
       )){
         this.setState({
           xData: sortColumns(nextProps.xData),
           yData: [...nextProps.yData],
           dropPosition: nextProps.dropListInfo?nextProps.dropListInfo.dropPosition:{x:"0px",y:"0px"},
           dropData: nextProps.dropListInfo?nextProps.dropListInfo.dropData:[],
-          isexist: nextProps.dropListInfo?nextProps.dropListInfo.isexist: false
+          isexist: nextProps.dropListInfo?nextProps.dropListInfo.isexist: false,
+          current: nextProps.current,
+          total: nextProps.total
         })
       }
     }else{
       if(!(
         JSON.stringify(_.cloneDeep(this.props.xData)) === JSON.stringify(_.cloneDeep(nextProps.xData)) &&
         JSON.stringify(_.cloneDeep(this.props.yData)) === JSON.stringify(_.cloneDeep(nextProps.yData )) &&
-        JSON.stringify(this.props.dropListInfo) === JSON.stringify(nextProps.dropListInfo)
+        JSON.stringify(this.props.dropListInfo) === JSON.stringify(nextProps.dropListInfo) &&
+        this.props.current === nextProps.current &&
+        this.props.total === nextProps.total
       )){
         this.setState({
           xData: sortColumns(nextProps.xData),
           yData: [...nextProps.yData],
           dropPosition: nextProps.dropListInfo?nextProps.dropListInfo.dropPosition:{x:"0px",y:"0px"},
           dropData: nextProps.dropListInfo?nextProps.dropListInfo.dropData:[],
-          isexist: nextProps.dropListInfo?nextProps.dropListInfo.isexist: false
+          isexist: nextProps.dropListInfo?nextProps.dropListInfo.isexist: false,
+          current: nextProps.current,
+          total: nextProps.total
         })
       }
     }
@@ -80,13 +90,19 @@ class WyTable extends Component{
           size="small"
           columns={this.state.xData}
           dataSource={this.state.yData}
-          pagination={{
+          pagination={Object.assign(
+            {},
+            {
             pageSize: this.props.pageSize?this.props.pageSize:5,
             pageSizeOptions: ["5","10","20","30","40"],
             showSizeChanger: true,
             showQuickJumper: true,
-            onShowSizeChange: this.props.onShowSizeChange?(current,size)=>this.props.onShowSizeChange(current,size): function(){}
-          }}
+            onShowSizeChange: this.props.onShowSizeChange?(current,size)=>this.props.onShowSizeChange(current,size): function(){},
+            current: this.props.current,
+            total: this.props.total
+          },
+          {total: this.state.total,current: this.state.current}
+        )}
           rowSelection={this.props.rowSelection?this.props.rowSelection:undefined}
           expandedRowRender={this.props.expandedRowRender?this.props.expandedRowRender:undefined}
           onRow={(record)=>{
@@ -105,7 +121,9 @@ class WyTable extends Component{
                 }
               }
             }
-          }>
+          }
+          onChange={(pagination, filters, sorter)=>{this.props.tableChange(pagination, filters, sorter)}}
+          >
           </Table>
         <DropList
           dropPosition={_.cloneDeep(this.state.dropPosition)}

@@ -27,25 +27,29 @@ const wyAxiosPost = (url,data,callback)=>{
     url: wholeUrl,
     data: postData,
     method: "post",
+    withCredentials: false,
     headers: {
       "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
     }
   }
 ).then((result)=>{
-    if(result.data.ret === 200){
-      if(result.data.data.status === 1){
-        callback(result.data)
-      }else{
-        //message.error(url+':'+result.data.data.msg)
-        message.error(result.data.data.msg)
-      }
-    }else{
-      //message.error('业务请求错误：'+url+result.data.msg)
-      message.error(result.data.msg)
+    // if(result.data.ret === 200){
+    //   if(result.data.data.status === 1){
+    //     callback(result.data)
+    //   }else{
+    //     //message.error(url+':'+result.data.data.msg)
+    //     message.error(result.data.data.msg)
+    //   }
+    // }else{
+    //   //message.error('业务请求错误：'+url+result.data.msg)
+    //   message.error(result.data.msg)
+    // }
+    if(result.status === 200){
+      callback(result)
     }
   }).catch(error=>{
 	  // message.error('系统请求错误：'+url+error)
-	  //message.error(error)
+	  message.error('系统请求有误')
     return
   })
 }

@@ -1,6 +1,8 @@
 const ip_addr = document.location.hostname;
 
-const host  = 'http://'+ip_addr+':8080/NetLog/public/?r='
+const host  = 'http://10.0.0.100:8080/updis/'
+//const host  = 'https://www.scxgo.cn/'
+//const host  = 'http://www.scxgo.cn:996/'
 
 
 exports.host =  host

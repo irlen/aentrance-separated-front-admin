@@ -7,35 +7,40 @@ export const doToggle = (collapsed)=>({
   collapsed
 })
 //增加模块
-export const addModules = (moduleData)=>({
-  type: 'ADD_MODULE',
-  moduleData
-})
+// export const addModules = (moduleData)=>({
+//   type: 'ADD_MODULE',
+//   moduleData
+// })
 //设置位置
-export const setPosition = (positions)=>({
-  type: 'SET_POSITION',
-  positions
-})
+// export const setPosition = (positions)=>({
+//   type: 'SET_POSITION',
+//   positions
+// })
 //删除模块
-export const deleteModule = (id)=>({
-  type: 'DELETE_MODULE',
-  id
-})
+// export const deleteModule = (id)=>({
+//   type: 'DELETE_MODULE',
+//   id
+// })
 
 //初始化modules
-export const initModules = (modulesData)=>({
-  type: 'INIT_MODULES',
-  modulesData
-})
+// export const initModules = (modulesData)=>({
+//   type: 'INIT_MODULES',
+//   modulesData
+// })
 
 //设置数据
-export const setData = (dataInfo)=>({
-  type: 'SET_DATA',
-  dataInfo
-})
+// export const setData = (dataInfo)=>({
+//   type: 'SET_DATA',
+//   dataInfo
+// })
 
 //设置windowH
 export const setWindowH = (windowH)=>({
   type:'SET_WH',
   windowH
+})
+
+export const updateIndus = (value)=>({
+  type:'UPDATE_INDUS',
+  value
 })

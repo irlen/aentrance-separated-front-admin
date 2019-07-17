@@ -3,8 +3,8 @@ import Layout from './Layout'
 import { setWindowH } from '../actions'
 
 const mapStateToProps = (state)=>({
-  navWidth: state.nav.navWidth,
-  collapsed: state.nav.collapsed,
+  //navWidth: state.nav.navWidth,
+  //collapsed: state.nav.collapsed,
   windowH: state.height
 })
 const mapDispatchToProps = (dispatch)=>({

@@ -1,13 +1,20 @@
-import React, { Component } from 'react'
+import React from 'react'
+//import PropTypes from 'prop-types'
+import { connect } from 'react-redux'
+import $ from 'jquery'
 
-import { Button,Input } from 'antd'
-export default ()=>{
-  return <span style={{color:"#333"}}>
-  后台管理页面
-  <Button type='primary'>按钮测试</Button>
-  <Input />
-  <div className="haha">
-      sdafafdsafafdsafasfasdfdsa
-  </div>
-  </span>
+import Header from './header'
+import { userLogout } from '../actions'
+import Container from './Container'
+class Admin extends React.Component {
+  render(){
+    return(
+      <div className="adminContainer">
+        <Header />
+        <Container />
+      </div>
+    )
+  }
 }
+
+export default Admin

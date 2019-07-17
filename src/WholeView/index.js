@@ -126,6 +126,9 @@ class WholeView extends Component{
       })
     }
   }
+  componentWillUnmount(){
+    this._isMounted = false
+  }
   render(){
     //window动态高度
     //数选择框的属性

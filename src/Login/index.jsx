@@ -5,7 +5,7 @@ import React from 'react'
 import { message, Row, Col } from 'antd'
 import $ from 'jquery'
 import { connect, dispatch } from 'react-redux'
-import { Redirect } from 'react-router-dom'
+import { Redirect, withRouter } from 'react-router-dom'
 
 import { setAuth, getCompiledAuth } from '../actions'
 import Loginfrom from './loginform'
@@ -36,11 +36,14 @@ class LoginComponent extends React.Component {
   }
   //登陆提交事件
   loginSubmit = (values)=>{
-    wyAxiosPost('User/login',values,(result)=>{
+    wyAxiosPost('Index/login',values,(result)=>{
       const responseData = result.data.msg
-      if(responseData.is_login){
-        localStorage['loginInfo'] = document.cookie
-        this.props.history.push('/app')
+      if(responseData.status === 1){
+        console.log('chenggong ')
+        sessionStorage['isLogin'] = true
+        sessionStorage['username'] = values.username
+        console.log(this.props)
+        this.props.history.push('/admin/datanote')
       }else{
         message.warning(responseData.msg)
       }
@@ -84,4 +87,4 @@ class LoginComponent extends React.Component {
 }
 
 
-export default connect()(LoginComponent)
+export default withRouter(LoginComponent)

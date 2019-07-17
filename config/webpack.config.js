@@ -373,8 +373,8 @@ module.exports = function(webpackEnv) {
                       // "@error-color": "#f5222d",                           // 错误色
                       // "@font-size-base": "14px",                           // 主字号
                       // "@heading-color": "rgba(0, 0, 0, .85)",              // 标题色
-                       "@text-color": "rgba(255, 255, 255, 0.6)",                // 主文本色
-                       "@text-color-secondary" : "rgba(1, 211, 159, 1)",       // 次文本色
+                    // "@text-color": "rgba(255, 255, 255, 0.6)",                // 主文本色
+                    // "@text-color-secondary" : "rgba(1, 211, 159, 1)",       // 次文本色
                       // "@disabled-color" : "rgba(0, 0, 0, .25)",            // 失效色
                       // "@border-radius-base": "4px",                        // 组件/浮层圆角
                       // "@border-color-base": "#d9d9d9",                     // 边框色
@@ -382,9 +382,9 @@ module.exports = function(webpackEnv) {
                       //"@modal-mask-bg":"rgba(0,0,0,0.24)"                  //遮罩
                       "@table-selected-row-bg":"rgba(1,211,159,0.4)",        //表格选中背景色
                        "@table-row-hover-bg":"rgba(1,211,159,0.48)",            //表格hover背景色
-                       "@menu-bg":"#0f153a",                                   //导航飘出部分颜色
-                       "@input-bg":"rgba(0,0,0,0.24)",                         //输入框背景颜色
-                       "@input-color":"#fff",                                  //输入框文字颜色
+                    //"@menu-bg":"#0f153a",                                   //导航飘出部分颜色
+                    //"@input-bg":"rgba(0,0,0,0.24)",                         //输入框背景颜色
+                    //"@input-color":"#fff",                                  //输入框文字颜色
                        "@input-border-color":"rgba(1,211,159,0.56)",           //输入框边框颜色
                        "@btn-default-color":"rgba(51, 51, 51, 0.8)",           //取消&删除按钮字体色
                        "@tabs-card-head-background":"rgba(0,0,0,0.2)",        //tabs待选bar颜色
