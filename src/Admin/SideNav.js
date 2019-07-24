@@ -10,10 +10,10 @@ import { withRouter } from 'react-router-dom'
 import { adminRoute } from '../Routes/routeConfig'
 
 const SubMenu = Menu.SubMenu
-
+const selectStyle = {color:"#01bd4c"}
 class SideNav extends Component {
   state = {
-    collapsed: true,
+    collapsed: false,
     openKeys:[]
   }
   componentDidMount(){
@@ -23,7 +23,8 @@ class SideNav extends Component {
     if(this._isMounted){
       const coll = this.state.collapsed
       if(coll){
-        this.props.setLeftW('200')
+        //this.props.setLeftW('200')
+        this.props.setLeftW('160')
       }else{
         this.props.setLeftW('60')
       }
@@ -65,6 +66,9 @@ class SideNav extends Component {
     })
     const selectedKeys = []
     selectedKeys.push(this.props.location.pathname)
+    const reg = /\/[a-z]+/g
+    const pathArray = this.props.location.pathname.match(reg)
+    const oneLever = pathArray[0]+pathArray[1]
     return (
       <div>
         <NavStyle>
@@ -82,7 +86,7 @@ class SideNav extends Component {
                   <SubMenu
                     key={ item.key }
                     title={
-                      <span>
+                      <span style={oneLever===item.key?selectStyle:{}}>
                         <i className={ item.icon } aria-hidden="true"></i>
                         <Icon type="double-right" style={{color:"rgba(255,255,255,0)"}}/>
                         <span>{ item.name }</span>
@@ -145,16 +149,16 @@ class SideNav extends Component {
           </Menu>
           <div style={{textAlign:"center",cursor:"pointer",color:"#01bd4c"}} onClick={this.toggleCollapsed}>
             {
-              this.state.collapsed?
-              <span>
-                <i className="fa fa-long-arrow-left" aria-hidden="true"></i>
-                <i className="fa fa-long-arrow-right" aria-hidden="true"></i>
-              </span>
-              :
-              <span>
-                <i className="fa fa-long-arrow-right" aria-hidden="true"></i>
-                <i className="fa fa-long-arrow-left" aria-hidden="true"></i>
-              </span>
+              // this.state.collapsed?
+              // <span>
+              //   <i className="fa fa-long-arrow-left" aria-hidden="true"></i>
+              //   <i className="fa fa-long-arrow-right" aria-hidden="true"></i>
+              // </span>
+              // :
+              // <span>
+              //   <i className="fa fa-long-arrow-right" aria-hidden="true"></i>
+              //   <i className="fa fa-long-arrow-left" aria-hidden="true"></i>
+              // </span>
 
             }
           </div>

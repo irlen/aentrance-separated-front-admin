@@ -43,7 +43,7 @@ class LoginComponent extends React.Component {
         sessionStorage['isLogin'] = true
         sessionStorage['username'] = values.username
         console.log(this.props)
-        this.props.history.push('/admin/datanote')
+        this.props.history.push('/admin/takenote/datanote')
       }else{
         message.warning(responseData.msg)
       }

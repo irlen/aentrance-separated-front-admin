@@ -88,7 +88,6 @@ class ShowDetail extends Component {
     this._isMounted = false
   }
   render(){
-    console.log(this.state.data)
     return(
       <div style={{background:"#f9f9f9",marginTop:"20px",padding:"20px",lineHeight:"60px"}}>
         <Scrollbars

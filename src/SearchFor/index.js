@@ -7,7 +7,6 @@ import _ from 'lodash'
 
 import { wyAxiosPost } from '../components/WyAxios'
 import ModuleList from './ModuleList'
-import ModuleListForEnterprise from './ModuleListForEnterprise'
 import ShowDetail from './ShowDetail'
 const { Option } = Select
 class SearchFor extends Component{
@@ -183,9 +182,6 @@ class SearchFor extends Component{
                 list={this.state.enterprise_list}
                 curTarget={this.state.enterprise}
               />
-              {
-                //<ModuleListForEnterprise setTypeField={this.setTypeField} type="enterprise" list={this.state.enterprise_list} curTarget={this.state.enterprise}/>
-              }
               </div>
             </div>
           </Col>

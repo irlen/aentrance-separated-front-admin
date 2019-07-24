@@ -28,6 +28,7 @@ import DataCompany from '../DataCompany'
 import DataTech from '../DataTech'
 import IndusClassify from '../IndusClassify'
 import SearchFor from '../SearchFor'
+import UserManage from '../UserManage'
 
 const ARoute = (props)=>(
   <div>
@@ -55,11 +56,12 @@ export const SubAdminRoute = () => (
       {
        //管理
       }
-      <Route path='/admin/searchfor' exact render={()=> sessionStorage.isLogin?<SearchFor />:<VerticFail/> } />
-      <Route path='/admin/datanote' exact render={()=> sessionStorage.isLogin?<DataNote />:<VerticFail/> } />
-      <Route path='/admin/databuilding' exact render={()=> sessionStorage.isLogin?<DataBuilding />:<VerticFail/>} />
-      <Route path='/admin/datacompany' exact render={()=> sessionStorage.isLogin?<DataCompany />:<VerticFail/>} />
-      <Route path='/admin/datatech' exact render={()=> sessionStorage.isLogin?<DataTech />:<VerticFail/>} />
-      <Route path='/admin/indusclassify' exact render={()=> sessionStorage.isLogin?<IndusClassify />:<VerticFail/>} />
+      <Route path='/admin/forsearch/searchfor' exact render={()=> sessionStorage.isLogin?<SearchFor />:<VerticFail/> } />
+      <Route path='/admin/takenote/datanote' exact render={()=> sessionStorage.isLogin?<DataNote />:<VerticFail/> } />
+      <Route path='/admin/takenote/databuilding' exact render={()=> sessionStorage.isLogin?<DataBuilding />:<VerticFail/>} />
+      <Route path='/admin/takenote/datacompany' exact render={()=> sessionStorage.isLogin?<DataCompany />:<VerticFail/>} />
+      <Route path='/admin/takenote/datatech' exact render={()=> sessionStorage.isLogin?<DataTech />:<VerticFail/>} />
+      <Route path='/admin/takenote/indusclassify' exact render={()=> sessionStorage.isLogin?<IndusClassify />:<VerticFail/>} />
+      <Route path='/admin/user/usermanage' exact render={()=> sessionStorage.isLogin?<UserManage />:<VerticFail/>} />
   </div>
 )

@@ -2,7 +2,7 @@
 import { jsx, css } from '@emotion/core'
 import styled from '@emotion/styled'
 import React, { Component } from 'react'
-import { Row, Col } from 'antd'
+import { Row, Col, Drawer, Button } from 'antd'
 import _ from 'lodash'
 import { connect } from 'react-redux'
 import { Scrollbars } from 'react-custom-scrollbars'
@@ -30,7 +30,8 @@ class ModuleList extends Component{
     list: [],
     curTarget:'',
     hoverTarget:'',
-    windowH:''
+    windowH:'',
+    visible: false
   }
 
   componentDidMount(){
@@ -75,6 +76,21 @@ class ModuleList extends Component{
       })
     }
   }
+  edit = (type,id)=>{
+    console.log(type,id)
+    this.showDrawer()
+
+  }
+  onClose = () => {
+    this.setState({
+      visible: false,
+    })
+  }
+  showDrawer = () => {
+    this.setState({
+      visible: true,
+    })
+  }
 
   componentWillUnmount(){
     this._isMounted = false
@@ -97,7 +113,7 @@ class ModuleList extends Component{
                       <div css={{flex:"0 0 30px"}}>
                       {
                         this.state.hoverTarget === item.id?
-                        <span css={{color:"rgb(1, 189, 76)"}}><i className="fa fa-pencil" aria-hidden="true"></i></span>
+                        <span onClick={()=>{this.edit(this.props.type,item.id)}} css={{color:"rgb(1, 189, 76)"}}><i className="fa fa-pencil" aria-hidden="true"></i></span>
                         :
                         ''
                       }
@@ -123,6 +139,16 @@ class ModuleList extends Component{
             ''
           }
         </Scrollbars>
+        <Drawer
+          title={<Button><i className="fa fa-chevron-left" aria-hidden="true"></i> <span style={{marginLeft:"10px"}}>返回</span></Button>}
+          placement="right"
+          closable={false}
+          onClose={this.onClose}
+          visible={this.state.visible}
+          width={"100%"}
+        >
+
+        </Drawer>
       </div>
     )
   }

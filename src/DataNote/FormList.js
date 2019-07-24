@@ -75,13 +75,7 @@ class FormDetail extends Component{
         const responseData = result.data.msg
         if(responseData.msg === 0){
           this.props.form.validateFieldsAndScroll((err, fieldsValue) => {
-            //let fields = {}
             if (!err) {
-              // const values = {
-              //   ...fieldsValue,
-              //   'development_time':fieldsValue['development_time']?fieldsValue['development_time'].format('YYYY-MM'):'',
-              // }
-              // fields = values
               wyAxiosPost('Park/savePark',{type:'add',info:fieldsValue},(result)=>{
                 const responseData = result.data.msg
                 if(responseData.status === 1){
@@ -100,7 +94,7 @@ class FormDetail extends Component{
           })
         }else{
           message.warning('已存在同名产业园')
-        }
+         }
       })
     }else{
       this.props.form.validateFieldsAndScroll((err, fieldsValue) => {
@@ -108,7 +102,6 @@ class FormDetail extends Component{
         if (!err) {
            const values = {
              ...fieldsValue,
-          //   'development_time':fieldsValue['development_time']?fieldsValue['development_time'].format('YYYY-MM'):'',
           }
            fields = values
            fields.id = this.state.id
@@ -126,7 +119,6 @@ class FormDetail extends Component{
           const len = Object.keys(err).length
           message.warning('有'+len+'项必填项没有填写')
         }
-
         return
       })
     }
@@ -168,8 +160,8 @@ class FormDetail extends Component{
       const restaurant_area = this.props.form.getFieldValue('restaurant_area')
       list[3].value = restaurant_area
       list[3].rate = "restaurant_rate"
-      const restaurant_rate = this.props.form.getFieldValue('restaurant_rate')
-      list[4].value = restaurant_rate
+      const business_area = this.props.form.getFieldValue('business_area')
+      list[4].value = business_area
       list[4].rate = "business_rate"
       const literary_area = this.props.form.getFieldValue('literary_area')
       list[5].value = literary_area
@@ -217,13 +209,13 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8} css={{height:"93px"}}>
-                  <Form.Item label="详细地址">
-                    {getFieldDecorator('detailed_address', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<TextArea autosize={{minRows:1, maxRows:2}} />)}
-                  </Form.Item>
+                 <Form.Item label="详细地址">
+                   {getFieldDecorator('detailed_address', {
+                     rules: [
+                       { required: false, message: '' }
+                   ],
+                 })(<TextArea autosize={{minRows:1, maxRows:2}} />)}
+                 </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
                   <Form.Item label="项目状况">
@@ -351,7 +343,7 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="占总建筑面积比例（研发办公面积/总建筑面积）">
+                  <Form.Item label="研发办公占总建筑面积的比例">
                     {getFieldDecorator('occupy_rate', {
                       rules: [
                         { required: false, message: '' }
@@ -378,7 +370,7 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="占总建筑面积比例（厂房面积/总建筑面积）">
+                  <Form.Item label="厂房占总建筑面积的比例">
                     {getFieldDecorator('factory_rate', {
                       rules: [
                         { required: false, message: '' }
@@ -405,35 +397,8 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="占总建筑面积比例（公寓面积/总建筑面积）">
+                  <Form.Item label="公寓占总建筑面积的比例">
                     {getFieldDecorator('apartment_rate', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber
-                    min={0}
-                    max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value.replace('%', '')}
-                    css={{width:"100%"}}
-                    disabled={true}
-                    placeholder={'自动计算，无需填写'}
-                  />)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="餐饮配套面积">
-                    {getFieldDecorator('restaurant_area', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber onBlur={this.calcRate} css={{width:"90%"}} min={0} />)}
-                  {' m²'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="占总建筑面积比例（餐饮配套面积/总建筑面积）">
-                    {getFieldDecorator('restaurant_rate', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -459,7 +424,7 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="占总建筑面积比例（商业配套面积/总建筑面积）">
+                  <Form.Item label="商业占总建筑面积的比例">
                     {getFieldDecorator('business_rate', {
                       rules: [
                         { required: false, message: '' }
@@ -486,7 +451,7 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="占总建筑面积比例（文体设施配套面积/总建筑面积）">
+                  <Form.Item label="文体设施占总建筑面积的比例">
                     {getFieldDecorator('literary_rate', {
                       rules: [
                         { required: false, message: '' }
@@ -603,7 +568,7 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="园区产值">
+                  <Form.Item label="产值">
                     {getFieldDecorator('park_output_value', {
                       rules: [
                         { required: false, message: '' }
@@ -778,48 +743,6 @@ class FormDetail extends Component{
                     ],
                   })(<InputNumber css={{width:"80%"}} min={0} />)}
                   {' 元/m²/月'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="园区运营模式">
-                    {getFieldDecorator('operate', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<Select
-                      mode="multiple"
-                      style={{ width: '100%' }}
-                      maxTagCount={2}
-                      maxTagPlaceholder="...等"
-                    >
-                      <Option value="政府运营模式" key="政府运营模式">政府运营模式</Option>
-                      <Option value="投资运营模式" key="投资运营模式">投资运营模式</Option>
-                      <Option value="服务运营模式" key="服务运营模式">服务运营模式</Option>
-                      <Option value="土地盈利模式" key="土地盈利模式">土地盈利模式</Option>
-                      <Option value="产业运营模式" key="产业运营模式">产业运营模式</Option>
-                    </Select>)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="园区运营服务">
-                    {getFieldDecorator('service', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<Select
-                      mode="multiple"
-                      style={{ width: '100%' }}
-                      maxTagCount={2}
-                      maxTagPlaceholder="...等"
-                    >
-                      <Option value="商务服务" key="商务服务">商务服务</Option>
-                      <Option value="信息技术服务" key="信息技术服务">信息技术服务</Option>
-                      <Option value="审批申报服务" key="审批申报服务">审批申报服务</Option>
-                      <Option value="投融资服务" key="投融资服务">投融资服务</Option>
-                      <Option value="基础服务" key="基础服务">基础服务</Option>
-                      <Option value="联合党建服务" key="联合党建服务">联合党建服务</Option>
-                      <Option value="公共检测服务" key="公共检测服务">公共检测服务</Option>
-                    </Select>)}
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
@@ -1010,61 +933,7 @@ class FormDetail extends Component{
                   </Form.Item>
                 </Col>
                 <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="园区主要招商资源">
-                    {getFieldDecorator('resource', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<Select
-                      mode="tags"
-                      style={{ width: '100%' }}
-                      maxTagCount={2}
-                      maxTagPlaceholder="...等"
-                    >
-                      <Option value="政府招商局" key="政府招商局">政府招商局</Option>
-                      <Option value="政府人才计划" key="政府人才计划">政府人才计划</Option>
-                      <Option value="以商招商" key="以商招商">以商招商</Option>
-                      <Option value="项目联动" key="项目联动">项目联动</Option>
-                      <Option value="人脉介绍" key="人脉介绍">人脉介绍</Option>
-                      <Option value="现场招商" key="现场招商">现场招商</Option>
-                      <Option value="异业互动" key="异业互动">异业互动</Option>
-                      <Option value="广告宣传" key="广告宣传">广告宣传</Option>
-                      <Option value="互联网推广" key="互联网推广">互联网推广</Option>
-                      <Option value="招商热线" key="招商热线">招商热线</Option>
-                      <Option value="其他" key="其他">其他</Option>
-                    </Select>)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="园区招商方式">
-                    {getFieldDecorator('mode', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<Select
-                      mode="tags"
-                      style={{ width: '100%' }}
-                      maxTagCount={2}
-                      maxTagPlaceholder="...等"
-                    >
-                      <Option value="产业链商局" key="产业链商局">产业链商局</Option>
-                      <Option value="主导产业招商" key="主导产业招商">主导产业招商</Option>
-                      <Option value="产业政策招商" key="产业政策招商">产业政策招商</Option>
-                      <Option value="重点区域招商" key="重点区域招商">重点区域招商</Option>
-                      <Option value="重点部门招商" key="重点部门招商">重点部门招商</Option>
-                      <Option value="重点人物招商" key="重点人物招商">重点人物招商</Option>
-                      <Option value="资本招商" key="资本招商">资本招商</Option>
-                      <Option value="大数据招商" key="大数据招商">大数据招商</Option>
-                      <Option value="创业大赛招商" key="创业大赛招商">创业大赛招商</Option>
-                      <Option value="飞地招商" key="飞地招商">飞地招商</Option>
-                      <Option value="前店后厂招商" key="前店后厂招商">前店后厂招商</Option>
-                      <Option value="互联网社群招商" key="互联网社群招商">互联网社群招商</Option>
-                      <Option value="其他" key="其他">其他</Option>
-                    </Select>)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="园区企业服务核心平台">
+                  <Form.Item label="园区产业服务核心平台">
                     {getFieldDecorator('core', {
                       rules: [
                         { required: false, message: '' }
@@ -1088,7 +957,7 @@ class FormDetail extends Component{
                 </Col>
                 <Col sm={24} md={12} lg={8}>
                   <Form.Item label="产业服务平台名称">
-                    {getFieldDecorator('dddd', {
+                    {getFieldDecorator('platform_name', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -1097,7 +966,7 @@ class FormDetail extends Component{
                 </Col>
                 <Col sm={24} md={12} lg={8}>
                   <Form.Item label="产业服务平台类型">
-                    {getFieldDecorator('platform_name', {
+                    {getFieldDecorator('platform_type', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -1129,15 +998,6 @@ class FormDetail extends Component{
                 <Col sm={24} md={12} lg={8} css={{height:"93px"}}>
                   <Form.Item label="产业服务平台特色（优势）服务">
                     {getFieldDecorator('advantage', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<TextArea autosize={{minRows:1, maxRows:2}} />)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8} css={{height:"93px"}}>
-                  <Form.Item label="产业服务平台发展现状">
-                    {getFieldDecorator('platform_status', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -1233,7 +1093,7 @@ class FormDetail extends Component{
                 </Col>
                 <Col sm={24} md={12} lg={8} css={{height:"93px"}}>
                   <Form.Item label="园区招商资源诉求">
-                    {getFieldDecorator('business_appeal ', {
+                    {getFieldDecorator('business_appeal', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -1242,7 +1102,7 @@ class FormDetail extends Component{
                 </Col>
                 <Col sm={24} md={12} lg={8} css={{height:"93px"}}>
                   <Form.Item label="园区发展专业平台需求">
-                    {getFieldDecorator('platform_appeal ', {
+                    {getFieldDecorator('platform_appeal', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -1251,7 +1111,7 @@ class FormDetail extends Component{
                 </Col>
                 <Col sm={24} md={12} lg={8} css={{height:"93px"}}>
                   <Form.Item label="园区发展政策需求">
-                    {getFieldDecorator('policy_appeal ', {
+                    {getFieldDecorator('policy_appeal', {
                       rules: [
                         { required: false, message: '' }
                     ],
@@ -1778,149 +1638,6 @@ class FormDetail extends Component{
 
               </Row>
             </Panel>
-            <Panel header="园区企业家年龄情况" key="3.4">
-              <Row gutter={16}>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="50后">
-                    {getFieldDecorator('age50_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber
-                    min={0}
-                    max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value.replace('%', '')}
-                    css={{width:"100%"}}
-                  />)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="60后">
-                    {getFieldDecorator('age60_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber
-                    min={0}
-                    max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value.replace('%', '')}
-                    css={{width:"100%"}}
-                  />)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="70后">
-                    {getFieldDecorator('age70_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber
-                    min={0}
-                    max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value.replace('%', '')}
-                    css={{width:"100%"}}
-                  />)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="80后">
-                    {getFieldDecorator('age80_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber
-                    min={0}
-                    max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value.replace('%', '')}
-                    css={{width:"100%"}}
-                  />)}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="90后">
-                    {getFieldDecorator('age90_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber
-                    min={0}
-                    max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value.replace('%', '')}
-                    css={{width:"100%"}}
-                  />)}
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Panel>
-            <Panel header="园区就业人员构成" key="3.5">
-              <Row gutter={16}>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="院士">
-                    {getFieldDecorator('academician_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber css={{width:"90%"}} min={0} />)}
-                  {' 人'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="博士后">
-                    {getFieldDecorator('post_doctoral_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber css={{width:"90%"}} min={0} />)}
-                  {' 人'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="博士">
-                    {getFieldDecorator('doctoral_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber css={{width:"90%"}} min={0} />)}
-                  {' 人'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="硕士">
-                    {getFieldDecorator('master_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber css={{width:"90%"}} min={0} />)}
-                  {' 人'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="本科">
-                    {getFieldDecorator('college_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber css={{width:"90%"}} min={0} />)}
-                  {' 人'}
-                  </Form.Item>
-                </Col>
-                <Col sm={24} md={12} lg={8}>
-                  <Form.Item label="专科">
-                    {getFieldDecorator('specialty_number', {
-                      rules: [
-                        { required: false, message: '' }
-                    ],
-                  })(<InputNumber css={{width:"90%"}} min={0} />)}
-                  {' 人'}
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Panel>
             <Panel header="停车位个数" key="3.6">
               <Row gutter={16}>
                 <Col sm={24} md={12} lg={8}>
@@ -2143,7 +1860,7 @@ class FormDetail extends Component{
                 </Col>
               </Row>
             </Panel>
-            <Panel header="联系及地理" key="4" style={{borderBottom:"none"}}>
+            <Panel header="联系及地理" key="4">
               <Row gutter={16}>
                 <Col sm={24} md={12} lg={8}>
                   <Form.Item label="联系人">

@@ -18,7 +18,7 @@ class DataCompany extends Component{
     ids:[],
     drawerVisible:false,
     isSpining: false,
-    pageSize: 10,
+    pageSize: 20,
     id:'',
     curFields: {}, //当前编辑的ID对应的字段
     current: 1,
@@ -36,7 +36,7 @@ class DataCompany extends Component{
         this.setState({
           total: responseData.msg
         },()=>{
-          this.getParkList(undefined, undefined, undefined)
+          this.getParkList()
         })
       }
     })
@@ -62,43 +62,46 @@ class DataCompany extends Component{
     }
   }
   //获取园区列表
-  getParkList = (pagination=undefined, filters=undefined, sorter=undefined)=>{
-    if(this._isMounted){
-      this.setState({
-        isSpining: true
-      })
-    }
-    let current = this.state.current
-    let pageSize = this.state.pageSize
-    let search = this.state.search
-
-    if(pagination){
-      current = pagination.current
-      pageSize = pagination.pageSize
-    }
-    wyAxiosPost('Enterprise/getEnterpriseList',{current,pageSize,search},(result)=>{
-      const responseData = result.data.msg
-      let curxData = _.cloneDeep(responseData.xxx)
-      curxData.push({
-        title: '操作',
-        dataIndex: 'edit',
-        render: (text, record, index)=>(
-          <span>
-            <span title="编辑" style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>{this.editPark(record.key)}} >
-              <i className="fa fa-pencil-square" aria-hidden="true"></i>
-            </span>
-          </span>
-        )
-      })
-      if(this._isMounted){
-        this.setState({
-          xData: curxData,
-          yData: responseData.yyy,
-          isSpining: false,
-          current
-        })
-      }
+  tableChange = (pagination)=>{
+    this.setState({
+      isSpining: true,
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+    },()=>{
+      this.getParkList()
     })
+  }
+  getParkList = ()=>{
+    const doRequest = ()=>{
+      let current = this.state.current
+      let pageSize = this.state.pageSize
+      let search = this.state.search
+      wyAxiosPost('Enterprise/getEnterpriseList',{current,pageSize,search},(result)=>{
+        const responseData = result.data.msg
+        let curxData = _.cloneDeep(responseData.xxx)
+        curxData.push({
+          title: '操作',
+          dataIndex: 'edit',
+          render: (text, record, index)=>(
+            <span>
+              <span title="编辑" style={{cursor:"pointer",color: "#00CC66"}} onClick={()=>{this.editPark(record.key)}} >
+                <i className="fa fa-pencil-square" aria-hidden="true"></i>
+              </span>
+            </span>
+          )
+        })
+        if(this._isMounted){
+          this.setState({
+            xData: curxData,
+            yData: responseData.yyy,
+            isSpining: false,
+          })
+        }
+      })
+    }
+    if(this._isMounted){
+        doRequest()
+    }
   }
 
   showDrawer = () => {
@@ -213,11 +216,10 @@ class DataCompany extends Component{
             <WySpin isSpining={this.state.isSpining}>
               <WyTable
                 pageSize={this.state.pageSize}
-                onShowSizeChange={this.pageSizeChange}
                 rowSelection={rowSelection}
                 xData={this.state.xData?this.state.xData:[]}
                 yData={this.state.yData?this.state.yData:[]}
-                tableChange={this.getParkList}
+                tableChange={this.tableChange}
                 total={this.state.total}
                 current={this.state.current}
               />
@@ -230,17 +232,11 @@ class DataCompany extends Component{
           onClose={this.closeDrawer}
           visible={this.state.drawerVisible}
         >
-
         {
           this.state.drawerVisible?
-          <FormList id={this.state.id} getTotal={()=>{
-            if(this._isMounted){
-              this.setState({
-                current:1,
-                search:''
-              },()=>{this.getTotal(this.state.search)})
-            }
-          }} closeDrawer={this.closeDrawer} curFields={this.state.id === ''?{}:this.state.curFields} />
+          <FormList id={this.state.id}
+           getTotal={()=>{this.getTotal(this.state.search)}}
+           closeDrawer={this.closeDrawer} curFields={this.state.id === ''?{}:this.state.curFields} />
           :
           ''
         }

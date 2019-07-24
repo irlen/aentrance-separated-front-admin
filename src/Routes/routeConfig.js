@@ -67,28 +67,28 @@ const routeOne = [
 
 const adminRoute = [
   // {
-  //   key:'/admin/searchfor',
-  //   path:'/admin/searchfor',
+  //   key:'/admin/forsearch',
+  //   path:'/admin/forsearch',
   //   component:'',
   //   name:'信息检索',
   //   icon: 'fa fa-search',
   //   routes:[
-  //     { key:'/admin/searchfor', path: '/admin/searchfor', component:'../SearchFor', name:'地域和企业'},
+  //     { key:'/admin/forsearch/searchfor', path: '/admin/forsearch/searchfor', component:'../SearchFor', name:'地域和企业'},
   //   ]
   // },
   {
-    key:'/admin/datanote',
-    path:'/admin/datanote',
+    key:'/admin/takenote',
+    path:'/admin/takenote',
     component:'',
-    name:'地域',
+    name:'信息录入',
     icon: 'fa fa-database',
     routes:[
-      { key:'/admin/datanote', path: '/admin/datanote', component:'../DataNote', name:'产业园'},
-      { key:'/admin/databuilding', path: '/admin/databuilding', component:'../DataBuilding', name:'楼宇'},
-      { key:'/admin/datacompany', path: '/admin/datacompany', component:'../DataCompany', name:'企业'},
-      { key:'/admin/datatech', path: '/admin/datatech', component:'../DataTech', name:'科技创新'},
+      { key:'/admin/takenote/datanote', path: '/admin/takenote/datanote', component:'../DataNote', name:'产业园'},
+      { key:'/admin/takenote/databuilding', path: '/admin/takenote/databuilding', component:'../DataBuilding', name:'楼宇'},
+      { key:'/admin/takenote/datacompany', path: '/admin/takenote/datacompany', component:'../DataCompany', name:'企业'},
+      { key:'/admin/takenote/datatech', path: '/admin/takenote/datatech', component:'../DataTech', name:'科技创新'},
     ]
-  }
+  },
   // ,{
   //   key:'/admin/indusclassify',
   //   path:'/admin/indusclassify',
@@ -98,6 +98,16 @@ const adminRoute = [
   //   routes:[
   //     { key:'/admin/indusclassify', path: '/admin/indusclassify', component:'../IndusClassify', name:'管理'},
   //   ]
-  // }
+  // }，
+  {
+    key:'/admin/user',
+    path:'/admin/user',
+    component:'',
+    name:'用户',
+    icon: 'fa fa-user',
+    routes:[
+      { key:'/admin/user/usermanage', path: '/admin/user/usermanage', component:'../UserManage', name:'管理'},
+    ]
+  }
 ]
 export { routeOne, adminRoute}

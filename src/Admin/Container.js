@@ -13,7 +13,8 @@ import { adminRoute } from '../Routes/routeConfig'
 import { setWindowH } from '../actions'
 class Container extends Component {
   state = {
-    leftW: "60"
+    //leftW: "60"
+    leftW: "160"
   }
   componentDidMount(){
     this._isMounted = true
